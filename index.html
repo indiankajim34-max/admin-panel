@@ -1,0 +1,78 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <title>WinGo VIP - Key Generator</title>
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <style>
+        body { font-family: Arial, sans-serif; background: #121212; color: #fff; text-align: center; padding: 20px; }
+        .card { background: #1e1e1e; padding: 25px; border-radius: 12px; max-width: 400px; margin: auto; box-shadow: 0 4px 10px rgba(0,0,0,0.5); }
+        h2 { color: #00ffcc; margin-bottom: 20px; }
+        .grid { display: grid; grid-template-columns: 1fr 1fr; gap: 10px; margin-bottom: 20px; }
+        button { background: #007bff; color: white; border: none; padding: 12px; border-radius: 6px; cursor: pointer; font-weight: bold; font-size: 14px; }
+        button:hover { background: #0056b3; }
+        .key-box { background: #2a2a2a; padding: 15px; margin-top: 15px; border-radius: 6px; font-size: 16px; color: #00ffcc; word-break: break-all; border: 1px dashed #00ffcc; }
+    </style>
+</head>
+<body>
+
+<div class="card">
+    <h2>🔑 WinGo VIP Admin Panel</h2>
+    <p>Select Key Duration:</p>
+    
+    <div class="grid">
+        <button onclick="generateKey(1, 'HOURS')">1 Hour</button>
+        <button onclick="generateKey(24, 'HOURS')">24 Hours</button>
+        <button onclick="generateKey(3, 'DAYS')">3 Days</button>
+        <button onclick="generateKey(7, 'DAYS')">7 Days</button>
+        <button onclick="generateKey(15, 'DAYS')">15 Days</button>
+        <button onclick="generateKey(20, 'DAYS')">20 Days</button>
+        <button onclick="generateKey(30, 'DAYS')">30 Days</button>
+    </div>
+
+    <div class="key-box" id="resultKey">Click any button to generate key</div>
+</div>
+
+<script type="module">
+    import { initializeApp } from "https://www.gstatic.com/firebasejs/10.8.0/firebase-app.js";
+    import { getFirestore, doc, setDoc } from "https://www.gstatic.com/firebasejs/10.8.0/firebase-firestore.js";
+
+    const firebaseConfig = {
+      apiKey: "AIzaSyD_24prkpu6ylZITC1B", 
+      authDomain: "wingo-vip-759b9.firebaseapp.com",
+      projectId: "wingo-vip-759b9",
+      storageBucket: "wingo-vip-759b9.firebasestorage.app",
+      messagingSenderId: "304008432437"
+    };
+
+    const app = initializeApp(firebaseConfig);
+    const db = getFirestore(app);
+
+    window.generateKey = async function(amount, unit) {
+        let randomNum = Math.floor(100000 + Math.random() * 900000);
+        let key = "WINGO-" + unit.charAt(0) + "-" + randomNum;
+        
+        let now = new Date();
+        let expireTime = new Date(now);
+
+        if(unit === 'HOURS') expireTime.setHours(now.getHours() + amount);
+        if(unit === 'DAYS') expireTime.setDate(now.getDate() + amount);
+
+        document.getElementById('resultKey').innerText = "Generating Key...";
+
+        try {
+            await setDoc(doc(db, "keys", key), {
+                key: key,
+                expiresAt: expireTime.toISOString(),
+                createdAt: now.toISOString(),
+                duration: amount + " " + unit,
+                isUsed: false
+            });
+            document.getElementById('resultKey').innerText = "Generated Key:\n" + key;
+        } catch(e) {
+            document.getElementById('resultKey').innerText = "Error: " + e.message;
+        }
+    }
+</script>
+</body>
+  </html>
+
