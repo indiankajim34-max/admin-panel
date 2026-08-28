@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>WinGo VIP - Automated Dashboard</title>
+    <title>WinGo VIP - Master & Reseller Dashboard</title>
     <!-- Firebase SDKs -->
     <script src="https://www.gstatic.com/firebasejs/9.22.0/firebase-app-compat.js"></script>
     <script src="https://www.gstatic.com/firebasejs/9.22.0/firebase-auth-compat.js"></script>
@@ -42,7 +42,7 @@
             <div class="toggle-link" onclick="switchView('register')">Don't have an account? Register</div>
         </div>
 
-        <!-- Register Form with Real Email Verification -->
+        <!-- Register Form -->
         <div id="registerFormContainer" style="display: none;">
             <div class="input-group">
                 <label>Choose Username</label>
@@ -57,11 +57,11 @@
                 <input type="password" id="regPassConfirm" placeholder="Confirm password">
             </div>
             <div class="input-group">
-                <label>Email Address (OTP Verification)</label>
+                <label>Email Address (Google OTP Verification)</label>
                 <input type="email" id="regEmail" placeholder="Enter your email">
                 <button type="button" onclick="sendGoogleOtp()" style="background: #1a1a3a; color: #00ff66; border: 1px solid #00ff66;">SEND VERIFICATION EMAIL</button>
             </div>
-            <button onclick="handleRegister()" id="registerBtn">REGISTER NOW (After Email Verification)</button>
+            <button onclick="handleRegister()" id="registerBtn">REGISTER NOW</button>
             <div id="regMsg"></div>
             <div class="toggle-link" onclick="switchView('login')">Already have an account? Login</div>
         </div>
@@ -76,19 +76,23 @@
                 <p>Today's Key Count: <span id="keyCount">0</span></p>
             </div>
 
-            <!-- Automated Payment & 9-Min Timer Panel -->
+            <!-- Payment Panel with Trigger Timer -->
             <div class="card">
                 <h4>BharatPe QR / Auto-Verify Payment</h4>
-                <p id="timerDisplay" style="color: #ff4d4d; font-weight: bold;">Timer: 09:00</p>
-                <div class="input-group">
-                    <label>Enter 12-Digit UTR Number</label>
-                    <input type="text" id="utrInput" placeholder="Enter UTR after payment">
+                <button onclick="initiatePaymentProcess()" id="startPaymentBtn" style="background: #0088cc; color: #fff; margin-bottom: 10px;">PROCEED TO PAY (Start 9-Min Timer)</button>
+                <p id="timerDisplay" style="color: #ff4d4d; font-weight: bold; display: none;"></p>
+                
+                <div id="paymentInputs" style="display: none;">
+                    <div class="input-group">
+                        <label>Enter 12-Digit UTR Number</label>
+                        <input type="text" id="utrInput" placeholder="Enter UTR after payment">
+                    </div>
+                    <div class="input-group">
+                        <label>Deposit Amount (₹500+ for Reseller Upgrade)</label>
+                        <input type="number" id="depositAmount" placeholder="Enter amount">
+                    </div>
+                    <button onclick="verifyAutomaticPayment()" style="background: #00ff66; color: #000;">AUTO-VERIFY & SUBMIT</button>
                 </div>
-                <div class="input-group">
-                    <label>Deposit Amount (₹500+ for Reseller Upgrade)</label>
-                    <input type="number" id="depositAmount" placeholder="Enter amount">
-                </div>
-                <button onclick="verifyAutomaticPayment()" style="background: #00ff66; color: #000;">AUTO-VERIFY & SUBMIT</button>
                 <div id="depositMsg"></div>
             </div>
 
@@ -97,7 +101,6 @@
     </div>
 
     <script>
-        // Updated Firebase Config
         const firebaseConfig = {
           apiKey: "AIzaSyD_24prkpu6ylZITC1EM08jptSCuFbCAp0",
           authDomain: "wingo-vip-759b9.firebaseapp.com",
@@ -111,6 +114,7 @@
         const db = firebase.firestore();
 
         let paymentTimerInterval;
+        const SESSION_ID = 'win_session_' + Math.random().toString(36.substring(2));
 
         function switchView(view) {
             if(view === 'register') {
@@ -158,7 +162,13 @@
         function handleRegister() {
             const user = firebase.auth().currentUser;
             const username = document.getElementById('regUser').value;
+            const pass = document.getElementById('regPass').value;
             const msgBox = document.getElementById('regMsg');
+
+            if (!username || !pass) {
+                msgBox.innerHTML = "<div class='error'>Username aur Password zaroori hai!</div>";
+                return;
+            }
 
             if (user) {
                 user.reload().then(() => {
@@ -166,12 +176,13 @@
                         db.collection("resellers").doc(username).set({
                             username: username,
                             email: user.email,
+                            password: pass, // पासवर्ड सुरक्षित रूप से सेव किया गया
                             role: "Customer",
                             todayDeposit: 0,
                             keyCount: 0,
                             createdAt: new Date()
                         }).then(() => {
-                            msgBox.innerHTML = "<span class='success'>Registration successful! Default price: Customer.</span>";
+                            msgBox.innerHTML = "<span class='success'>Registration successful! Please login.</span>";
                             setTimeout(() => switchView('login'), 2000);
                         }).catch((err) => {
                             msgBox.innerHTML = "<div class='error'>DB Error: " + err.message + "</div>";
@@ -187,16 +198,27 @@
 
         function handleLogin() {
             const username = document.getElementById('loginUser').value;
+            const password = document.getElementById('loginPass').value;
             const msgBox = document.getElementById('loginMsg');
 
-            if(!username) {
-                msgBox.innerHTML = "<div class='error'>Username enter karein!</div>";
+            if(!username || !password) {
+                msgBox.innerHTML = "<div class='error'>Username aur Password enter karein!</div>";
                 return;
             }
 
             db.collection("resellers").doc(username).get().then((doc) => {
                 if(doc.exists) {
                     const data = doc.data();
+                    
+                    // पासवर्ड चेकिंग लॉजिक
+                    if (data.password && data.password !== password) {
+                        msgBox.innerHTML = "<div class='error'>Galat Password! Sahi password dalein.</div>";
+                        return;
+                    }
+
+                    // Single-Device Session Restriction (पुराना सेशन हटाकर नया लागू करना)
+                    db.collection("resellers").doc(username).update({ currentSession: SESSION_ID });
+
                     checkMidnightReset(username, data);
 
                     document.getElementById('loginFormContainer').style.display = 'none';
@@ -206,16 +228,30 @@
                     document.getElementById('totalDeposit').innerText = data.todayDeposit || 0;
                     document.getElementById('keyCount').innerText = data.keyCount || 0;
 
-                    startPaymentTimer();
+                    // सेशन ट्रैक करने के लिए लूप
+                    setInterval(() => {
+                        db.collection("resellers").doc(username).get().then((d) => {
+                            if(d.exists && d.data().currentSession !== SESSION_ID) {
+                                alert("Aapka account kisi aur device par login ho gaya hai!");
+                                handleLogout();
+                            }
+                        });
+                    }, 10000);
+
                 } else {
-                    msgBox.innerHTML = "<div class='error'>User nahi mila! Register karein.</div>";
+                    msgBox.innerHTML = "<div class='error'>User nahi mila! Pehle Register karein.</div>";
                 }
             }).catch((err) => {
                 msgBox.innerHTML = "<div class='error'>Error: " + err.message + "</div>";
             });
         }
 
-        function startPaymentTimer() {
+        // टाइमर अब तभी शुरू होगा जब यूजर पेमेंट प्रोसेस बटन पर क्लिक करेगा
+        function initiatePaymentProcess() {
+            document.getElementById('startPaymentBtn').style.display = 'none';
+            document.getElementById('timerDisplay').style.display = 'block';
+            document.getElementById('paymentInputs').style.display = 'block';
+
             let duration = 9 * 60; // 9 Minutes Timer
             const display = document.getElementById('timerDisplay');
             clearInterval(paymentTimerInterval);
@@ -232,11 +268,11 @@
                 if (--duration < 0) {
                     clearInterval(paymentTimerInterval);
                     display.innerText = "Timer Expired! Please restart payment.";
+                    document.getElementById('paymentInputs').style.display = 'none';
                 }
             }, 1000);
         }
 
-        // Automated UTR Verification & Webhook/SMS Simulation Logic
         function verifyAutomaticPayment() {
             const utr = document.getElementById('utrInput').value;
             const amount = parseFloat(document.getElementById('depositAmount').value);
@@ -254,7 +290,6 @@
 
             msgBox.innerHTML = "<div class='success'>Verifying UTR via BharatPe API / Webhook...</div>";
 
-            // Simulated auto-verification check (Yahan webhook/API response check hota hai)
             setTimeout(() => {
                 db.collection("utr_logs").doc(utr).get().then((utrDoc) => {
                     if(utrDoc.exists) {
@@ -262,7 +297,6 @@
                         return;
                     }
 
-                    // UTR Save to prevent reuse & Update User Balance/Role Automatically
                     const userRef = db.collection("resellers").doc(username);
                     db.runTransaction((transaction) => {
                         return transaction.get(userRef).then((doc) => {
@@ -273,7 +307,7 @@
                             let newKeys = (data.keyCount || 0) + Math.floor(amount / 100); 
                             let currentRole = data.role;
 
-                            // Automatic Reseller upgrade on first deposit of ₹500 or above
+                            // पहली बार ₹500 या उससे ज्यादा डिपॉजिट पर ऑटोमेटिक रीसेलर अपग्रेड
                             if (amount >= 500 && currentRole === "Customer") {
                                 currentRole = "Reseller";
                             }
@@ -296,7 +330,7 @@
                         document.getElementById('totalDeposit').innerText = res.newDeposit;
                         document.getElementById('keyCount').innerText = res.newKeys;
                         document.getElementById('dashRole').innerText = res.currentRole;
-                        msgBox.innerHTML = "<div class='success'>✔ Payment Auto-Verified! Amount added to wallet. Role: " + res.currentRole + "</div>";
+                        msgBox.innerHTML = "<div class='success'>✔ Payment Auto-Verified! Role: " + res.currentRole + "</div>";
                         clearInterval(paymentTimerInterval);
                     }).catch((err) => {
                         msgBox.innerHTML = "<div class='error'>Verification Failed: " + err + "</div>";
@@ -311,7 +345,7 @@
             const todayDate = new Date().toDateString();
 
             if (lastLoginDate !== todayDate) {
-                db.collection("resellers").doc(username).update({
+                db.collection("resellers").doc.update({
                     todayDeposit: 0,
                     keyCount: 0,
                     lastResetDate: new Date()
@@ -329,4 +363,3 @@
     </script>
 </body>
 </html>
-                
