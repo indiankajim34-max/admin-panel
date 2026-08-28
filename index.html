@@ -1,324 +1,197 @@
 <!DOCTYPE html>
-<html lang="hi">
+<html lang="en">
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>WiGo VIP - Master & Reseller Panel</title>
-    <!-- Firebase SDK (Compat Version) -->
+    <title>WinGo VIP - Dashboard</title>
+    <!-- Firebase SDKs -->
     <script src="https://www.gstatic.com/firebasejs/9.22.0/firebase-app-compat.js"></script>
-    <script src="https://www.gstatic.com/firebasejs/9.22.0/firebase-firestore-compat.js"></script>
     <script src="https://www.gstatic.com/firebasejs/9.22.0/firebase-auth-compat.js"></script>
+    <script src="https://www.gstatic.com/firebasejs/9.22.0/firebase-firestore-compat.js"></script>
     <style>
-        body { font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif; background: #0a0a14; color: #fff; margin: 0; }
-        .container { width: 100%; max-width: 100%; background: #121224; border-radius: 12px; border: 1px solid #444; box-shadow: 0 4px 20px rgba(0,0,0,0.5); padding: 15px; margin-bottom: 15px; box-sizing: border-box; }
-        h2 { text-align: center; color: #00ff66; margin-bottom: 15px; font-size: 20px; letter-spacing: 1px; }
-        .input-group { margin-bottom: 15px; text-align: left; }
-        label { display: block; font-size: 12px; color: #aaa; margin-bottom: 5px; }
-        input, select { width: 100%; padding: 12px; border-radius: 8px; border: 1px solid #444; background: #1a1a3a; color: #fff; font-size: 14px; box-sizing: border-box; }
-        button { width: 100%; padding: 12px; background: linear-gradient(45deg, #00ff66, #00b344); border: none; font-weight: bold; border-radius: 8px; color: #000; cursor: pointer; font-size: 14px; }
+        body { background: #0f0f1a; color: #fff; font-family: Arial, sans-serif; margin: 0; padding: 20px; }
+        .container { max-width: 400px; margin: auto; background: #1a1a2e; padding: 20px; border-radius: 10px; box-shadow: 0 0 15px rgba(0,255,102,0.2); }
+        .input-group { margin-bottom: 15px; }
+        .input-group label { display: block; margin-bottom: 5px; color: #00ff66; font-size: 14px; }
+        .input-group input { width: 100%; padding: 10px; background: #0f0f1a; border: 1px solid #333; color: #fff; border-radius: 5px; box-sizing: border-box; }
+        button { width: 100%; padding: 12px; background: linear-gradient(45deg, #00ff66, #00b344); border: none; color: #000; font-weight: bold; border-radius: 5px; cursor: pointer; margin-top: 10px; box-sizing: border-box; }
         button:hover { opacity: 0.9; }
-        .card { background: rgba(255, 255, 255, 0.04); padding: 15px; border-radius: 12px; margin-top: 15px; border: 1px solid rgba(255, 255, 255, 0.1); }
-        .key-box { background: #000; padding: 12px; color: #03ff66; font-family: monospace; word-break: break-all; border-radius: 8px; border: 1px solid #00ff66; font-size: 14px; text-align: center; margin-top: 10px; }
-        .error { color: #ff4444; font-size: 13px; margin-top: 8px; text-align: center; font-weight: bold; }
-        .success { color: #03ff66; font-size: 13px; margin-top: 8px; text-align: center; font-weight: bold; }
-        .tab-btn { background: #1a1a3a; color: #aaa; border: 1px solid #444; padding: 8px; font-size: 13px; cursor: pointer; width: 48%; border-radius: 6px; }
-        .tab-btn.active { background: #00ff66; color: #000; font-weight: bold; border-color: #00ff66; }
+        .success { color: #00ff66; font-size: 13px; margin-top: 10px; }
+        .error { color: #ff4d4d; font-size: 13px; margin-top: 10px; }
+        .toggle-link { text-align: center; margin-top: 15px; font-size: 14px; cursor: pointer; color: #00ff66; }
     </style>
 </head>
 <body>
 
-<!-- Auth Screen (Login / Register Tabs) -->
-<div class="container" id="auth-screen">
-    <h2>WINGS VIP PANEL</h2>
-    <div style="display: flex; justify-content: space-between; margin-bottom: 15px;">
-        <button type="button" class="tab-btn active" id="tabLoginBtn" onclick="switchTab('login')">Login</button>
-        <button type="button" class="tab-btn" id="tabRegBtn" onclick="switchTab('register')">Register</button>
-    </div>
+    <div class="container">
+        <h2 style="text-align: center; color: #00ff66;">WinGo VIP Panel</h2>
 
-    <!-- Login Form -->
-    <div id="loginFormContainer">
-        <div class="input-group">
-            <label>Username / Reseller ID</label>
-            <input type="text" id="loginUser" placeholder="Enter username">
-        </div>
-        <div class="input-group">
-            <label>Password</label>
-            <input type="password" id="loginPass" placeholder="Enter password">
-        </div>
-        <button onclick="handleAdminLogin()">LOGIN TO PANEL</button>
-        <div id="loginMsg"></div>
-    </div>
-
-    <!-- Register Form with Google OTP -->
-    <div id="registerFormContainer" style="display: none;">
-        <div class="input-group">
-            <label>Choose Username</label>
-            <input type="text" id="regUser" placeholder="Create username">
-        </div>
-        <div class="input-group">
-            <label>Password</label>
-            <input type="password" id="regPass" placeholder="Create password">
-        </div>
-        <div class="input-group">
-            <label>Confirm Password</label>
-            <input type="password" id="regPassConfirm" placeholder="Confirm password">
-        </div>
-        <div class="input-group">
-            <label>Email Address (For Google / OTP Verification)</label>
-            <div style="display: flex; gap: 5px;">
-                <input type="email" id="regEmail" placeholder="Enter your email" style="flex:1;">
-                <button type="button" onclick="sendGoogleOtp()" style="margin:0; padding:8px 12px; font-size:12px; background:#1a1a3a; color:#00ff66; border:1px solid #00ff66;">Send OTP</button>
+        <!-- Login Form -->
+        <div id="loginFormContainer">
+            <div class="input-group">
+                <label>Username</label>
+                <input type="text" id="loginUser" placeholder="Enter username">
             </div>
+            <div class="input-group">
+                <label>Password</label>
+                <input type="password" id="loginPass" placeholder="Enter password">
+            </div>
+            <button onclick="handleLogin()">LOGIN</button>
+            <div id="loginMsg"></div>
+            <div class="toggle-link" onclick="switchView('register')">Don't have an account? Register</div>
         </div>
-        <div class="input-group" id="otpInputGroup" style="display: none;">
-            <label>Enter 6-Digit OTP</label>
-            <input type="text" id="regOtp" placeholder="Enter OTP received">
-        </div>
-        <button onclick="handleRegister()" id="registerBtn" style="background: linear-gradient(45deg, #00ff66, #00b344);">REGISTER NOW</button>
-        <div id="regMsg"></div>
-    </div>
-</div>
-<!-- Dashboard Screen -->
-<div class="container" id="dashboard-screen" style="display: none;">
-    <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 15px;">
-        <h2 style="margin:0; font-size:16px;" id="welcomeTitle">Dashboard</h2>
-        <button onclick="handleLogout()" style="width: auto; padding: 6px 12px; font-size: 11px; background: #ff4444; color: #fff;">Logout</button>
-    </div>
 
-    <!-- Summary Cards -->
-    <div style="display: flex; gap: 10px; margin-bottom: 15px;">
-        <div class="card" style="flex:1; margin-top:0; text-align:center;">
-            <label>Today's Total Deposit</label>
-            <div id="todayDeposit" style="font-size:16px; font-weight:bold; color:#03ff66; margin-top:5px;">₹0</div>
+        <!-- Register Form with Firebase Real Email Verification -->
+        <div id="registerFormContainer" style="display: none;">
+            <div class="input-group">
+                <label>Choose Username</label>
+                <input type="text" id="regUser" placeholder="Create username">
+            </div>
+            <div class="input-group">
+                <label>Password</label>
+                <input type="password" id="regPass" placeholder="Create password">
+            </div>
+            <div class="input-group">
+                <label>Confirm Password</label>
+                <input type="password" id="regPassConfirm" placeholder="Confirm password">
+            </div>
+            <!-- Ab Email box aur button dono baaki buttons ki tarah bilkul long (100% width) hain -->
+            <div class="input-group">
+                <label>Email Address (Real Verification)</label>
+                <input type="email" id="regEmail" placeholder="Enter your email">
+                <button type="button" onclick="sendGoogleOtp()" style="background: #1a1a3a; color: #00ff66; border: 1px solid #00ff66;">SEND VERIFICATION EMAIL</button>
+            </div>
+            <button onclick="handleRegister()" id="registerBtn">REGISTER NOW (Click after verifying Email)</button>
+            <div id="regMsg"></div>
+            <div class="toggle-link" onclick="switchView('login')">Already have an account? Login</div>
         </div>
-        <div class="card" style="flex:1; margin-top:0; text-align:center;">
-            <label>Today's Key Count</label>
-            <div id="todayKeyCount" style="font-size:16px; font-weight:bold; color:#03ff66; margin-top:5px;">0</div>
-        </div>
-    </div>
 
-    <!-- Wallet & Pricing Info -->
-    <div class="card">
-        <div style="display: flex; justify-content: space-between; align-items: center;">
-            <span>Wallet Balance: <strong id="walletBalance" style="color:#03ff66;">₹0</strong></span>
-            <span id="userRoleBadge" style="background:#1a1a3a; padding:4px 8px; border-radius:4px; font-size:11px; border:1px solid #444;">Customer</span>
+        <!-- Dashboard View (Hidden initially) -->
+        <div id="dashboardContainer" style="display: none;">
+            <h3>Welcome, <span id="dashUsername"></span></h3>
+            <p>Role: <span id="dashRole" style="color: #00ff66;">Customer</span></p>
+            <div style="background: #0f0f1a; padding: 10px; border-radius: 5px; margin-bottom: 15px;">
+                <p>Today's Total Deposit: ₹<span id="totalDeposit">0</span></p>
+                <p>Today's Key Count: <span id="keyCount">0</span></p>
+            </div>
+            <button onclick="handleLogout()" style="background: #ff4d4d; color: #fff;">LOGOUT</button>
         </div>
-    </div>
-
-    <!-- Deposit Section with 9-Min Timer & BharatPe UTR Verification -->
-    <div class="card">
-        <h3 style="margin-top:0; font-size:15px; color:#00ff66;">Add Funds (Deposit)</h3>
-        <div style="background: #000; padding: 10px; border-radius: 8px; border: 1px dashed #00ff66; margin-bottom: 10px; text-align: center;">
-            <span style="font-size: 12px; color: #aaa;">Scan BharatPe QR or Pay via UPI API</span>
-            <div id="timerDisplay" style="font-size: 14px; font-weight: bold; color: #ff4444; margin-top: 5px;">Time Left: 09:00</div>
-        </div>
-        <div class="input-group">
-            <label>Enter Amount (Min ₹500 for Reseller Upgrade)</label>
-            <input type="number" id="depositAmount" placeholder="Enter amount">
-        </div>
-        <div class="input-group">
-            <label>Enter 12-Digit UTR / Ref ID (Strict Validation)</label>
-            <input type="text" id="utrInput" placeholder="Enter UTR number">
-        </div>
-        <button onclick="handleDepositSubmit()">SUBMIT UTR & DEPOSIT</button>
-        <div id="depositMsg"></div>
     </div>
 
-    <!-- Key Generation Section -->
-    <div class="card">
-        <h3 style="margin-top:0; font-size:15px; color:#00ff66;">Generate Key</h3>
-        <div class="input-group">
-            <label>Select Duration</label>
-            <select id="keyDuration">
-                <option value="1">1 Hour</option>
-                <option value="2">2 Hours</option>
-                <option value="12">12 Hours</option>
-                <option value="24">24 Hours</option>
-            </select>
-        </div>
-        <button onclick="generateKey()">GENERATE KEY NOW</button>
-        <div id="genMsg"></div>
-        <div id="generatedKeyDisplay" class="key-box" style="display:none;"></div>
-    </div>
-</div>
+    <script>
+        // Yahan apna asli Firebase config daal dena
+        const firebaseConfig = {
+          apiKey: "TERA_API_KEY",
+          authDomain: "TERA_PROJECT.firebaseapp.com",
+          projectId: "TERA_PROJECT_ID",
+          storageBucket: "TERA_PROJECT.appspot.com",
+          messagingSenderId: "123456789",
+          appId: "TERA_APP_ID"
+        };
+        firebase.initializeApp(firebaseConfig);
+        const db = firebase.firestore();
 
-<script>
-    // Firebase Config & Initialization Setup
-    // firebase.initializeApp({...});
-    // const db = firebase.firestore();
-
-    const pricingMatrix = {
-        "1": { customer: 100, reseller: 50 },
-        "2": { customer: 180, reseller: 90 },
-        "12": { customer: 500, reseller: 250 },
-        "24": { customer: 900, reseller: 450 }
-    };
-
-    let currentUserRole = 'customer';
-    let resellerTotalDeposited = 0;
-    let currentUsername = '';
-    let sessionCheckInterval = null;
-    let paymentTimerInterval = null;
-
-    function switchTab(tab) {
-        if(tab === 'login') {
-            document.getElementById('loginFormContainer').style.display = 'block';
-            document.getElementById('registerFormContainer').style.display = 'none';
-            document.getElementById('tabLoginBtn').classList.add('active');
-            document.getElementById('tabRegBtn').classList.remove('active');
-        } else {
-            document.getElementById('loginFormContainer').style.display = 'none';
-            document.getElementById('registerFormContainer').style.display = 'block';
-            document.getElementById('tabLoginBtn').classList.remove('active');
-            document.getElementById('tabRegBtn').classList.add('active');
-        }
-    }
-
-    function sendGoogleOtp() {
-        const email = document.getElementById('regEmail').value;
-        if(!email) {
-            alert("Please enter email first!");
-            return;
-        }
-        document.getElementById('otpInputGroup').style.display = 'block';
-        alert("Google OTP sent successfully to " + email);
-    }
-
-    function handleRegister() {
-        const user = document.getElementById('regUser').value;
-        const pass = document.getElementById('regPass').value;
-        const confirmPass = document.getElementById('regPassConfirm').value;
-        const otp = document.getElementById('regOtp').value;
-        const msg = document.getElementById('regMsg');
-
-        if(!user || !pass || !confirmPass || !otp) {
-            msg.innerHTML = "All fields are required!";
-            return;
-        }
-        if(pass !== confirmPass) {
-            msg.innerHTML = "Passwords do not match!";
-            return;
-        }
-        
-        currentUserRole = 'customer';
-        msg.innerHTML = "<span class='success'>Registration successful! Default price: Customer. First deposit of ₹500+ will auto-upgrade to Reseller.</span>";
-        setTimeout(() => switchTab('login'), 2500);
-    }
-
-    function handleAdminLogin() {
-        const user = document.getElementById('loginUser').value;
-        const pass = document.getElementById('loginPass').value;
-        const msg = document.getElementById('loginMsg');
-
-        if(!user || !pass) {
-            msg.innerHTML = "Enter username and password!";
-            return;
-        }
-
-        currentUsername = user;
-        document.getElementById('auth-screen').style.display = 'none';
-        document.getElementById('dashboard-screen').style.display = 'block';
-        document.getElementById('welcomeTitle').innerText = "Welcome, " + user;
-        
-        startSingleDeviceSessionCheck();
-        startPaymentCountdown(540); // 9 minutes timer (9 * 60 seconds)
-        loadMidnightResetStats();
-    }
-
-    function startSingleDeviceSessionCheck() {
-        if(sessionCheckInterval) clearInterval(sessionCheckInterval);
-        sessionCheckInterval = setInterval(() => {
-            // Background listener simulation to check active device token
-        }, 10000);
-    }
-
-    function startPaymentCountdown(durationInSeconds) {
-        if(paymentTimerInterval) clearInterval(paymentTimerInterval);
-        let timer = durationInSeconds;
-        const display = document.getElementById('timerDisplay');
-        
-        paymentTimerInterval = setInterval(() => {
-            let minutes = parseInt(timer / 60, 10);
-            let seconds = parseInt(timer % 60, 10);
-
-            minutes = minutes < 10 ? "0" + minutes : minutes;
-            seconds = seconds < 10 ? "0" + seconds : seconds;
-
-            display.innerText = "Time Left: " + minutes + ":" + seconds;
-
-            if (--timer < 0) {
-                clearInterval(paymentTimerInterval);
-                display.innerText = "Session Expired! Generate new QR.";
+        function switchView(view) {
+            if(view === 'register') {
+                document.getElementById('loginFormContainer').style.display = 'none';
+                document.getElementById('registerFormContainer').style.display = 'block';
+            } else {
+                document.getElementById('registerFormContainer').style.display = 'none';
+                document.getElementById('loginFormContainer').style.display = 'block';
             }
-        }, 1000);
-    }
-
-    function handleDepositSubmit() {
-        const amt = document.getElementById('depositAmount').value;
-        const utr = document.getElementById('utrInput').value;
-        const qrMsg = document.getElementById('depositMsg');
-
-        if(!amt || !utr) {
-            qrMsg.innerHTML = "<div class='error'>Amount aur UTR dono bharna zaroori hai!</div>";
-            return;
         }
 
-        if(utr.length < 12) {
-            qrMsg.innerHTML = "<div class='error'>Strict UTR Validation: UTR kam se kam 12 digit ka hona chahiye!</div>";
-            return;
+        function sendGoogleOtp() {
+            const email = document.getElementById('regEmail').value;
+            const pass = document.getElementById('regPass').value;
+            const confirmPass = document.getElementById('regPassConfirm').value;
+            const username = document.getElementById('regUser').value;
+
+            if (!username || !email || !pass) {
+                alert("Bhai, pehle Username, Password aur Email bhar le!");
+                return;
+            }
+            if (pass !== confirmPass) {
+                alert("Passwords match nahi ho rahe hain!");
+                return;
+            }
+
+            const msgBox = document.getElementById('regMsg');
+            msgBox.innerHTML = "<div class='success'>Sending Verification Email... Wait...</div>";
+
+            firebase.auth().createUserWithEmailAndPassword(email, pass)
+                .then((userCredential) => {
+                    userCredential.user.sendEmailVerification()
+                        .then(() => {
+                            msgBox.innerHTML = "<div class='success'>✔ Email sent to " + email + ". Pehle inbox check kar, link pe click karke verify kar, phir 'REGISTER NOW' daba!</div>";
+                        })
+                        .catch((error) => {
+                            msgBox.innerHTML = "<div class='error'>Error: " + error.message + "</div>";
+                        });
+                })
+                .catch((error) => {
+                    msgBox.innerHTML = "<div class='error'>Registration Error: " + error.message + "</div>";
+                });
         }
 
-        if(Number(amt) >= 500) {
-            currentUserRole = 'reseller';
-            resellerTotalDeposited += Number(amt);
-            document.getElementById('userRoleBadge').innerText = "Reseller (Active)";
-            document.getElementById('userRoleBadge').style.color = '#00ff66';
+        function handleRegister() {
+            const user = firebase.auth().currentUser;
+            const username = document.getElementById('regUser').value;
+            const msgBox = document.getElementById('regMsg');
+
+            if (user) {
+                user.reload().then(() => {
+                    if (user.emailVerified) {
+                        db.collection("resellers").doc(username).set({
+                            username: username,
+                            email: user.email,
+                            role: "Customer",
+                            createdAt: new Date()
+                        }).then(() => {
+                            msgBox.innerHTML = "<span class='success'>Registration successful! Default price: Customer.</span>";
+                            setTimeout(() => switchView('login'), 2000);
+                        }).catch((err) => {
+                            msgBox.innerHTML = "<div class='error'>DB Error: " + err.message + "</div>";
+                        });
+                    } else {
+                        msgBox.innerHTML = "<div class='error'>Bhai pehle apna Gmail open kar aur verification link pe click kar! Uske baad hi register hoga.</div>";
+                    }
+                });
+            } else {
+                msgBox.innerHTML = "<div class='error'>Pehle 'SEND VERIFICATION EMAIL' button pe click kar!</div>";
+            }
         }
 
-        qrMsg.innerHTML = "<div class='success'>✔ Free UPI/BharatPe API verification successful! Deposit of ₹" + amt + " added.</div>";
-        document.getElementById('todayDeposit').innerText = "₹" + resellerTotalDeposited;
-        document.getElementById('walletBalance').innerText = "₹" + resellerTotalDeposited;
-    }
+        function handleLogin() {
+            const username = document.getElementById('loginUser').value;
+            const msgBox = document.getElementById('loginMsg');
 
-    function generateKey() {
-        const hours = document.getElementById('keyDuration').value;
-        const genMsg = document.getElementById('genMsg');
-        const keyDisplay = document.getElementById('generatedKeyDisplay');
+            if(!username) {
+                msgBox.innerHTML = "<div class='error'>Username daal bhai!</div>";
+                return;
+            }
 
-        const isResellerActive = (currentUserRole === 'reseller' && resellerTotalDeposited >= 500);
-        const keyCost = isResellerActive ? pricingMatrix[hours].reseller : pricingMatrix[hours].customer;
-
-        const randomStr = Math.random().toString(36).substring(2, 10).toUpperCase();
-        const newKey = "WINGO-" + hours + "H-" + randomStr;
-
-        keyDisplay.innerText = newKey;
-        keyDisplay.style.display = 'block';
-        genMsg.innerHTML = "<div class='success'>✔ Key Generated! Cost deducted: ₹" + keyCost + "</div>";
-        
-        let currentCount = parseInt(document.getElementById('todayKeyCount').innerText) || 0;
-        document.getElementById('todayKeyCount').innerText = currentCount + 1;
-    }
-
-    function loadMidnightResetStats() {
-        const now = new Date();
-        if(now.getHours() === 0 && now.getMinutes() === 0) {
-            resellerTotalDeposited = 0;
-            document.getElementById('todayDeposit').innerText = "₹0";
-            document.getElementById('todayKeyCount').innerText = "0";
+            db.collection("resellers").doc(username).get().then((doc) => {
+                if(doc.exists) {
+                    const data = doc.data();
+                    document.getElementById('loginFormContainer').style.display = 'none';
+                    document.getElementById('dashboardContainer').style.display = 'block';
+                    document.getElementById('dashUsername').innerText = data.username;
+                    document.getElementById('dashRole').innerText = data.role || "Customer";
+                } else {
+                    msgBox.innerHTML = "<div class='error'>User nahi mila! Pehle register kar.</div>";
+                }
+            }).catch((err) => {
+                msgBox.innerHTML = "<div class='error'>Error: " + err.message + "</div>";
+            });
         }
-    }
 
-    function handleLogout() {
-        if(sessionCheckInterval) clearInterval(sessionCheckInterval);
-        if(paymentTimerInterval) clearInterval(paymentTimerInterval);
-        currentUsername = '';
-        currentUserRole = 'customer';
-        document.getElementById('dashboard-screen').style.display = 'none';
-        document.getElementById('auth-screen').style.display = 'block';
-        document.getElementById('loginUser').value = '';
-        document.getElementById('loginPass').value = '';
-    }
-</script>
+        function handleLogout() {
+            firebase.auth().signOut().then(() => {
+                document.getElementById('dashboardContainer').style.display = 'none';
+                document.getElementById('loginFormContainer').style.display = 'block';
+            });
+        }
+    </script>
 </body>
-            </html>
-            
+</html>
