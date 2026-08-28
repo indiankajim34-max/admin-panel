@@ -3,20 +3,20 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>WinGo VIP - Standalone Admin & Reseller Panel</title>
-    <!-- Firebase SDK (Compat Version for Easy Integration) -->
+    <title>WinGo VIP - Master & Reseller Panel</title>
+    <!-- Firebase SDK (Compat Version) -->
     <script src="https://www.gstatic.com/firebasejs/9.22.0/firebase-app-compat.js"></script>
     <script src="https://www.gstatic.com/firebasejs/9.22.0/firebase-firestore-compat.js"></script>
     <style>
-        body { font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif; background: #0a0a14; color: #fff; margin: 0; padding: 20px; display: flex; justify-content: center; align-items: center; min-height: 100vh; box-sizing: border-box; }
-        .container { width: 100%; max-width: 450px; background: #121224; border-radius: 20px; padding: 22px; box-shadow: 0 0 25px rgba(0, 240, 255, 0.3); border: 2px solid #00f0ff; box-sizing: border-box; }
-        h2 { text-align: center; color: #00ff66; margin-bottom: 20px; font-size: 20px; letter-spacing: 1px; }
+        body { font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif; background: #0a0a14; color: #fff; margin: 0; padding: 10px; display: flex; justify-content: center; align-items: flex-start; min-height: 100vh; box-sizing: border-box; }
+        .container { width: 100%; max-width: 100%; background: #121224; border-radius: 15px; padding: 15px; box-shadow: 0 0 25px rgba(0, 240, 255, 0.3); border: 2px solid #00f0ff; box-sizing: border-box; margin-top: 5px; }
+        h2 { text-align: center; color: #00ff66; margin-bottom: 15px; font-size: 20px; letter-spacing: 1px; }
         .input-group { margin-bottom: 15px; text-align: left; }
         label { display: block; font-size: 12px; color: #aaa; margin-bottom: 5px; }
         input, select { width: 100%; padding: 12px; border-radius: 8px; border: 1px solid #444; background: #1a1a3a; color: white; box-sizing: border-box; font-size: 14px; outline: none; }
         button { width: 100%; padding: 12px; background: linear-gradient(45deg, #00ff66, #00b344); border: none; font-weight: bold; color: #000; border-radius: 8px; cursor: pointer; margin-top: 10px; font-size: 15px; }
         button:hover { opacity: 0.9; }
-        .card { background: rgba(255, 255, 255, 0.04); padding: 16px; border-radius: 12px; margin-top: 15px; border: 1px solid rgba(0, 240, 255, 0.15); text-align: left; }
+        .card { background: rgba(255, 255, 255, 0.04); padding: 15px; border-radius: 12px; margin-top: 15px; border: 1px solid rgba(0, 240, 255, 0.15); text-align: left; }
         .key-box { background: #000; padding: 12px; color: #00ff66; font-family: monospace; word-break: break-all; border-radius: 8px; margin-top: 12px; text-align: center; border: 1px dashed #00ff66; font-size: 15px; }
         .error { color: #ff4444; font-size: 13px; margin-top: 8px; text-align: center; font-weight: bold; }
         .success { color: #00ff66; font-size: 13px; margin-top: 8px; text-align: center; font-weight: bold; }
@@ -29,7 +29,7 @@
     <h2>ADMIN & RESELLER LOGIN</h2>
     <div class="input-group">
         <label>Username / Admin ID</label>
-        <input type="text" id="loginUser" placeholder="Enter username (e.g. admin)">
+        <input type="text" id="loginUser" placeholder="Enter username">
     </div>
     <div class="input-group">
         <label>Password</label>
@@ -43,18 +43,42 @@
 <div class="container" id="dashboard-screen" style="display: none;">
     <h2 id="dashTitle">PANEL DASHBOARD</h2>
     
+    <!-- Reseller Wallet Card (Only visible to Resellers) -->
     <div class="card" id="walletCard" style="display: none;">
         <div style="font-size: 13px; color: #aaa;">Wallet Balance:</div>
         <div style="font-size: 26px; color: #00ff66; font-weight: bold;">₹<span id="walletBalance">0</span></div>
-        <div id="activation-notice" style="font-size: 11px; color: #ffcc00; margin-top: 4px;">⚠️ ₹500 डिपॉजिट करके Reseller डिस्काउंट (60% छूट) एक्टिवेट करें!</div>
+        <div id="activation-notice" style="font-size: 11px; color: #ffcc00; margin-top: 4px;">⚠️ ₹500 डिपॉजिट करके Reseller डिस्काउंट एक्टिवेट करें!</div>
     </div>
 
+    <!-- Master Admin Super-Power Controls -->
     <div class="card" id="masterInfoCard" style="display: none;">
-        <div style="color: #ffcc00; font-size: 13px; font-weight: bold;">⚡ Master Admin Access</div>
-        <div style="font-size: 12px; color: #aaa; margin-top: 3px;">Unlimited Key Generation Enabled (Game Server Synced).</div>
+        <div style="color: #ffcc00; font-size: 13px; font-weight: bold; margin-bottom: 8px;">⚡ Master Admin Controls (Super Powers)</div>
+        
+        <!-- 1. Create Reseller Manually without Deposit -->
+        <div style="background: rgba(0,0,0,0.3); padding: 10px; border-radius: 8px; margin-bottom: 12px;">
+            <label style="color: #00ff66; margin-bottom: 6px; font-weight: bold;">Manual Reseller Creator (Direct Add)</label>
+            <div class="input-group" style="margin-bottom: 8px;">
+                <input type="text" id="newResellerUser" placeholder="New Reseller Username" style="font-size: 12px; padding: 8px; margin-bottom: 5px;">
+                <input type="text" id="newResellerPass" placeholder="New Reseller Password" style="font-size: 12px; padding: 8px;">
+            </div>
+            <button onclick="createResellerManually()" style="margin: 0; padding: 8px; font-size: 12px; background: #00ff66; color: #000;">CREATE RESELLER DIRECTLY</button>
+            <div id="createResellerMsg" style="font-size: 11px; margin-top: 4px;"></div>
+        </div>
+
+        <!-- 2. Admin QR Code Changer Feature -->
+        <div style="background: rgba(0,0,0,0.3); padding: 10px; border-radius: 8px; margin-bottom: 10px;">
+            <label style="color: #00f0ff; margin-bottom: 4px;">Change BharatPe QR Image URL</label>
+            <div style="display: flex; gap: 8px;">
+                <input type="text" id="adminQrUrlInput" placeholder="Paste direct QR Image URL" style="font-size: 12px; padding: 8px;">
+                <button onclick="updateAdminQr()" style="margin: 0; padding: 0 15px; font-size: 12px; background: #00f0ff; color: #000;">Save</button>
+            </div>
+            <div id="qrUpdateMsg" style="font-size: 11px; margin-top: 4px;"></div>
+        </div>
+        
+        <div style="font-size: 12px; color: #aaa;">Unlimited Key Generation Enabled (Game Server Synced).</div>
     </div>
 
-    <!-- Wallet Recharge Box (BharatPe QR & UTR) -->
+    <!-- Wallet Recharge Box (BharatPe QR for Reseller) -->
     <div class="card" id="rechargeCard" style="display: none;">
         <h4 style="color: #00f0ff; margin: 0 0 10px 0;">Wallet Recharge (BharatPe QR)</h4>
         <div class="input-group">
@@ -75,15 +99,10 @@
         <div class="input-group">
             <label>Select Validity & Price</label>
             <select id="keyDuration" onchange="updatePriceDisplay()">
-                <option value="24">24 Hours (1 Day) — ₹150 (Reseller: ₹60)</option>
-                <option value="72">3 Days — ₹300 (Reseller: ₹120)</option>
-                <option value="168">7 Days — ₹500 (Reseller: ₹200)</option>
-                <option value="360">15 Days — ₹700 (Reseller: ₹280)</option>
-                <option value="480">20 Days — ₹850 (Reseller: ₹340)</option>
-                <option value="720">30 Days — ₹1250 (Reseller: ₹500)</option>
+                <!-- Dynamic options loaded via JS based on role -->
             </select>
         </div>
-        <div style="font-size: 13px; color: #00ff66; margin-bottom: 10px; text-align: right;">Katne wali rakam: <b>₹<span id="activeKeyCost">60</span></b></div>
+        <div style="font-size: 13px; color: #00ff66; margin-bottom: 10px; text-align: right;" id="costDisplayContainer">Katne wali rakam: <b>₹<span id="activeKeyCost">150</span></b></div>
         <button onclick="generateKey()">CREATE KEY</button>
         <div id="genMsg"></div>
         <div class="key-box" id="generatedKeyDisplay" style="display: none;"></div>
@@ -97,7 +116,7 @@
     <div style="background:#121224; border:2px solid #00f0ff; padding:20px; border-radius:15px; max-width:350px; width:100%; text-align:center;">
         <h3 style="color:#00ff66; margin-top:0;">Scan & Pay</h3>
         <div style="background:#fff; padding:10px; border-radius:10px; display:inline-block; margin-bottom:10px;">
-            <img id="adminQrImage" src="https://via.placeholder.com/200?text=BharatPe+QR" alt="QR" style="width:180px; height:180px; display:block;">
+            <img id="dynamicBharatPeQR" src="https://via.placeholder.com/200?text=BharatPe+QR" alt="QR" style="width:180px; height:180px; display:block;">
         </div>
         <p style="font-size:12px; color:#aaa; margin:5px 0;">Amount: ₹<span id="modalPayAmt">0</span> (Scan with GPay/PhonePe)</p>
         <div class="input-group" style="margin-top:10px;">
@@ -127,8 +146,9 @@
     let currentUserRole = ''; 
     let resellerWalletBalance = 0;
     let resellerTotalDeposited = 0;
+    let activeQrUrl = "https://via.placeholder.com/200?text=BharatPe+QR";
 
-    // Fixed Pricing Matrix (Customer Price & Reseller Price with 60% Discount)
+    // Pricing Matrix
     const pricingMatrix = {
         "24":  { customer: 150, reseller: 60 },
         "72":  { customer: 300, reseller: 120 },
@@ -138,11 +158,45 @@
         "720": { customer: 1250, reseller: 500 }
     };
 
+    function populateDropdown() {
+        const select = document.getElementById('keyDuration');
+        select.innerHTML = '';
+        
+        const isReseller = (currentUserRole === 'reseller' && resellerTotalDeposited >= 500);
+
+        const optionsData = [
+            { val: "24", label: "24 Hours (1 Day)", c: 150, r: 60 },
+            { val: "72", label: "3 Days", c: 300, r: 120 },
+            { val: "168", label: "7 Days", c: 500, r: 200 },
+            { val: "360", label: "15 Days", c: 700, r: 280 },
+            { val: "480", label: "20 Days", c: 850, r: 340 },
+            { val: "720", label: "30 Days", c: 1250, r: 500 }
+        ];
+
+        optionsData.forEach(item => {
+            const opt = document.createElement('option');
+            opt.value = item.val;
+            if (isReseller) {
+                opt.text = `${item.label} — ₹${item.r} (Reseller Price)`;
+            } else {
+                opt.text = `${item.label} — ₹${item.c}`;
+            }
+            select.appendChild(opt);
+        });
+        updatePriceDisplay();
+    }
+
     function updatePriceDisplay() {
         const hours = document.getElementById('keyDuration').value;
-        const isResellerActive = resellerTotalDeposited >= 500;
-        const cost = isResellerActive ? pricingMatrix[hours].reseller : pricingMatrix[hours].customer;
-        document.getElementById('activeKeyCost').innerText = cost;
+        const isReseller = (currentUserRole === 'reseller' && resellerTotalDeposited >= 500);
+        const cost = isReseller ? pricingMatrix[hours].reseller : pricingMatrix[hours].customer;
+        
+        if(currentUserRole === 'master') {
+            document.getElementById('costDisplayContainer').style.display = 'none'; 
+        } else {
+            document.getElementById('costDisplayContainer').style.display = 'block';
+            document.getElementById('activeKeyCost').innerText = cost;
+        }
     }
 
     async function handleAdminLogin() {
@@ -160,6 +214,7 @@
         if (user === 'kajim_master' && pass === 'Kajim@786') {
             currentUsername = 'Master Admin';
             currentUserRole = 'master';
+            await fetchAdminSettings();
             initDashboard();
             return;
         }
@@ -176,15 +231,69 @@
                     currentUserRole = 'reseller';
                     resellerWalletBalance = data.wallet || 0;
                     resellerTotalDeposited = data.totalDeposited || 0;
+                    await fetchAdminSettings();
                     initDashboard();
                 } else {
                     msgDiv.innerHTML = "<div class='error'>❌ Galat Password!</div>";
                 }
             } else {
-                msgDiv.innerHTML = "<div class='error'>❌ Reseller account nahi mila!</div>";
+                msgDiv.innerHTML = "<div class='error'>❌ Account nahi mila!</div>";
             }
         } catch (err) {
             msgDiv.innerHTML = "<div class='error'>Server Error: " + err.message + "</div>";
+        }
+    }
+
+    async function fetchAdminSettings() {
+        try {
+            const settingsDoc = await db.collection('settings').doc('admin_config').get();
+            if (settingsDoc.exists) {
+                activeQrUrl = settingsDoc.data().qrCodeUrl || activeQrUrl;
+            }
+        } catch (e) {
+            console.log("Using default QR");
+        }
+    }
+
+    async function updateAdminQr() {
+        const newUrl = document.getElementById('adminQrUrlInput').value.trim();
+        const msg = document.getElementById('qrUpdateMsg');
+        if(!newUrl) {
+            msg.innerHTML = "<span class='error'>Valid URL dalein!</span>";
+            return;
+        }
+        try {
+            await db.collection('settings').doc('admin_config').set({ qrCodeUrl: newUrl }, { merge: true });
+            activeQrUrl = newUrl;
+            msg.innerHTML = "<span class='success'>✅ QR Code successfully updated!</span>";
+        } catch(err) {
+            msg.innerHTML = "<span class='error'>Error: " + err.message + "</span>";
+        }
+    }
+
+    async function createResellerManually() {
+        const u = document.getElementById('newResellerUser').value.trim();
+        const p = document.getElementById('newResellerPass').value.trim();
+        const msg = document.getElementById('createResellerMsg');
+        msg.innerHTML = '';
+
+        if(!u || !p) {
+            msg.innerHTML = "<span class='error'>Username aur Password dono dalein!</span>";
+            return;
+        }
+
+        try {
+            await db.collection('resellers').doc(u).set({
+                password: p,
+                wallet: 0,
+                totalDeposited: 500, // Direct active discount default
+                createdAt: Date.now()
+            });
+            msg.innerHTML = "<span class='success'>✅ Reseller '" + u + "' safaltapoorvak ban gaya!</span>";
+            document.getElementById('newResellerUser').value = '';
+            document.getElementById('newResellerPass').value = '';
+        } catch(err) {
+            msg.innerHTML = "<span class='error'>Error: " + err.message + "</span>";
         }
     }
 
@@ -197,6 +306,7 @@
             document.getElementById('masterInfoCard').style.display = 'block';
             document.getElementById('walletCard').style.display = 'none';
             document.getElementById('rechargeCard').style.display = 'none';
+            document.getElementById('adminQrUrlInput').value = activeQrUrl;
         } else {
             document.getElementById('dashTitle').innerText = 'RESELLER: ' + currentUsername;
             document.getElementById('masterInfoCard').style.display = 'none';
@@ -209,7 +319,7 @@
                 document.getElementById('activation-notice').style.color = "#00ff66";
             }
         }
-        updatePriceDisplay();
+        populateDropdown();
     }
 
     function setRechargeAmt(amt) {
@@ -223,6 +333,7 @@
             return;
         }
         document.getElementById('modalPayAmt').innerText = amt;
+        document.getElementById('dynamicBharatPeQR').src = activeQrUrl;
         document.getElementById('qrModal').style.display = 'flex';
     }
 
@@ -243,7 +354,6 @@
         }
 
         try {
-            // Save UTR pending request to Firestore for admin manual approval
             await db.collection('pending_recharges').add({
                 username: currentUsername,
                 amount: Number(amt),
@@ -266,7 +376,7 @@
         genMsg.innerHTML = '';
         keyDisplay.style.display = 'none';
 
-        const isResellerActive = resellerTotalDeposited >= 500;
+        const isResellerActive = (currentUserRole === 'reseller' && resellerTotalDeposited >= 500);
         const keyCost = isResellerActive ? pricingMatrix[hours].reseller : pricingMatrix[hours].customer;
 
         const randomStr = Math.random().toString(36).substring(2, 10).toUpperCase();
@@ -283,14 +393,12 @@
                     return;
                 }
 
-                // Deduct balance from reseller wallet in Firestore
                 const newBalance = currentWallet - keyCost;
                 await resellerRef.update({ wallet: newBalance });
                 resellerWalletBalance = newBalance;
                 document.getElementById('walletBalance').innerText = newBalance;
             }
 
-            // Save new key directly to Firestore 'keys' collection (Synced with Game Server)
             await db.collection('keys').doc(newKey).set({
                 durationHours: Number(hours),
                 createdAt: Date.now(),
@@ -321,5 +429,4 @@
 </script>
 
 </body>
-    </html>
-    
+</html>
