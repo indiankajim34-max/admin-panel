@@ -1,240 +1,342 @@
-<script>
-    const firebaseConfig = {
-      apiKey: "AIzaSyD_24prkpu6ylZITC1EM08jptSCuFbCAp0",
-      authDomain: "wingo-vip-759b9.firebaseapp.com",
-      projectId: "wingo-vip-759b9",
-      storageBucket: "wingo-vip-759b9.firebasestorage.app",
-      messagingSenderId: "304008432437",
-      appId: "1:304008432437:web:cba7a59be9e1079ffd9a7c",
-      measurementId: "G-70XVCDYQQ9"
-    };
-    
-    // Check if firebase is already initialized
-    if (!firebase.apps.length) {
-        firebase.initializeApp(firebaseConfig);
-    }
-    const db = firebase.firestore();
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>WinGo VIP - Dashboard</title>
+    <!-- Firebase SDKs -->
+    <script src="https://www.gstatic.com/firebasejs/9.22.0/firebase-app-compat.js"></script>
+    <script src="https://www.gstatic.com/firebasejs/9.22.0/firebase-auth-compat.js"></script>
+    <script src="https://www.gstatic.com/firebasejs/9.22.0/firebase-firestore-compat.js"></script>
+    <style>
+        body { background: #0f0f1a; color: #fff; font-family: Arial, sans-serif; margin: 0; padding: 20px; }
+        .container { max-width: 420px; margin: auto; background: #1a1a2e; padding: 20px; border-radius: 10px; box-shadow: 0 0 15px rgba(0,255,102,0.2); }
+        .input-group { margin-bottom: 15px; }
+        .input-group label { display: block; margin-bottom: 5px; color: #00ff66; font-size: 14px; }
+        .input-group input { width: 100%; padding: 10px; background: #0f0f1a; border: 1px solid #333; color: #fff; border-radius: 5px; box-sizing: border-box; }
+        button { width: 100%; padding: 12px; background: linear-gradient(45deg, #00ff66, #00b344); border: none; color: #000; font-weight: bold; border-radius: 5px; cursor: pointer; margin-top: 10px; box-sizing: border-box; }
+        button:hover { opacity: 0.9; }
+        .success { color: #00ff66; font-size: 13px; margin-top: 10px; }
+        .error { color: #ff4d4d; font-size: 13px; margin-top: 10px; }
+        .toggle-link { text-align: center; margin-top: 15px; font-size: 14px; cursor: pointer; color: #00ff66; }
+        .card { background: #0f0f1a; padding: 12px; border-radius: 6px; margin-bottom: 15px; border: 1px solid #222; }
+    </style>
+</head>
+<body>
 
-    let paymentTimerInterval;
-    const SESSION_ID = 'win_session_' + Math.random().toString(36).substring(2);
+    <div class="container">
+        <h2 style="text-align: center; color: #00ff66;">WinGo VIP Dashboard</h2>
 
-    function switchView(view) {
-        if(view === 'register') {
-            document.getElementById('loginFormContainer').style.display = 'none';
-            document.getElementById('registerFormContainer').style.display = 'block';
-        } else {
-            document.getElementById('registerFormContainer').style.display = 'none';
-            document.getElementById('loginFormContainer').style.display = 'block';
-        }
-    }
+        <!-- Login Form -->
+        <div id="loginFormContainer">
+            <div class="input-group">
+                <label>Username</label>
+                <input type="text" id="loginUser" placeholder="Enter username">
+            </div>
+            <div class="input-group">
+                <label>Password</label>
+                <input type="password" id="loginPass" placeholder="Enter password">
+            </div>
+            <button onclick="handleLogin()">LOGIN</button>
+            <div id="loginMsg"></div>
+            <div class="toggle-link" onclick="switchView('register')">Don't have an account? Register</div>
+        </div>
 
-    function sendGoogleOtp() {
-        const email = document.getElementById('regEmail').value;
-        const pass = document.getElementById('regPass').value;
-        const confirmPass = document.getElementById('regPassConfirm').value;
-        const username = document.getElementById('regUser').value;
+        <!-- Register Form -->
+        <div id="registerFormContainer" style="display: none;">
+            <div class="input-group">
+                <label>Choose Username</label>
+                <input type="text" id="regUser" placeholder="Create username">
+            </div>
+            <div class="input-group">
+                <label>Password</label>
+                <input type="password" id="regPass" placeholder="Create password">
+            </div>
+            <div class="input-group">
+                <label>Confirm Password</label>
+                <input type="password" id="regPassConfirm" placeholder="Confirm password">
+            </div>
+            <div class="input-group">
+                <label>Email Address (Google OTP Verification)</label>
+                <input type="email" id="regEmail" placeholder="Enter your email">
+                <button type="button" onclick="sendGoogleOtp()" style="background: #1a1a3a; color: #00ff66; border: 1px solid #00ff66;">SEND VERIFICATION EMAIL</button>
+            </div>
+            <button onclick="handleRegister()" id="registerBtn">REGISTER NOW</button>
+            <div id="regMsg"></div>
+            <div class="toggle-link" onclick="switchView('login')">Already have an account? Login</div>
+        </div>
 
-        if (!username || !email || !pass) {
-            alert("Pehle Username, Password aur Email bhariye!");
-            return;
-        }
-        if (pass !== confirmPass) {
-            alert("Passwords match nahi kar rahe!");
-            return;
-        }
+        <!-- Dashboard View -->
+        <div id="dashboardContainer" style="display: none;">
+            <h3>Welcome, <span id="dashUsername"></span></h3>
+            <p>Role: <span id="dashRole" style="color: #00ff66;">Customer</span></p>
+            
+            <div class="card">
+                <p>Today's Total Deposit: ₹<span id="totalDeposit">0</span></p>
+                <p>Today's Key Count: <span id="keyCount">0</span></p>
+            </div>
 
-        const msgBox = document.getElementById('regMsg');
-        msgBox.innerHTML = "<div class='success'>Sending Verification Email...</div>";
-
-        firebase.auth().createUserWithEmailAndPassword(email, pass)
-            .then((userCredential) => {
-                userCredential.user.sendEmailVerification()
-                    .then(() => {
-                        msgBox.innerHTML = "<div class='success'>✔ Email sent to " + email + ". Link par click karke verify karein!</div>";
-                    })
-                    .catch((error) => {
-                        msgBox.innerHTML = "<div class='error'>Error: " + error.message + "</div>";
-                    });
-            })
-            .catch((error) => {
-                msgBox.innerHTML = "<div class='error'>Error: " + error.message + "</div>";
-            });
-    }
-
-    function handleRegister() {
-        const user = firebase.auth().currentUser;
-        const username = document.getElementById('regUser').value;
-        const pass = document.getElementById('regPass').value;
-        const msgBox = document.getElementById('regMsg');
-
-        if (!username || !pass) {
-            msgBox.innerHTML = "<div class='error'>Username aur Password zaroori hai!</div>";
-            return;
-        }
-
-        if (user) {
-            user.reload().then(() => {
-                if (user.emailVerified) {
-                    db.collection("resellers").doc(username).set({
-                        username: username,
-                        email: user.email,
-                        password: pass,
-                        role: "Customer",
-                        todayDeposit: 0,
-                        keyCount: 0,
-                        createdAt: new Date()
-                    }).then(() => {
-                        msgBox.innerHTML = "<span class='success'>Registration successful! Please login.</span>";
-                        setTimeout(() => switchView('login'), 2000);
-                    }).catch((err) => {
-                        msgBox.innerHTML = "<div class='error'>DB Error: " + err.message + "</div>";
-                    });
-                } else {
-                    msgBox.innerHTML = "<div class='error'>Pehle apna Gmail khol kar verification link par click karein!</div>";
-                }
-            });
-        } else {
-            msgBox.innerHTML = "<div class='error'>Pehle 'SEND VERIFICATION EMAIL' par click karein!</div>";
-        }
-    }
-
-    function handleLogin() {
-        const username = document.getElementById('loginUser').value.trim();
-        const password = document.getElementById('loginPass').value.trim();
-        const msgBox = document.getElementById('loginMsg');
-
-        if(!username || !password) {
-            msgBox.innerHTML = "<div class='error'>Username aur Password enter karein!</div>";
-            return;
-        }
-
-        msgBox.innerHTML = "<div class='success'>Logging in...</div>";
-
-        db.collection("resellers").doc(username).get().then((doc) => {
-            if(doc.exists) {
-                const data = doc.data();
+            <!-- Payment Panel with Trigger Timer -->
+            <div class="card">
+                <h4>BharatPe QR / Auto-Verify Payment</h4>
+                <button onclick="initiatePaymentProcess()" id="startPaymentBtn" style="background: #0088cc; color: #fff; margin-bottom: 10px;">PROCEED TO PAY (Start 9-Min Timer)</button>
+                <p id="timerDisplay" style="color: #ff4d4d; font-weight: bold; display: none;"></p>
                 
-                // अगर डेटाबेस में पासवर्ड सेट है और मैच नहीं हो रहा
-                if (data.password && data.password !== password) {
-                    msgBox.innerHTML = "<div class='error'>Galat Password! Sahi password dalein.</div>";
-                    return;
-                }
+                <div id="paymentInputs" style="display: none;">
+                    <div class="input-group">
+                        <label>Enter 12-Digit UTR Number</label>
+                        <input type="text" id="utrInput" placeholder="Enter UTR after payment">
+                    </div>
+                    <div class="input-group">
+                        <label>Deposit Amount (₹500+ for Reseller Upgrade)</label>
+                        <input type="number" id="depositAmount" placeholder="Enter amount">
+                    </div>
+                    <button onclick="verifyAutomaticPayment()" style="background: #00ff66; color: #000;">AUTO-VERIFY & SUBMIT</button>
+                </div>
+                <div id="depositMsg"></div>
+            </div>
 
-                db.collection("resellers").doc(username).update({ currentSession: SESSION_ID }).catch(err => console.log(err));
+            <button onclick="handleLogout()" style="background: #ff4d4d; color: #fff;">LOGOUT</button>
+        </div>
+    </div>
 
+    <script>
+        const firebaseConfig = {
+          apiKey: "AIzaSyD_24prkpu6ylZITC1EM08jptSCuFbCAp0",
+          authDomain: "wingo-vip-759b9.firebaseapp.com",
+          projectId: "wingo-vip-759b9",
+          storageBucket: "wingo-vip-759b9.firebasestorage.app",
+          messagingSenderId: "304008432437",
+          appId: "1:304008432437:web:cba7a59be9e1079ffd9a7c",
+          measurementId: "G-70XVCDYQQ9"
+        };
+        
+        if (!firebase.apps.length) {
+            firebase.initializeApp(firebaseConfig);
+        }
+        const db = firebase.firestore();
+
+        let paymentTimerInterval;
+        const SESSION_ID = 'win_session_' + Math.random().toString(36).substring(2);
+
+        function switchView(view) {
+            if(view === 'register') {
                 document.getElementById('loginFormContainer').style.display = 'none';
-                document.getElementById('dashboardContainer').style.display = 'block';
-                document.getElementById('dashUsername').innerText = data.username;
-                document.getElementById('dashRole').innerText = data.role || "Customer";
-                document.getElementById('totalDeposit').innerText = data.todayDeposit || 0;
-                document.getElementById('keyCount').innerText = data.keyCount || 0;
-                msgBox.innerHTML = "";
-
+                document.getElementById('registerFormContainer').style.display = 'block';
             } else {
-                msgBox.innerHTML = "<div class='error'>User nahi mila! Register karein.</div>";
+                document.getElementById('registerFormContainer').style.display = 'none';
+                document.getElementById('loginFormContainer').style.display = 'block';
             }
-        }).catch((err) => {
-            msgBox.innerHTML = "<div class='error'>Connection Error: " + err.message + "</div>";
-        });
-    }
-
-    function initiatePaymentProcess() {
-        document.getElementById('startPaymentBtn').style.display = 'none';
-        document.getElementById('timerDisplay').style.display = 'block';
-        document.getElementById('paymentInputs').style.display = 'block';
-
-        let duration = 9 * 60; 
-        const display = document.getElementById('timerDisplay');
-        clearInterval(paymentTimerInterval);
-
-        paymentTimerInterval = setInterval(() => {
-            let minutes = parseInt(duration / 60, 10);
-            let seconds = parseInt(duration % 60, 10);
-
-            minutes = minutes < 10 ? "0" + minutes : minutes;
-            seconds = seconds < 10 ? "0" + seconds : seconds;
-
-            display.innerText = "Payment Timer: " + minutes + ":" + seconds;
-
-            if (--duration < 0) {
-                clearInterval(paymentTimerInterval);
-                display.innerText = "Timer Expired! Please restart payment.";
-                document.getElementById('paymentInputs').style.display = 'none';
-            }
-        }, 1000);
-    }
-
-    function verifyAutomaticPayment() {
-        const utr = document.getElementById('utrInput').value.trim();
-        const amount = parseFloat(document.getElementById('depositAmount').value);
-        const username = document.getElementById('dashUsername').innerText;
-        const msgBox = document.getElementById('depositMsg');
-
-        if(!utr || utr.length < 10) {
-            msgBox.innerHTML = "<div class='error'>Valid 12-digit UTR enter karein!</div>";
-            return;
-        }
-        if(isNaN(amount) || amount <= 0) {
-            msgBox.innerHTML = "<div class='error'>Sahi deposit amount enter karein!</div>";
-            return;
         }
 
-        msgBox.innerHTML = "<div class='success'>Verifying UTR via BharatPe API...</div>";
+        function sendGoogleOtp() {
+            const email = document.getElementById('regEmail').value;
+            const pass = document.getElementById('regPass').value;
+            const confirmPass = document.getElementById('regPassConfirm').value;
+            const username = document.getElementById('regUser').value;
 
-        setTimeout(() => {
-            db.collection("utr_logs").doc(utr).get().then((utrDoc) => {
-                if(utrDoc.exists) {
-                    msgBox.innerHTML = "<div class='error'>Ye UTR pehle hi use ho chuka hai!</div>";
-                    return;
-                }
+            if (!username || !email || !pass) {
+                alert("Pehle Username, Password aur Email bhariye!");
+                return;
+            }
+            if (pass !== confirmPass) {
+                alert("Passwords match nahi kar rahe!");
+                return;
+            }
 
-                const userRef = db.collection("resellers").doc(username);
-                db.runTransaction((transaction) => {
-                    return transaction.get(userRef).then((doc) => {
-                        if (!doc.exists) throw "User does not exist!";
-                        
-                        let data = doc.data();
-                        let newDeposit = (data.todayDeposit || 0) + amount;
-                        let newKeys = (data.keyCount || 0) + Math.floor(amount / 100); 
-                        let currentRole = data.role;
+            const msgBox = document.getElementById('regMsg');
+            msgBox.innerHTML = "<div class='success'>Sending Verification Email...</div>";
 
-                        if (amount >= 500 && currentRole === "Customer") {
-                            currentRole = "Reseller";
-                        }
-
-                        transaction.set(db.collection("utr_logs").doc(utr), {
-                            username: username,
-                            amount: amount,
-                            timestamp: new Date()
+            firebase.auth().createUserWithEmailAndPassword(email, pass)
+                .then((userCredential) => {
+                    userCredential.user.sendEmailVerification()
+                        .then(() => {
+                            msgBox.innerHTML = "<div class='success'>✔ Email sent to " + email + ". Link par click karke verify karein!</div>";
+                        })
+                        .catch((error) => {
+                            msgBox.innerHTML = "<div class='error'>Error: " + error.message + "</div>";
                         });
-
-                        transaction.update(userRef, {
-                            todayDeposit: newDeposit,
-                            keyCount: newKeys,
-                            role: currentRole
-                        });
-
-                        return { newDeposit, newKeys, currentRole };
-                    });
-                }).then((res) => {
-                    document.getElementById('totalDeposit').innerText = res.newDeposit;
-                    document.getElementById('keyCount').innerText = res.newKeys;
-                    document.getElementById('dashRole').innerText = res.currentRole;
-                    msgBox.innerHTML = "<div class='success'>✔ Payment Auto-Verified! Role: " + res.currentRole + "</div>";
-                    clearInterval(paymentTimerInterval);
-                }).catch((err) => {
-                    msgBox.innerHTML = "<div class='error'>Verification Failed: " + err + "</div>";
+                })
+                .catch((error) => {
+                    msgBox.innerHTML = "<div class='error'>Error: " + error.message + "</div>";
                 });
-            });
-        }, 1500);
-    }
+        }
 
-    function handleLogout() {
-        clearInterval(paymentTimerInterval);
-        document.getElementById('dashboardContainer').style.display = 'none';
-        document.getElementById('loginFormContainer').style.display = 'block';
-        document.getElementById('loginUser').value = '';
-        document.getElementById('loginPass').value = '';
-        document.getElementById('loginMsg').innerHTML = '';
-    }
-</script>
+        function handleRegister() {
+            const user = firebase.auth().currentUser;
+            const username = document.getElementById('regUser').value;
+            const pass = document.getElementById('regPass').value;
+            const msgBox = document.getElementById('regMsg');
+
+            if (!username || !pass) {
+                msgBox.innerHTML = "<div class='error'>Username aur Password zaroori hai!</div>";
+                return;
+            }
+
+            if (user) {
+                user.reload().then(() => {
+                    if (user.emailVerified) {
+                        db.collection("resellers").doc(username).set({
+                            username: username,
+                            email: user.email,
+                            password: pass,
+                            role: "Customer",
+                            todayDeposit: 0,
+                            keyCount: 0,
+                            createdAt: new Date()
+                        }).then(() => {
+                            msgBox.innerHTML = "<span class='success'>Registration successful! Please login.</span>";
+                            setTimeout(() => switchView('login'), 2000);
+                        }).catch((err) => {
+                            msgBox.innerHTML = "<div class='error'>DB Error: " + err.message + "</div>";
+                        });
+                    } else {
+                        msgBox.innerHTML = "<div class='error'>Pehle apna Gmail khol kar verification link par click karein!</div>";
+                    }
+                });
+            } else {
+                msgBox.innerHTML = "<div class='error'>Pehle 'SEND VERIFICATION EMAIL' par click karein!</div>";
+            }
+        }
+
+        function handleLogin() {
+            const username = document.getElementById('loginUser').value.trim();
+            const password = document.getElementById('loginPass').value.trim();
+            const msgBox = document.getElementById('loginMsg');
+
+            if(!username || !password) {
+                msgBox.innerHTML = "<div class='error'>Username aur Password enter karein!</div>";
+                return;
+            }
+
+            msgBox.innerHTML = "<div class='success'>Logging in...</div>";
+
+            db.collection("resellers").doc(username).get().then((doc) => {
+                if(doc.exists) {
+                    const data = doc.data();
+                    
+                    if (data.password && data.password !== password) {
+                        msgBox.innerHTML = "<div class='error'>Galat Password! Sahi password dalein.</div>";
+                        return;
+                    }
+
+                    db.collection("resellers").doc(username).update({ currentSession: SESSION_ID }).catch(err => console.log(err));
+
+                    document.getElementById('loginFormContainer').style.display = 'none';
+                    document.getElementById('dashboardContainer').style.display = 'block';
+                    document.getElementById('dashUsername').innerText = data.username;
+                    document.getElementById('dashRole').innerText = data.role || "Customer";
+                    document.getElementById('totalDeposit').innerText = data.todayDeposit || 0;
+                    document.getElementById('keyCount').innerText = data.keyCount || 0;
+                    msgBox.innerHTML = "";
+
+                } else {
+                    msgBox.innerHTML = "<div class='error'>User nahi mila! Register karein.</div>";
+                }
+            }).catch((err) => {
+                msgBox.innerHTML = "<div class='error'>Connection Error: " + err.message + "</div>";
+            });
+        }
+
+        function initiatePaymentProcess() {
+            document.getElementById('startPaymentBtn').style.display = 'none';
+            document.getElementById('timerDisplay').style.display = 'block';
+            document.getElementById('paymentInputs').style.display = 'block';
+
+            let duration = 9 * 60; 
+            const display = document.getElementById('timerDisplay');
+            clearInterval(paymentTimerInterval);
+
+            paymentTimerInterval = setInterval(() => {
+                let minutes = parseInt(duration / 60, 10);
+                let seconds = parseInt(duration % 60, 10);
+
+                minutes = minutes < 10 ? "0" + minutes : minutes;
+                seconds = seconds < 10 ? "0" + seconds : seconds;
+
+                display.innerText = "Payment Timer: " + minutes + ":" + seconds;
+
+                if (--duration < 0) {
+                    clearInterval(paymentTimerInterval);
+                    display.innerText = "Timer Expired! Please restart payment.";
+                    document.getElementById('paymentInputs').style.display = 'none';
+                }
+            }, 1000);
+        }
+
+        function verifyAutomaticPayment() {
+            const utr = document.getElementById('utrInput').value.trim();
+            const amount = parseFloat(document.getElementById('depositAmount').value);
+            const username = document.getElementById('dashUsername').innerText;
+            const msgBox = document.getElementById('depositMsg');
+
+            if(!utr || utr.length < 10) {
+                msgBox.innerHTML = "<div class='error'>Valid 12-digit UTR enter karein!</div>";
+                return;
+            }
+            if(isNaN(amount) || amount <= 0) {
+                msgBox.innerHTML = "<div class='error'>Sahi deposit amount enter karein!</div>";
+                return;
+            }
+
+            msgBox.innerHTML = "<div class='success'>Verifying UTR via BharatPe API...</div>";
+
+            setTimeout(() => {
+                db.collection("utr_logs").doc(utr).get().then((utrDoc) => {
+                    if(utrDoc.exists) {
+                        msgBox.innerHTML = "<div class='error'>Ye UTR pehle hi use ho chuka hai!</div>";
+                        return;
+                    }
+
+                    const userRef = db.collection("resellers").doc(username);
+                    db.runTransaction((transaction) => {
+                        return transaction.get(userRef).then((doc) => {
+                            if (!doc.exists) throw "User does not exist!";
+                            
+                            let data = doc.data();
+                            let newDeposit = (data.todayDeposit || 0) + amount;
+                            let newKeys = (data.keyCount || 0) + Math.floor(amount / 100); 
+                            let currentRole = data.role;
+
+                            if (amount >= 500 && currentRole === "Customer") {
+                                currentRole = "Reseller";
+                            }
+
+                            transaction.set(db.collection("utr_logs").doc(utr), {
+                                username: username,
+                                amount: amount,
+                                timestamp: new Date()
+                            });
+
+                            transaction.update(userRef, {
+                                todayDeposit: newDeposit,
+                                keyCount: newKeys,
+                                role: currentRole
+                            });
+
+                            return { newDeposit, newKeys, currentRole };
+                        });
+                    }).then((res) => {
+                        document.getElementById('totalDeposit').innerText = res.newDeposit;
+                        document.getElementById('keyCount').innerText = res.newKeys;
+                        document.getElementById('dashRole').innerText = res.currentRole;
+                        msgBox.innerHTML = "<div class='success'>✔ Payment Auto-Verified! Role: " + res.currentRole + "</div>";
+                        clearInterval(paymentTimerInterval);
+                    }).catch((err) => {
+                        msgBox.innerHTML = "<div class='error'>Verification Failed: " + err + "</div>";
+                    });
+                });
+            }, 1500);
+        }
+
+        function handleLogout() {
+            clearInterval(paymentTimerInterval);
+            document.getElementById('dashboardContainer').style.display = 'none';
+            document.getElementById('loginFormContainer').style.display = 'block';
+            document.getElementById('loginUser').value = '';
+            document.getElementById('loginPass').value = '';
+            document.getElementById('loginMsg').innerHTML = '';
+        }
+    </script>
+</body>
+</html>
