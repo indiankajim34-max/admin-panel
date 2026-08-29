@@ -301,7 +301,7 @@ document.getElementById('loginFormContainer').style.display = 'block';
 }
 }
 
-// MiniMoth Test WhatsApp OTP with SMS fallback integration generating Unique 6-digit OTP
+// MiniMoth WhatsApp OTP with SMS fallback integration generating Unique 6-digit OTP
 function sendMiniMothOtp(flowType) {
 const countryCode = document.getElementById(flowType === 'register' ? 'regCountryCode' : 'forgotCountryCode').value;
 const rawPhone = document.getElementById(flowType === 'register' ? 'regPhone' : 'forgotPhone').value.trim();
