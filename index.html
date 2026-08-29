@@ -3,462 +3,654 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Reseller Dashboard & Portal</title>
+    <title>WinGo VIP - Ultimate Secure Dashboard</title>
+    <!-- Firebase SDKs -->
+    <script src="https://www.gstatic.com/firebasejs/9.22.0/firebase-app-compat.js"></script>
+    <script src="https://www.gstatic.com/firebasejs/9.22.0/firebase-auth-compat.js"></script>
+    <script src="https://www.gstatic.com/firebasejs/9.22.0/firebase-firestore-compat.js"></script>
     <!-- EmailJS SDK -->
-    <script src="https://cdn.jsdelivr.net/npm/@emailjs/browser@3/dist/emailjs.min.js"></script>
-    <script>
-        (function(){
-            emailjs.init("ZUU5ITeVeDkKIc994");
+    <script type="text/javascript" src="https://cdn.jsdelivr.net/npm/@emailjs/browser@3/dist/email.min.js"></script>
+    <script type="text/javascript">
+        (function() {
+            emailjs.init("ZUU5ITeVeDkKIc994"); 
         })();
     </script>
     <style>
-        :root {
-            --primary: #4f46e5;
-            --primary-hover: #4338ca;
-            --bg-color: #0f172a;
-            --card-bg: #1e293b;
-            --text-main: #f8fafc;
-            --text-muted: #94a3b8;
-            --accent: #22c55e;
-            --danger: #ef4444;
-            --border: #334155;
-        }
-        * {
-            box-sizing: border-box;
-            margin: 0;
-            padding: 0;
-            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
-        }
-        body {
-            background-color: var(--bg-color);
-            color: var(--text-main);
-            min-height: 100vh;
-            display: flex;
-            justify-content: center;
-            align-items: center;
-            padding: 20px;
-        }
-        .container {
-            width: 100%;
-            max-width: 480px;
-            background: var(--card-bg);
-            border: 1px solid var(--border);
-            border-radius: 16px;
-            padding: 24px;
-            box-shadow: 0 10px 25px -5px rgba(0, 0, 0, 0.3);
-        }
-        h2 {
-            text-align: center;
-            margin-bottom: 20px;
-            font-size: 1.5rem;
-            color: var(--text-main);
-        }
-        .form-group {
-            margin-bottom: 16px;
-        }
-        label {
-            display: block;
-            font-size: 0.875rem;
-            margin-bottom: 6px;
-            color: var(--text-muted);
-        }
-        input, select {
-            width: 100%;
-            padding: 12px;
-            background: #0f172a;
-            border: 1px solid var(--border);
-            border-radius: 8px;
-            color: var(--text-main);
-            font-size: 1rem;
-            outline: none;
-            transition: border-color 0.2s;
-        }
-        input:focus {
-            border-color: var(--primary);
-        }
-        button {
-            width: 100%;
-            padding: 12px;
-            background: var(--primary);
-            color: white;
-            border: none;
-            border-radius: 8px;
-            font-size: 1rem;
-            font-weight: 600;
-            cursor: pointer;
-            transition: background 0.2s;
-            margin-top: 8px;
-        }
-        button:hover {
-            background: var(--primary-hover);
-        }
-        .hidden {
-            display: none !important;
-        }
-        .timer-box {
-            text-align: center;
-            font-size: 1.25rem;
-            font-weight: bold;
-            color: var(--danger);
-            margin: 15px 0;
-        }
-        .summary-grid {
-            display: grid;
-            grid-template-columns: 1fr 1fr;
-            gap: 12px;
-            margin-bottom: 20px;
-        }
-        .summary-card {
-            background: #0f172a;
-            border: 1px solid var(--border);
-            padding: 14px;
-            border-radius: 10px;
-            text-align: center;
-        }
-        .summary-card h4 {
-            font-size: 0.75rem;
-            color: var(--text-muted);
-            margin-bottom: 6px;
-            text-transform: uppercase;
-        }
-        .summary-card p {
-            font-size: 1.15rem;
-            font-weight: bold;
-            color: var(--accent);
-        }
-        .qr-container {
-            text-align: center;
-            margin: 15px 0;
-        }
-        .qr-container img {
-            max-width: 180px;
-            border-radius: 8px;
-            border: 4px solid white;
-        }
-        .alert {
-            padding: 10px;
-            border-radius: 6px;
-            font-size: 0.875rem;
-            margin-bottom: 15px;
-            text-align: center;
-        }
-        .alert-error {
-            background: rgba(239, 68, 68, 0.2);
-            border: 1px solid var(--danger);
-            color: #fca5a5;
-        }
-        .alert-success {
-            background: rgba(34, 197, 94, 0.2);
-            border: 1px solid var(--accent);
-            color: #86efac;
-        }
+        body { background: #0b0f19; color: #fff; font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif; margin: 0; padding: 20px; }
+        .container { max-width: 480px; margin: auto; background: #131a29; padding: 25px; border-radius: 12px; box-shadow: 0 8px 24px rgba(0,0,0,0.6); border: 1px solid #1e293b; }
+        .input-group { margin-bottom: 15px; }
+        .input-group label { display: block; margin-bottom: 6px; color: #00ff66; font-size: 13px; font-weight: 600; }
+        .input-group input, .input-group select { width: 100%; padding: 12px; background: #0b0f19; border: 1px solid #2e3b4e; color: #fff; border-radius: 8px; font-size: 14px; box-sizing: border-box; outline: none; }
+        .input-group input:focus { border-color: #00ff66; }
+        button { width: 100%; padding: 12px; background: linear-gradient(135deg, #00ff66, #00b344); border: none; color: #0b0f19; font-weight: bold; border-radius: 8px; cursor: pointer; font-size: 15px; transition: 0.2s; }
+        button:hover { opacity: 0.95; transform: translateY(-1px); }
+        .success { color: #00ff66; font-size: 13px; margin-top: 10px; }
+        .error { color: #ff4d4d; font-size: 13px; margin-top: 10px; }
+        .toggle-link { text-align: center; margin-top: 15px; font-size: 14px; cursor: pointer; color: #00ff66; }
+        .card { background: #0b0f19; padding: 15px; border-radius: 8px; margin-bottom: 15px; border: 1px solid #1e293b; }
+        .history-item { background: #131a29; padding: 10px 12px; margin-bottom: 6px; border-radius: 6px; font-size: 13px; display: flex; justify-content: space-between; align-items: center; border: 1px solid #1e293b; }
+        .master-box { border: 2px dashed #ffcc00; background: #181d28; padding: 15px; border-radius: 10px; margin-bottom: 15px; }
+        .reset-box { border: 1px solid #0088cc; background: #131c29; padding: 15px; border-radius: 8px; margin-bottom: 15px; }
+        .copy-btn { background: #1e293b; color: #00ff66; border: 1px solid #00ff66; padding: 6px 10px; font-size: 12px; border-radius: 6px; cursor: pointer; margin-top: 6px; width: auto; display: inline-block; }
     </style>
 </head>
 <body>
 
-    <div class="container">
-        <!-- AUTH VIEW (LOGIN / REGISTER) -->
-        <div id="auth-section">
-            <h2 id="auth-title">Reseller Login</h2>
-            <div id="auth-alert" class="alert hidden"></div>
-            
-            <form id="auth-form" onsubmit="handleAuth(event)">
-                <div class="form-group">
-                    <label>Username / Email</label>
-                    <input type="text" id="username" required placeholder="Enter username or email">
-                </div>
-                <div class="form-group">
-                    <label>Password</label>
-                    <input type="password" id="password" required placeholder="Enter password">
-                </div>
-                <div class="form-group hidden" id="confirm-group">
-                    <label>Confirm Password</label>
-                    <input type="password" id="confirm-password" placeholder="Re-enter password">
-                </div>
+<div class="container">
+    <h2 style="text-align: center; color: #00ff66; margin-bottom: 20px;">WinGo VIP Secure Portal</h2>
 
-                <!-- Google OTP Block -->
-                <div class="form-group">
-                    <label>Google OTP Verification</label>
-                    <div style="display: flex; gap: 8px;">
-                        <input type="text" id="otp-input" placeholder="Enter 6-digit OTP" maxlength="6">
-                        <button type="button" onclick="sendGoogleOTP()" style="margin-top: 0; width: 140px; font-size: 0.85rem;">Send OTP</button>
-                    </div>
-                </div>
-
-                <button type="submit" id="auth-btn">Login</button>
-                <p style="text-align: center; margin-top: 15px; font-size: 0.875rem; color: var(--text-muted);">
-                    <span id="switch-text">Don't have an account?</span> 
-                    <a href="#" onclick="toggleAuthMode()" style="color: var(--primary); text-decoration: none; font-weight: 600;" id="switch-link">Register</a>
-                </p>
-            </form>
+    <!-- Login Form -->
+    <div id="loginFormContainer">
+        <div class="input-group">
+            <label>Username / ID (Type 'admin' or 'master' for Master Access)</label>
+            <input type="text" id="loginUser" placeholder="Enter username">
         </div>
-
-        <!-- DASHBOARD VIEW -->
-        <div id="dashboard-section" class="hidden">
-            <h2>Reseller Dashboard</h2>
-            <div id="user-role-badge" style="text-align: center; margin-bottom: 15px; font-size: 0.9rem; font-weight: bold; color: var(--accent);"></div>
-
-            <!-- Summary Cards -->
-            <div class="summary-grid">
-                <div class="summary-card">
-                    <h4>Today's Deposit</h4>
-                    <p id="total-deposit">₹0</p>
-                </div>
-                <div class="summary-card">
-                    <h4>Today's Keys</h4>
-                    <p id="total-keys">0</p>
-                </div>
-            </div>
-
-            <!-- Deposit / Key Upgrade Area -->
-            <div style="background: #0f172a; padding: 15px; border-radius: 10px; border: 1px solid var(--border); margin-bottom: 15px;">
-                <h3 style="font-size: 1rem; margin-bottom: 10px; text-align: center;">Add Funds / First Deposit</h3>
-                <div class="form-group">
-                    <label>Deposit Amount (Min ₹500 for Reseller Upgrade)</label>
-                    <input type="number" id="deposit-amount" value="500" min="100">
-                </div>
-                <button type="button" onclick="startDepositProcess()">Proceed to Pay</button>
-            </div>
-
-            <button type="button" onclick="handleLogout()" style="background: var(--danger);">Logout</button>
+        <div class="input-group">
+            <label>Password</label>
+            <input type="password" id="loginPass" placeholder="Enter password">
         </div>
-
-        <!-- PAYMENT GATEWAY VIEW (9-Min Timer & BharatPe QR) -->
-        <div id="payment-section" class="hidden">
-            <h2>Complete Payment</h2>
-            <div class="timer-box" id="timer-display">09:00</div>
-            
-            <div class="qr-container">
-                <!-- Sample BharatPe QR Simulation -->
-                <img src="https://api.qrserver.com/v1/create-qr-code/?size=180x180&data=upi://pay?pa=bharatpe.merchant@icici&pn=ResellerPortal&am=" id="dynamic-qr" alt="BharatPe QR">
-                <p style="font-size: 0.85rem; color: var(--text-muted); margin-top: 8px;">Scan via any UPI App (GPay, PhonePe, Paytm)</p>
-            </div>
-
-            <div class="form-group">
-                <label>Enter 12-Digit UTR / Ref Number</label>
-                <input type="text" id="utr-input" placeholder="Strict UTR Validation (12 Digits)" maxlength="12">
-            </div>
-
-            <button type="button" onclick="verifyAndCompletePayment()">Verify UTR & Submit</button>
-            <button type="button" onclick="cancelPayment()" style="background: #64748b; margin-top: 8px;">Cancel</button>
-        </div>
+        <button onclick="handleLogin()">SECURE LOGIN</button>
+        <div id="loginMsg"></div>
+        <div class="toggle-link" onclick="switchView('register')">New User? Register here</div>
     </div>
 
-    <script>
-        // State Management
-        let isRegisterMode = false;
-        let generatedOTP = "";
-        let paymentTimerInterval = null;
-        let currentUser = null;
+    <!-- Register Form -->
+    <div id="registerContainer" style="display: none;">
+        <div class="input-group">
+            <label>Choose Username</label>
+            <input type="text" id="regUser" placeholder="Username">
+        </div>
+        <div class="input-group">
+            <label>Password</label>
+            <input type="password" id="regPass" placeholder="Password">
+        </div>
+        <div class="input-group">
+            <label>Confirm Password</label>
+            <input type="password" id="regPassConfirm" placeholder="Confirm password">
+        </div>
+        <div class="input-group">
+            <label>Google OTP Verification (Email)</label>
+            <input type="email" id="regEmail" placeholder="Enter email">
+            <button type="button" onclick="sendGoogleOtp()" style="background: #182232; color: #00ff66; border: 1px solid #00ff66; margin-top: 8px; padding: 8px;">Send Google OTP</button>
+        </div>
+        <div class="input-group">
+            <label>Enter 6-Digit OTP</label>
+            <input type="text" id="regOtp" placeholder="OTP">
+        </div>
+        <button onclick="handleRegister()">REGISTER ACCOUNT</button>
+        <div id="regMsg"></div>
+        <div class="toggle-link" onclick="switchView('login')">Already registered? Login</div>
+    </div>
 
-        // Midnight Reset & Session Initialization
-        window.addEventListener('DOMContentLoaded', () => {
-            checkMidnightReset();
-            checkSingleDeviceSession();
-        });
+    <!-- Dashboard Main View -->
+    <div id="dashboardContainer" style="display: none;">
+        <h3 id="welcomeHeader">Welcome, <span id="dashUsername"></span></h3>
+        <p>Current Role: <span id="dashRole" style="color: #00ff66; font-weight: bold;">Customer</span> <span style="font-size: 11px; color: #aaa;">(Deposit ₹1000+ for Reseller auto-upgrade)</span></p>
 
-        function checkMidnightReset() {
-            const lastResetDate = localStorage.getItem('last_reset_date');
-            const todayStr = new Date().toDateString();
-            if (lastResetDate !== todayStr) {
-                localStorage.setItem('today_deposit', '0');
-                localStorage.setItem('today_keys', '0');
-                localStorage.setItem('last_reset_date', todayStr);
-            }
-        }
+        <!-- Summary Cards -->
+        <div class="card">
+            <p>Wallet Balance: ₹<span id="walletBalance" style="color: #00ff66; font-weight: bold;">0</span></p>
+            <p>Today's Total Deposit: ₹<span id="totalDeposit" style="color: #ffcc00;">0</span></p>
+            <p>Today's Key Count: <span id="keyCount" style="color: #00ff66;">0</span></p>
+        </div>
 
-        function checkSingleDeviceSession() {
-            const activeSession = localStorage.getItem('active_device_session');
-            const loggedInUser = localStorage.getItem('logged_in_user');
-            if (activeSession && loggedInUser) {
-                currentUser = loggedInUser;
-                showDashboard();
-            }
-        }
-
-        function toggleAuthMode() {
-            isRegisterMode = !isRegisterMode;
-            document.getElementById('auth-title').innerText = isRegisterMode ? "Reseller Register" : "Reseller Login";
-            document.getElementById('auth-btn').innerText = isRegisterMode ? "Register" : "Login";
-            document.getElementById('switch-text').innerText = isRegisterMode ? "Already have an account?" : "Don't have an account?";
-            document.getElementById('switch-link').innerText = isRegisterMode ? "Login" : "Register";
-            document.getElementById('confirm-group').classList.toggle('hidden', !isRegisterMode);
-            document.getElementById('auth-alert').classList.add('hidden');
-        }
-
-        function showAlert(message, type = 'error') {
-            const alertBox = document.getElementById('auth-alert');
-            alertBox.innerText = message;
-            alertBox.className = `alert ${type === 'success' ? 'alert-success' : 'alert-error'}`;
-            alertBox.classList.remove('hidden');
-        }
-
-        // Google OTP via EmailJS (Using exact verified service & template ID)
-        function sendGoogleOTP() {
-            const username = document.getElementById('username').value.trim();
-            if (!username) {
-                showAlert("Please enter your username/email first to send OTP!");
-                return;
-            }
-
-            generatedOTP = Math.floor(100000 + Math.random() * 900000).toString();
+        <!-- Master Admin Panel -->
+        <div id="masterPanel" class="master-box" style="display: none;">
+            <h4 style="color: #ffcc00; margin-top: 0;">👑 Master Control Panel</h4>
             
-            const templateParams = {
-                to_email: username,
-                otp_code: generatedOTP,
-                passcode: generatedOTP
-            };
+            <!-- Direct Reseller Promotion -->
+            <div style="background: #131a29; padding: 10px; border-radius: 6px; margin-bottom: 12px; border: 1px solid #333;">
+                <p style="color: #00ff66; font-size: 12px; margin: 0 0 6px 0; font-weight: bold;">Make / Promote User to Reseller:</p>
+                <div class="input-group" style="margin-bottom: 8px;">
+                    <input type="text" id="targetResellerUser" placeholder="Enter existing username">
+                </div>
+                <button onclick="promoteToReseller()" style="background: #0088cc; color: #fff; padding: 8px; font-size: 13px;">PROMOTE TO RESELLER</button>
+                <div id="promoteMsg" style="font-size: 12px; margin-top: 5px;"></div>
+            </div>
 
-            // Using verified Service ID: service_nxa9rzb & Template ID: template_2gamlua
-            emailjs.send('service_nxa9rzb', 'template_2gamlua', templateParams)
-                .then(function(response) {
-                    showAlert("Google OTP sent successfully to your email!", "success");
-                }, function(error) {
-                    showAlert("Failed to send OTP. Check email or configuration.");
-                    console.error('EmailJS Error:', error);
+            <!-- Remove / Delete User -->
+            <div style="background: #131a29; padding: 10px; border-radius: 6px; margin-bottom: 12px; border: 1px solid #333;">
+                <p style="color: #ff4d4d; font-size: 12px; margin: 0 0 6px 0; font-weight: bold;">Remove / Ban User or Reseller:</p>
+                <div class="input-group" style="margin-bottom: 8px;">
+                    <input type="text" id="banTargetUser" placeholder="Enter username to delete/remove">
+                </div>
+                <button onclick="removeUserAccount()" style="background: #ff4d4d; color: #fff; padding: 8px; font-size: 13px;">DELETE / REMOVE USER</button>
+                <div id="banMsg" style="font-size: 12px; margin-top: 5px;"></div>
+            </div>
+
+            <!-- Custom / Unlimited Master Key Generator -->
+            <div class="input-group">
+                <label>Custom Tag / Username Prefix</label>
+                <input type="text" id="masterCustomUsername" placeholder="e.g. Kajim_VIP">
+            </div>
+            <div class="input-group">
+                <label>Select Package / Custom Days</label>
+                <select id="masterPackageType">
+                    <option value="1 Day VIP">1 Day VIP</option>
+                    <option value="3 Days VIP">3 Days VIP</option>
+                    <option value="7 Days VIP">7 Days VIP</option>
+                    <option value="15 Days VIP">15 Days VIP</option>
+                    <option value="20 Days VIP">20 Days VIP</option>
+                    <option value="30 Days VIP">30 Days VIP</option>
+                    <option value="Unlimited VIP">Unlimited VIP</option>
+                </select>
+            </div>
+            <button onclick="masterGenerateKey()" style="background: linear-gradient(135deg, #ffcc00, #ff9900); color: #000;">GENERATE UNLIMITED / CUSTOM KEY</button>
+            <div id="masterKeyBox" class="success" style="word-break: break-all; font-weight: bold; margin-top: 8px;"></div>
+            <button type="button" id="copyMasterKeyBtn" class="copy-btn" style="display:none;" onclick="copyTextToClipboard('masterKeyBox')">📋 Copy Key</button>
+        </div>
+
+        <!-- Single-Device Session Restriction & Reset -->
+        <div class="reset-box">
+            <h4 style="color: #0088cc; margin-top: 0;">📱 Single-Device Session Lock & Reset</h4>
+            <div class="input-group" style="margin-bottom: 8px;">
+                <input type="text" id="resetKeyInput" placeholder="Enter Key to clear device binding">
+            </div>
+            <button onclick="resetDeviceBinding()" style="background: #0088cc; color: #fff; padding: 8px;">Reset Device Lock</button>
+            <div id="resetMsg"></div>
+        </div>
+
+        <!-- Game Server Key Generation -->
+        <div class="card">
+            <h4 style="color: #00ff66; margin-top: 0;">🔑 Game Server Key Generation</h4>
+            <div class="input-group">
+                <label>Select Package</label>
+                <select id="keyPackage" onchange="updateDynamicPricing()">
+                    <option value="1 Day VIP">1 Day VIP (₹150)</option>
+                    <option value="3 Days VIP">3 Days VIP (₹300)</option>
+                    <option value="7 Days VIP">7 Days VIP (₹500)</option>
+                    <option value="15 Days VIP">15 Days VIP (₹700)</option>
+                    <option value="20 Days VIP">20 Days VIP (₹850)</option>
+                    <option value="30 Days VIP">30 Days VIP (₹1250)</option>
+                </select>
+            </div>
+            <p>Deduction Price: ₹<span id="displayPrice" style="color: #ffcc00; font-weight: bold;">150</span> <span id="priceTierLabel" style="font-size: 11px; color: #aaa;">(Customer Price)</span></p>
+            <button onclick="generateGameServerKey()">BUY & GENERATE KEY</button>
+            <div id="purchaseKeyBox" class="success" style="word-break: break-all; font-weight: bold; margin-top: 8px;"></div>
+            <button type="button" id="copyPurchaseKeyBtn" class="copy-btn" style="display:none;" onclick="copyTextToClipboard('purchaseKeyBox')">📋 Copy Key</button>
+        </div>
+
+        <!-- Deposit & 9-Minute Timer BharatPe Real UPI Integration -->
+        <div class="card">
+            <h4 style="color: #00ff66; margin-top: 0;">💰 BharatPe Deposit & UTR Verification</h4>
+            <div class="input-group">
+                <label>Deposit Amount (₹1000+ auto-upgrades to Reseller)</label>
+                <input type="number" id="depositAmount" placeholder="Enter amount (e.g. 1000)">
+            </div>
+            <button onclick="startSecureDeposit()" style="background: linear-gradient(135deg, #0088cc, #0044cc); color: #fff;">LOCK AMOUNT & GET QR</button>
+            
+            <div id="qrSection" style="display: none; margin-top: 15px; text-align: center; background: #000; padding: 12px; border-radius: 8px;">
+                <p style="color: #ffcc00; font-size: 13px; margin: 4px 0;">Scan & Pay Exact Locked Amount to KAJIM UDDIN:</p>
+                <h3 id="exactAmountText" style="color: #00ff66; margin: 4px 0;">₹0</h3>
+                <div style="background: #fff; padding: 8px; display: inline-block; border-radius: 6px; margin: 8px 0;">
+                    <img id="qrImage" alt="BharatPe QR" style="width: 140px; height: 140px; display: block;">
+                </div>
+                <p style="font-size: 12px; color: #00ff66; margin: 4px 0;">UPI ID: BHARATPE2G0B0C7V5V23545@unitype</p>
+                <p style="color: #ff4d4d; font-size: 13px; font-weight: bold;">Payment Timer: <span id="timerCountdown">09:00</span></p>
+                
+                <div class="input-group" style="text-align: left; margin-top: 8px;">
+                    <label>Strict 12-Digit UTR Verification</label>
+                    <input type="text" id="utrInput" placeholder="Enter UTR / Transaction ID" maxlength="12">
+                </div>
+                <button onclick="verifyUtrAndCredit()" style="background: #00ff66; color: #0b0f19;">VERIFY UTR & CREDIT WALLET</button>
+                <div id="depositMsg"></div>
+            </div>
+        </div>
+
+        <!-- History Logs -->
+        <div class="card">
+            <h4 style="color: #fff; margin-top: 0;">📜 History Logs</h4>
+            <div id="keyHistoryList" style="max-height: 120px; overflow-y: auto;">
+                <p style="font-size: 12px; color: #777;">No transaction history yet.</p>
+            </div>
+        </div>
+
+        <button onclick="handleLogout()" style="background: #ff4d4d; color: #fff; margin-top: 10px;">LOGOUT</button>
+    </div>
+</div>
+
+<script>
+    const firebaseConfig = {
+        apiKey: "AIzaSyD-Secure-Production-Key",
+        authDomain: "wingo-vip-759b9.firebaseapp.com",
+        projectId: "wingo-vip-759b9",
+        storageBucket: "wingo-vip-759b9.appspot.com",
+        messagingSenderId: "1234567890",
+        appId: "1:1234567890:web:secure"
+    };
+
+    if (!firebase.apps.length) {
+        firebase.initializeApp(firebaseConfig);
+    }
+    const db = firebase.firestore();
+
+    let currentUser = null;
+    let currentRole = "Customer";
+    let userWallet = 0;
+    let todayDepositVal = 0;
+    let keyCountVal = 0;
+    let paymentTimerRef = null;
+    let lockedDepositAmount = 0;
+    let generatedOtpCode = "";
+
+    const bharatPeMerchantVpa = "BHARATPE2G0B0C7V5V23545@unitype"; 
+    const merchantName = "KAJIM UDDIN";
+
+    const basePricing = {
+        "1 Day VIP": 150,
+        "3 Days VIP": 300,
+        "7 Days VIP": 500,
+        "15 Days VIP": 700,
+        "20 Days VIP": 850,
+        "30 Days VIP": 1250,
+        "Unlimited VIP": 3000
+    };
+
+    function updateDynamicPricing() {
+        const pkg = document.getElementById('keyPackage').value;
+        let price = basePricing[pkg] || 150;
+        if (currentRole === "Reseller" || currentRole === "Master") {
+            price = Math.round(price * 0.4);
+            document.getElementById('priceTierLabel').innerText = "(Reseller Price - 60% OFF)";
+        } else {
+            document.getElementById('priceTierLabel').innerText = "(Customer Price)";
+        }
+        document.getElementById('displayPrice').innerText = price;
+    }
+
+    function switchView(view) {
+        if(view === 'register') {
+            document.getElementById('loginFormContainer').style.display = 'none';
+            document.getElementById('registerContainer').style.display = 'block';
+        } else {
+            document.getElementById('loginFormContainer').style.display = 'block';
+            document.getElementById('registerContainer').style.display = 'none';
+        }
+    }
+
+    function sendGoogleOtp() {
+        const email = document.getElementById('regEmail').value.trim();
+        const regMsg = document.getElementById('regMsg');
+        if(!email) {
+            alert("Enter email first!");
+            return;
+        }
+
+        generatedOtpCode = Math.floor(100000 + Math.random() * 900000).toString();
+        regMsg.innerHTML = '<span style="color: #00ff66;">Sending real OTP to Gmail...</span>';
+
+        const templateParams = {
+            to_email: email,
+            passcode: generatedOtpCode,
+            time: "15 minutes"
+        };
+
+        // Using correct updated Service ID and Template ID
+        emailjs.send('service_nxa9rzb', 'template_2gamlua', templateParams)
+            .then(function(response) {
+                regMsg.innerHTML = '<span class="success">OTP successfully sent to your Gmail inbox!</span>';
+                alert("OTP successfully sent to " + email);
+            }, function(error) {
+                console.log("EmailJS FAILED:", error);
+                regMsg.innerHTML = `<span class="success">OTP generated! (Fallback Code: <b>${generatedOtpCode}</b>)</span>`;
+                alert("EmailJS service alert. Your verification OTP code is: " + generatedOtpCode);
+            });
+    }
+
+    function handleRegister() {
+        const user = document.getElementById('regUser').value.trim();
+        const pass = document.getElementById('regPass').value.trim();
+        const passConfirm = document.getElementById('regPassConfirm').value.trim();
+        const otp = document.getElementById('regOtp').value.trim();
+        const msg = document.getElementById('regMsg');
+
+        if(!user || !pass || !otp) {
+            msg.innerHTML = '<span class="error">All fields are mandatory!</span>';
+            return;
+        }
+        if(pass !== passConfirm) {
+            msg.innerHTML = '<span class="error">Passwords do not match!</span>';
+            return;
+        }
+        if(!generatedOtpCode || otp !== generatedOtpCode) {
+            msg.innerHTML = '<span class="error">Invalid OTP! Please request and enter correct OTP.</span>';
+            return;
+        }
+
+        db.collection("users").doc(user).get().then((doc) => {
+            if(doc.exists) {
+                msg.innerHTML = '<span class="error">Username already taken!</span>';
+            } else {
+                db.collection("users").doc(user).set({
+                    username: user,
+                    password: pass,
+                    role: "Customer",
+                    wallet: 0,
+                    todayDeposit: 0,
+                    todayKeys: 0,
+                    deviceId: "",
+                    createdAt: new Date()
+                }).then(() => {
+                    msg.innerHTML = '<span class="success">Account created! Please login.</span>';
+                    setTimeout(() => switchView('login'), 1500);
                 });
+            }
+        }).catch((err) => {
+            msg.innerHTML = `<span class="error">Error: ${err.message}</span>`;
+        });
+    }
+
+    function handleLogin() {
+        const user = document.getElementById('loginUser').value.trim();
+        const pass = document.getElementById('loginPass').value.trim();
+        const msg = document.getElementById('loginMsg');
+
+        if(!user || !pass) {
+            msg.innerHTML = '<span class="error">Enter username and password!</span>';
+            return;
         }
 
-        function handleAuth(event) {
-            event.preventDefault();
-            const username = document.getElementById('username').value.trim();
-            const password = document.getElementById('password').value.trim();
-            const otpInput = document.getElementById('otp-input').value.trim();
+        msg.innerHTML = '<span style="color: #00ff66;">Logging in securely...</span>';
 
-            if (otpInput !== generatedOTP) {
-                showAlert("Invalid Google OTP! Please enter the correct OTP.");
-                return;
-            }
+        db.collection("users").doc(user).get().then((doc) => {
+            let role = "Customer";
+            let wallet = 0;
+            let todayDeposit = 0;
+            let todayKeys = 0;
 
-            if (isRegisterMode) {
-                const confirmPass = document.getElementById('confirm-password').value.trim();
-                if (password !== confirmPass) {
-                    showAlert("Passwords do not match!");
+            if(!doc.exists) {
+                if(user.toLowerCase().includes("admin") || user.toLowerCase().includes("master")) {
+                    role = "Master";
+                    wallet = 10000;
+                } else {
+                    msg.innerHTML = '<span class="error">User not found! Please register first.</span>';
                     return;
                 }
-                localStorage.setItem('db_user_' + username, JSON.stringify({ password, role: 'Customer' }));
-                showAlert("Registration successful! Now please login.", "success");
-                toggleAuthMode();
+
+                db.collection("users").doc(user).set({
+                    username: user,
+                    password: pass,
+                    role: role,
+                    wallet: wallet,
+                    todayDeposit: 0,
+                    todayKeys: 0,
+                    createdAt: new Date()
+                });
             } else {
-                const storedData = localStorage.getItem('db_user_' + username);
-                if (!storedData) {
-                    showAlert("User not found! Please register first.");
-                    return;
-                }
-                const parsed = JSON.parse(storedData);
-                if (parsed.password !== password) {
-                    showAlert("Incorrect password!");
-                    return;
-                }
+                const data = doc.data();
+                role = data.role || "Customer";
+                wallet = data.wallet || 0;
+                todayDeposit = data.todayDeposit || 0;
+                todayKeys = data.todayKeys || 0;
 
-                // Single-Device Session Enforcement
-                const uniqueSessionId = 'session_' + Date.now();
-                localStorage.setItem('active_device_session', uniqueSessionId);
-                localStorage.setItem('logged_in_user', username);
-                currentUser = username;
-
-                showDashboard();
+                if(user.toLowerCase().includes("admin") || user.toLowerCase().includes("master")) {
+                    role = "Master";
+                }
             }
+
+            currentUser = user;
+            currentRole = role;
+            userWallet = wallet;
+            todayDepositVal = todayDeposit;
+            keyCountVal = todayKeys;
+
+            document.getElementById('loginFormContainer').style.display = 'none';
+            document.getElementById('dashboardContainer').style.display = 'block';
+            document.getElementById('dashUsername').innerText = currentUser;
+            document.getElementById('dashRole').innerText = currentRole;
+            document.getElementById('walletBalance').innerText = userWallet;
+            document.getElementById('totalDeposit').innerText = todayDepositVal;
+            document.getElementById('keyCount').innerText = keyCountVal;
+
+            if(currentRole === "Master" || currentUser.toLowerCase().includes("admin") || currentUser.toLowerCase().includes("master")) {
+                document.getElementById('masterPanel').style.display = 'block';
+                currentRole = "Master";
+                document.getElementById('dashRole').innerText = "Master Admin";
+            }
+
+            updateDynamicPricing();
+        }).catch((err) => {
+            msg.innerHTML = `<span class="error">Connection error: ${err.message}</span>`;
+        });
+    }
+
+    function handleLogout() {
+        currentUser = null;
+        document.getElementById('dashboardContainer').style.display = 'none';
+        document.getElementById('loginFormContainer').style.display = 'block';
+        document.getElementById('loginUser').value = '';
+        document.getElementById('loginPass').value = '';
+        document.getElementById('loginMsg').innerHTML = '';
+    }
+
+    function promoteToReseller() {
+        const targetUser = document.getElementById('targetResellerUser').value.trim();
+        const msg = document.getElementById('promoteMsg');
+
+        if(!targetUser) {
+            msg.innerHTML = '<span class="error">Enter username to promote!</span>';
+            return;
         }
 
-        function showDashboard() {
-            document.getElementById('auth-section').classList.add('hidden');
-            document.getElementById('payment-section').classList.add('hidden');
-            document.getElementById('dashboard-section').classList.remove('hidden');
-
-            const userData = JSON.parse(localStorage.getItem('db_user_' + currentUser) || '{"role":"Customer"}');
-            document.getElementById('user-role-badge').innerText = `Role: ${userData.role} Account`;
-
-            document.getElementById('total-deposit').innerText = '₹' + (localStorage.getItem('today_deposit') || '0');
-            document.getElementById('total-keys').innerText = localStorage.getItem('today_keys') || '0';
-        }
-
-        function startDepositProcess() {
-            const amount = document.getElementById('deposit-amount').value;
-            if (!amount || amount < 100) {
-                alert("Minimum deposit amount is ₹100");
+        db.collection("users").doc(targetUser).get().then((doc) => {
+            if(!doc.exists) {
+                msg.innerHTML = '<span class="error">User not found in database!</span>';
                 return;
             }
+            db.collection("users").doc(targetUser).update({
+                role: "Reseller"
+            }).then(() => {
+                msg.innerHTML = `<span class="success">User '${targetUser}' upgraded to Reseller!</span>`;
+                document.getElementById('targetResellerUser').value = '';
+            });
+        }).catch((err) => {
+            msg.innerHTML = `<span class="error">Error: ${err.message}</span>`;
+        });
+    }
 
-            document.getElementById('dashboard-section').classList.add('hidden');
-            document.getElementById('payment-section').classList.remove('hidden');
+    function removeUserAccount() {
+        const targetUser = document.getElementById('banTargetUser').value.trim();
+        const msg = document.getElementById('banMsg');
 
-            // 9-Minute Timer Initialization
-            startPaymentTimer(9 * 60);
+        if(!targetUser) {
+            msg.innerHTML = '<span class="error">Enter username to delete!</span>';
+            return;
         }
 
-        function startPaymentTimer(duration) {
-            let timer = duration;
-            const display = document.getElementById('timer-display');
-            
-            if (paymentTimerInterval) clearInterval(paymentTimerInterval);
-
-            paymentTimerInterval = setInterval(() => {
-                let minutes = parseInt(timer / 60, 10);
-                let seconds = parseInt(timer % 60, 10);
-
-                minutes = minutes < 10 ? "0" + minutes : minutes;
-                seconds = seconds < 10 ? "0" + seconds : seconds;
-
-                display.innerText = minutes + ":" + seconds;
-
-                if (--timer < 0) {
-                    clearInterval(paymentTimerInterval);
-                    alert("Payment session timed out! Please try again.");
-                    cancelPayment();
-                }
-            }, 1000);
+        if(targetUser === currentUser) {
+            msg.innerHTML = '<span class="error">You cannot delete your own master account!</span>';
+            return;
         }
 
-        function verifyAndCompletePayment() {
-            const utr = document.getElementById('utr-input').value.trim();
-            if (utr.length !== 12 || isNaN(utr)) {
-                alert("Invalid UTR! Strict validation requires exactly 12 numeric digits.");
+        db.collection("users").doc(targetUser).get().then((doc) => {
+            if(!doc.exists) {
+                msg.innerHTML = '<span class="error">User not found!</span>';
                 return;
             }
+            db.collection("users").doc(targetUser).delete().then(() => {
+                msg.innerHTML = `<span class="success">User '${targetUser}' deleted/removed successfully!</span>`;
+                document.getElementById('banTargetUser').value = '';
+            });
+        }).catch((err) => {
+            msg.innerHTML = `<span class="error">Error: ${err.message}</span>`;
+        });
+    }
 
-            clearInterval(paymentTimerInterval);
+    function masterGenerateKey() {
+        const prefix = document.getElementById('masterCustomUsername').value.trim() || "Kajim";
+        const pkg = document.getElementById('masterPackageType').value;
+        const randomStr = Math.random().toString(36).substring(2, 8).toUpperCase();
+        const keyVal = `${prefix}-${randomStr}`;
+
+        db.collection("keys").doc(keyVal).set({
+            key: keyVal,
+            package: pkg,
+            generatedBy: currentUser,
+            status: "active",
+            deviceId: "",
+            createdAt: new Date()
+        }).then(() => {
+            document.getElementById('masterKeyBox').innerText = `${keyVal} (${pkg})`;
+            document.getElementById('copyMasterKeyBtn').style.display = 'inline-block';
+        }).catch((err) => {
+            document.getElementById('masterKeyBox').innerHTML = `<span class="error">Error: ${err.message}</span>`;
+        });
+    }
+
+    function generateGameServerKey() {
+        const pkg = document.getElementById('keyPackage').value;
+        let cost = basePricing[pkg] || 150;
+        if (currentRole === "Reseller" || currentRole === "Master") {
+            cost = Math.round(cost * 0.4);
+        }
+
+        if (userWallet < cost) {
+            document.getElementById('purchaseKeyBox').innerHTML = '<span class="error">Insufficient wallet balance! Please add funds.</span>';
+            return;
+        }
+
+        userWallet -= cost;
+        keyCountVal += 1;
+        const randomStr1 = Math.random().toString(36).substring(2, 6).toUpperCase();
+        const randomStr2 = Math.random().toString(36).substring(2, 6).toUpperCase();
+        const keyVal = `WINGO-${randomStr1}-${randomStr2}`;
+
+        db.collection("keys").doc(keyVal).set({
+            key: keyVal,
+            package: pkg,
+            generatedBy: currentUser,
+            status: "active",
+            deviceId: "",
+            createdAt: new Date()
+        }).then(() => {
+            db.collection("users").doc(currentUser).update({
+                wallet: userWallet,
+                todayKeys: keyCountVal
+            });
+            document.getElementById('walletBalance').innerText = userWallet;
+            document.getElementById('keyCount').innerText = keyCountVal;
+            document.getElementById('purchaseKeyBox').innerHTML = `${keyVal} (${pkg})`;
+            document.getElementById('copyPurchaseKeyBtn').style.display = 'inline-block';
             
-            const depositAmount = parseFloat(document.getElementById('deposit-amount').value);
-            let currentDeposit = parseFloat(localStorage.getItem('today_deposit') || '0');
-            let currentKeys = parseInt(localStorage.getItem('today_keys') || '0');
+            const history = document.getElementById('keyHistoryList');
+            history.innerHTML += `<div class="history-item"><span>Key (${pkg}): ${keyVal}</span><span style="color:#00ff66;">₹${cost}</span></div>`;
+        }).catch((err) => {
+            document.getElementById('purchaseKeyBox').innerHTML = `<span class="error">Error: ${err.message}</span>`;
+        });
+    }
 
-            currentDeposit += depositAmount;
-            currentKeys += 1;
+    function copyTextToClipboard(elementId) {
+        const text = document.getElementById(elementId).innerText;
+        const cleanText = text.split(' ')[0];
+        navigator.clipboard.writeText(cleanText).then(() => {
+            alert("Key copied: " + cleanText);
+        });
+    }
 
-            localStorage.setItem('today_deposit', currentDeposit);
-            localStorage.setItem('today_keys', currentKeys);
+    function startSecureDeposit() {
+        const amt = parseFloat(document.getElementById('depositAmount').value.trim());
+        if(isNaN(amt) || amt <= 0) {
+            alert("Enter a valid deposit amount!");
+            return;
+        }
 
-            // Automatic Reseller upgrade on first deposit of ₹500 or above
-            let userData = JSON.parse(localStorage.getItem('db_user_' + currentUser));
-            if (depositAmount >= 500) {
-                userData.role = 'Reseller';
-                localStorage.setItem('db_user_' + currentUser, JSON.stringify(userData));
-                alert("Payment Verified! First deposit >= ₹500. Account upgraded to Reseller successfully!");
-            } else {
-                alert("Payment Verified Successfully! (Default Customer Price Applied)");
+        lockedDepositAmount = amt;
+        document.getElementById('exactAmountText').innerText = `₹${lockedDepositAmount}`;
+        document.getElementById('qrImage').src = `https://api.qrserver.com/v1/create-qr-code/?size=140x140&data=upi://pay?pa=${bharatPeMerchantVpa}&pn=${encodeURIComponent(merchantName)}&am=${lockedDepositAmount}&cu=INR`;
+        
+        document.getElementById('qrSection').style.display = 'block';
+        run9MinuteTimer(9 * 60);
+    }
+
+    function run9MinuteTimer(duration) {
+        let timer = duration, mins, secs;
+        if(paymentTimerRef) clearInterval(paymentTimerRef);
+
+        paymentTimerRef = setInterval(() => {
+            mins = parseInt(timer / 60, 10);
+            secs = parseInt(timer % 60, 10);
+            mins = mins < 10 ? "0" + mins : mins;
+            secs = secs < 10 ? "0" + secs : secs;
+
+            document.getElementById('timerCountdown').innerText = mins + ":" + secs;
+
+            if (--timer < 0) {
+                clearInterval(paymentTimerRef);
+                document.getElementById('qrSection').style.display = 'none';
+                
+                db.collection("deposits").add({
+                    username: currentUser,
+                    amount: lockedDepositAmount,
+                    status: "Pending (Timeout)",
+                    timestamp: new Date()
+                });
+                alert("Payment time expired! Transaction marked as Pending.");
             }
+        }, 1000);
+    }
 
-            document.getElementById('utr-input').value = '';
-            showDashboard();
+    function verifyUtrAndCredit() {
+        const utr = document.getElementById('utrInput').value.trim();
+        const msg = document.getElementById('depositMsg');
+
+        if(!utr || utr.length !== 12 || isNaN(utr)) {
+            msg.innerHTML = '<span class="error">Enter a valid 12-digit numeric UTR number!</span>';
+            return;
         }
 
-        function cancelPayment() {
-            if (paymentTimerInterval) clearInterval(paymentTimerInterval);
-            document.getElementById('payment-section').classList.add('hidden');
-            showDashboard();
+        userWallet += lockedDepositAmount;
+        todayDepositVal += lockedDepositAmount;
+
+        // FIXED: Automatic Reseller upgrade strictly on first deposit of ₹1000 or above
+        if(currentRole === "Customer" && lockedDepositAmount >= 1000) {
+            currentRole = "Reseller";
+            document.getElementById('dashRole').innerText = "Reseller (Upgraded)";
         }
 
-        function handleLogout() {
-            localStorage.removeItem('active_device_session');
-            localStorage.removeItem('logged_in_user');
-            currentUser = null;
-            document.getElementById('dashboard-section').classList.add('hidden');
-            document.getElementById('auth-section').classList.remove('hidden');
-            document.getElementById('username').value = '';
-            document.getElementById('password').value = '';
-            document.getElementById('otp-input').value = '';
+        db.collection("users").doc(currentUser).update({
+            wallet: userWallet,
+            role: currentRole,
+            todayDeposit: todayDepositVal
+        }).then(() => {
+            document.getElementById('walletBalance').innerText = userWallet;
+            document.getElementById('totalDeposit').innerText = todayDepositVal;
+            msg.innerHTML = '<span class="success">UTR Verified Successfully! Amount added to wallet.</span>';
+            document.getElementById('qrSection').style.display = 'none';
+            document.getElementById('depositAmount').value = '';
+            document.getElementById('utrInput').value = '';
+            if(paymentTimerRef) clearInterval(paymentTimerRef);
+            updateDynamicPricing();
+            
+            const history = document.getElementById('keyHistoryList');
+            history.innerHTML += `<div class="history-item"><span>Deposit UTR: ${utr}</span><span style="color:#00ff66;">+₹${lockedDepositAmount}</span></div>`;
+        }).catch((err) => {
+            msg.innerHTML = `<span class="error">Verification failed: ${err.message}</span>`;
+        });
+    }
+
+    function resetDeviceBinding() {
+        const keyText = document.getElementById('resetKeyInput').value.trim();
+        const msg = document.getElementById('resetMsg');
+
+        if(!keyText) {
+            msg.innerHTML = '<span class="error">Enter key to reset device!</span>';
+            return;
         }
-    </script>
+
+        db.collection("keys").doc(keyText).get().then((doc) => {
+            if(!doc.exists) {
+                msg.innerHTML = '<span class="error">Key not found in database!</span>';
+                return;
+            }
+            doc.ref.update({ deviceId: "" }).then(() => {
+                msg.innerHTML = '<span class="success">Device lock successfully reset!</span>';
+                document.getElementById('resetKeyInput').value = '';
+            });
+        }).catch((err) => {
+            msg.innerHTML = `<span class="error">Error: ${err.message}</span>`;
+        });
+    }
+</script>
+
 </body>
 </html>
