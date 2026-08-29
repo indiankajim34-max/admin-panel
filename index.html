@@ -210,11 +210,11 @@ button:hover { opacity: 0.95; transform: translateY(-1px); }
 </div>
 </div>
 
-<!-- Settings Modal with Leaderboard and History Icons -->
+<!-- Settings Modal with Leaderboard, History and Pending Payments Icons -->
 <div id="settingsModal" class="modal-overlay">
 <div class="modal-content">
 <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 15px;">
-<h3 style="color: #00ff66; margin: 0;">⚙️ Settings & Leaderboard</h3>
+<h3 style="color: #00ff66; margin: 0;">⚙️ Settings & Control Panel</h3>
 <button onclick="closeSettingsModal()" style="width: auto; padding: 4px 10px; background: #ff4d4d; color: #fff; font-size: 12px;">✕</button>
 </div>
 
@@ -226,14 +226,15 @@ button:hover { opacity: 0.95; transform: translateY(-1px); }
 </div>
 </div>
 
-<!-- Settings Options / Icons -->
-<div style="display: flex; gap: 10px; margin-bottom: 15px;">
-<button onclick="showResellerHistory()" style="background: #182232; color: #00ff66; border: 1px solid #00ff66; font-size: 12px; padding: 10px;">📊 Reseller History</button>
-<button onclick="showUserHistory()" style="background: #182232; color: #0088cc; border: 1px solid #0088cc; font-size: 12px; padding: 10px;">👥 User History</button>
+<!-- Settings Options / Icons including Pending Payments -->
+<div style="display: flex; flex-wrap: wrap; gap: 8px; margin-bottom: 15px;">
+<button onclick="showResellerHistory()" style="background: #182232; color: #00ff66; border: 1px solid #00ff66; font-size: 11px; padding: 8px; flex: 1;">📊 Reseller History</button>
+<button onclick="showUserHistory()" style="background: #182232; color: #0088cc; border: 1px solid #0088cc; font-size: 11px; padding: 8px; flex: 1;">👥 User History</button>
+<button onclick="showPendingPayments()" style="background: #182232; color: #ffcc00; border: 1px solid #ffcc00; font-size: 11px; padding: 8px; flex: 1;">⏳ Pending Payments</button>
 </div>
 
 <div id="settingsDetailView" style="background: #0b0f19; padding: 10px; border-radius: 8px; font-size: 12px; max-height: 150px; overflow-y: auto; border: 1px solid #1e293b;">
-<p style="color: #aaa;">Select an option above to view history logs.</p>
+<p style="color: #aaa;">Select an option above to view logs or pending payments.</p>
 </div>
 </div>
 </div>
@@ -566,6 +567,14 @@ document.getElementById('qrSection').style.display = 'none';
 alert("Payment timer expired! Please generate a new QR.");
 }
 }, 1000);
+
+// Log pending payment attempt in database for manual approval view
+db.collection("pending_payments").add({
+username: currentUser,
+amount: lockedDepositAmount,
+status: "pending",
+createdAt: new Date()
+}).catch(err => console.log("Pending log err:", err));
 }
 
 function verifyUtrAndCredit() {
@@ -581,7 +590,7 @@ msg.innerHTML = '<span style="color: #00ff66;">Verifying UTR against live SMS pa
 
 db.collection("sms_transactions").doc(utr).get().then((smsDoc) => {
 if(!smsDoc.exists) {
-msg.innerHTML = '<span class="error">❌ Payment not found! No SMS received for this UTR in BharatPe.</span>';
+msg.innerHTML = '<span class="error">❌ Payment not found! No SMS received for this UTR in BharatPe. (You can check Pending Payments & approve manually).</span>';
 return;
 }
 
@@ -729,7 +738,6 @@ spent: data.totalSpent || 0
 });
 });
 
-// Sort by keys or spent descending
 resellers.sort((a, b) => b.keys - a.keys);
 
 if(resellers.length === 0) {
@@ -779,6 +787,64 @@ let d = doc.data();
 html += `<div style="border-bottom: 1px solid #222; padding: 4px 0;">👤 User: ${d.username} | Role: ${d.role || 'Customer'}</div>`;
 });
 view.innerHTML = html;
+});
+}
+
+// Pending Payments Manual Approval Feature
+function showPendingPayments() {
+const view = document.getElementById('settingsDetailView');
+view.innerHTML = '<p style="color: #777;">Loading pending payments...</p>';
+
+db.collection("pending_payments").where("status", "==", "pending").get().then((snapshot) => {
+let html = '<b style="color: #ffcc00;">Pending Payments (Click Approve to Credit Wallet):</b><br/>';
+let count = 0;
+snapshot.forEach((doc) => {
+let d = doc.data();
+html += `<div style="border-bottom: 1px solid #222; padding: 6px 0; display: flex; justify-content: space-between; align-items: center;">
+<span>👤 ${d.username} - ₹${d.amount}</span>
+<button onclick="approveManualPayment('${doc.id}', '${d.username}', ${d.amount})" style="width: auto; padding: 4px 8px; background: #00ff66; color: #0b0f19; font-size: 11px;">Approve</button>
+</div>`;
+count++;
+});
+if(count === 0) html = '<p style="color: #777;">No pending payments found.</p>';
+view.innerHTML = html;
+}).catch(err => {
+view.innerHTML = `<span class="error">Error loading pending payments: ${err.message}</span>`;
+});
+}
+
+function approveManualPayment(docId, username, amount) {
+db.collection("users").doc(username).get().then((userDoc) => {
+if(!userDoc.exists) {
+alert("User account not found!");
+return;
+}
+let uData = userDoc.data();
+let newWallet = (uData.wallet || 0) + Number(amount);
+let newDeposit = (uData.todayDeposit || 0) + Number(amount);
+let newRole = uData.role;
+if(newRole === "Customer" && newDeposit >= 1000) {
+newRole = "Reseller";
+}
+
+db.collection("users").doc(username).update({
+wallet: newWallet,
+todayDeposit: newDeposit,
+role: newRole
+}).then(() => {
+db.collection("pending_payments").doc(docId).update({ status: "approved" }).then(() => {
+alert(`Payment of ₹${amount} for ${username} approved successfully!`);
+showPendingPayments();
+if(currentUser === username) {
+userWallet = newWallet;
+todayDepositVal = newDeposit;
+currentRole = newRole;
+document.getElementById('walletBalance').innerText = userWallet;
+document.getElementById('totalDeposit').innerText = todayDepositVal;
+document.getElementById('dashRole').innerText = currentRole;
+}
+});
+});
 });
 }
 </script>
