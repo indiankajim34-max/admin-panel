@@ -19,9 +19,9 @@
 body { background: #0b0f19; color: #fff; font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif; margin: 0; padding: 20px; }
 .container { max-width: 480px; margin: auto; background: #131a29; padding: 25px; border-radius: 12px; box-shadow: 0 8px 24px rgba(0,0,0,0.6); border: 1px solid #1e293b; }
 .input-group { margin-bottom: 15px; }
-.input-group label { display: block; font-size: 13px; margin-bottom: 5px; color: #aaa; }
-.input-group input, .input-group select { width: 100%; padding: 10px; border-radius: 6px; border: 1px solid #1e293b; background: #0b0f19; color: #fff; box-sizing: border-box; }
-button { width: 100%; padding: 10px; border: none; border-radius: 6px; background: #00ff66; color: #0b0f19; font-weight: bold; cursor: pointer; transition: 0.2s; }
+.input-group label { display: block; margin-bottom: 6px; font-size: 13px; color: #cbd5e1; }
+.input-group input, .input-group select { width: 100%; padding: 10px; background: #0b0f19; border: 1px solid #334155; color: #fff; border-radius: 6px; box-sizing: border-box; }
+button { width: 100%; padding: 12px; background: #00ff66; color: #0b0f19; border: none; font-weight: bold; border-radius: 6px; cursor: pointer; transition: 0.2s; }
 button:hover { opacity: 0.95; transform: translateY(-1px); }
 .success { color: #00ff66; font-size: 13px; margin-top: 10px; }
 .error { color: #ff4d4d; font-size: 13px; margin-top: 10px; }
@@ -39,171 +39,166 @@ button:hover { opacity: 0.95; transform: translateY(-1px); }
 
 <!-- Login Form -->
 <div id="loginFormContainer">
-    <div class="input-group">
-        <label>Username / ID (Type 'admin' or 'master' for Master Access)</label>
-        <input type="text" id="loginUser" placeholder="Enter username">
-    </div>
-    <div class="input-group">
-        <label>Password</label>
-        <input type="password" id="loginPass" placeholder="Enter password">
-    </div>
-    <button onclick="handleLogin()">SECURE LOGIN</button>
-    <div id="loginMsg"></div>
-    <div class="toggle-link" onclick="switchView('register')">New User? Register here</div>
+<div class="input-group">
+<label>Username / ID (Type 'admin' or 'master' for Master Access)</label>
+<input type="text" id="loginUser" placeholder="Enter username">
+</div>
+<div class="input-group">
+<label>Password</label>
+<input type="password" id="loginPass" placeholder="Enter password">
+</div>
+<button onclick="handleLogin()">SECURE LOGIN</button>
+<div id="loginMsg"></div>
+<div class="toggle-link" onclick="switchView('register')">New User? Register here</div>
 </div>
 
 <!-- Register Form -->
 <div id="registerContainer" style="display: none;">
-    <div class="input-group">
-        <label>Choose Username</label>
-        <input type="text" id="regUser" placeholder="Username">
-    </div>
-    <div class="input-group">
-        <label>Password</label>
-        <input type="password" id="regPass" placeholder="Password">
-    </div>
-    <div class="input-group">
-        <label>Confirm Password</label>
-        <input type="password" id="regPassConfirm" placeholder="Confirm password">
-    </div>
-    <div class="input-group">
-        <label>Google OTP Verification (Gmail Inbox)</label>
-        <input type="email" id="regEmail" placeholder="Enter Gmail address">
-        <button type="button" onclick="sendGoogleOtp()" style="background: #182232; color: #00ff66; border: 1px solid #00ff66; margin-top: 8px; padding: 8px;">Send Gmail OTP</button>
-    </div>
-    <div class="input-group">
-        <label>Enter 6-Digit OTP</label>
-        <input type="text" id="regOtp" placeholder="OTP">
-    </div>
-    <button onclick="handleRegister()">REGISTER ACCOUNT</button>
-    <div id="regMsg"></div>
-    <div class="toggle-link" onclick="switchView('login')">Already registered? Login</div>
+<div class="input-group">
+<label>Choose Username</label>
+<input type="text" id="regUser" placeholder="Username">
+</div>
+<div class="input-group">
+<label>Password</label>
+<input type="password" id="regPass" placeholder="Password">
+</div>
+<div class="input-group">
+<label>Confirm Password</label>
+<input type="password" id="regPassConfirm" placeholder="Confirm password">
+</div>
+<div class="input-group">
+<label>Google OTP Verification (Gmail Inbox)</label>
+<input type="email" id="regEmail" placeholder="Enter Gmail address">
+<button type="button" onclick="sendGoogleOtp()" style="background: #182232; color: #00ff66; border: 1px solid #00ff66; margin-top: 8px; padding: 8px;">Send Gmail OTP</button>
+</div>
+<div class="input-group">
+<label>Enter 6-Digit OTP</label>
+<input type="text" id="regOtp" placeholder="OTP">
+</div>
+<button onclick="handleRegister()">REGISTER ACCOUNT</button>
+<div id="regMsg"></div>
+<div class="toggle-link" onclick="switchView('login')">Already registered? Login</div>
 </div>
 
 <!-- Dashboard Main View -->
 <div id="dashboardContainer" style="display: none;">
-    <h3 id="welcomeHeader">Welcome, <span id="dashUsername"></span></h3>
-    <p>Current Role: <span id="dashRole" style="color: #00ff66; font-weight: bold;">Customer</span> <span style="font-size: 11px; color: #aaa;">(Deposit ₹1000+ for Reseller auto-upgrade)</span></p>
+<h3 id="welcomeHeader">Welcome, <span id="dashUsername"></span></h3>
+<p>Current Role: <span id="dashRole" style="color: #00ff66; font-weight: bold;">Customer</span> <span style="font-size: 11px; color: #aaa;">(Deposit ₹1000+ for Reseller auto-upgrade)</span></p>
 
-    <!-- Summary Cards -->
-    <div class="card">
-        <p>Wallet Balance: ₹<span id="walletBalance" style="color: #00ff66; font-weight: bold;">0</span></p>
-        <p>Today's Total Deposit: ₹<span id="totalDeposit" style="color: #ffcc00;">0</span></p>
-        <p>Today's Key Count: <span id="keyCount" style="color: #00ff66;">0</span></p>
-    </div>
+<!-- Summary Cards -->
+<div class="card">
+<p>Wallet Balance: ₹<span id="walletBalance" style="color: #00ff66; font-weight: bold;">0</span></p>
+<p>Today's Total Deposit: ₹<span id="totalDeposit" style="color: #ffcc00;">0</span></p>
+<p>Today's Key Count: <span id="keyCount" style="color: #00ff66;">0</span></p>
+</div>
 
-    <!-- Master Admin Panel -->
-    <div id="masterPanel" class="master-box" style="display: none;">
-        <h4 style="color: #ffcc00; margin-top: 0;">👑 Master Control Panel</h4>
-        
-        <div style="background: #131a29; padding: 10px; border-radius: 6px; margin-bottom: 12px; border: 1px solid #333;">
-            <p style="color: #00ff66; font-size: 12px; margin: 0 0 6px 0; font-weight: bold;">Promote User to Reseller:</p>
-            <div class="input-group" style="margin-bottom: 8px;">
-                <input type="text" id="targetResellerUser" placeholder="Enter existing username">
-            </div>
-            <button onclick="promoteToReseller()" style="background: #0088cc; color: #fff; padding: 8px; font-size: 13px;">PROMOTE TO RESELLER</button>
-            <div id="promoteMsg" style="font-size: 12px; margin-top: 5px;"></div>
-        </div>
+<!-- Master Admin Panel -->
+<div id="masterPanel" class="master-box" style="display: none;">
+<h4 style="color: #ffcc00; margin-top: 0;">👑 Master Control Panel</h4>
+<div style="background: #131a29; padding: 10px; border-radius: 6px; margin-bottom: 12px; border: 1px solid #333;">
+<p style="color: #00ff66; font-size: 12px; margin: 0 0 6px 0; font-weight: bold;">Promote User to Reseller:</p>
+<div class="input-group" style="margin-bottom: 8px;">
+<input type="text" id="targetResellerUser" placeholder="Enter existing username">
+</div>
+<button onclick="promoteToReseller()" style="background: #0088cc; color: #fff; padding: 8px; font-size: 13px;">PROMOTE TO RESELLER</button>
+<div id="promoteMsg" style="font-size: 12px; margin-top: 5px;"></div>
+</div>
+<div style="background: #131a29; padding: 10px; border-radius: 6px; margin-bottom: 12px; border: 1px solid #333;">
+<p style="color: #ff4d4d; font-size: 12px; margin: 0 0 6px 0; font-weight: bold;">Remove / Ban User:</p>
+<div class="input-group" style="margin-bottom: 8px;">
+<input type="text" id="banTargetUser" placeholder="Enter username to delete">
+</div>
+<button onclick="removeUserAccount()" style="background: #ff4d4d; color: #fff; padding: 8px; font-size: 13px;">DELETE / REMOVE USER</button>
+<div id="banMsg" style="font-size: 12px; margin-top: 5px;"></div>
+</div>
+<div class="input-group">
+<label>Custom Tag / Username Prefix</label>
+<input type="text" id="masterCustomUsername" placeholder="e.g. Kajim_VIP">
+</div>
+<div class="input-group">
+<label>Select Package / Custom Days</label>
+<select id="masterPackageType">
+<option value="1 Day VIP">1 Day VIP</option>
+<option value="3 Days VIP">3 Days VIP</option>
+<option value="7 Days VIP">7 Days VIP</option>
+<option value="15 Days VIP">15 Days VIP</option>
+<option value="20 Days VIP">20 Days VIP</option>
+<option value="30 Days VIP">30 Days VIP</option>
+<option value="Unlimited VIP">Unlimited VIP</option>
+</select>
+</div>
+<button onclick="masterGenerateKey()" style="background: linear-gradient(135deg, #ffcc00, #ff9900); color: #000;">GENERATE CUSTOM KEY</button>
+<div id="masterKeyBox" class="success" style="word-break: break-all; font-weight: bold; margin-top: 8px;"></div>
+<button type="button" id="copyMasterKeyBtn" class="copy-btn" style="display:none;" onclick="copyTextToClipboard('masterKeyBox')">📋 Copy Key</button>
+</div>
 
-        <div style="background: #131a29; padding: 10px; border-radius: 6px; margin-bottom: 12px; border: 1px solid #333;">
-            <p style="color: #ff4d4d; font-size: 12px; margin: 0 0 6px 0; font-weight: bold;">Remove / Ban User:</p>
-            <div class="input-group" style="margin-bottom: 8px;">
-                <input type="text" id="banTargetUser" placeholder="Enter username to delete">
-            </div>
-            <button onclick="removeUserAccount()" style="background: #ff4d4d; color: #fff; padding: 8px; font-size: 13px;">DELETE / REMOVE USER</button>
-            <div id="banMsg" style="font-size: 12px; margin-top: 5px;"></div>
-        </div>
+<!-- Single-Device Session Restriction & Reset -->
+<div class="reset-box">
+<h4 style="color: #0088cc; margin-top: 0;">📱 Single-Device Session Lock</h4>
+<p style="font-size: 12px; color: #aaa; margin: 0 0 8px 0;">A reseller ID can only remain logged in on one device at a time.</p>
+<div class="input-group" style="margin-bottom: 8px;">
+<input type="text" id="resetKeyInput" placeholder="Enter Key or Session ID">
+</div>
+<button onclick="resetDeviceBinding()" style="background: #0088cc; color: #fff; padding: 8px;">Reset Device Lock</button>
+<div id="resetMsg"></div>
+</div>
 
-        <div class="input-group">
-            <label>Custom Tag / Username Prefix</label>
-            <input type="text" id="masterCustomUsername" placeholder="e.g. Kajim_VIP">
-        </div>
-        <div class="input-group">
-            <label>Select Package / Custom Days</label>
-            <select id="masterPackageType">
-                <option value="1 Day VIP">1 Day VIP</option>
-                <option value="3 Days VIP">3 Days VIP</option>
-                <option value="7 Days VIP">7 Days VIP</option>
-                <option value="15 Days VIP">15 Days VIP</option>
-                <option value="20 Days VIP">20 Days VIP</option>
-                <option value="30 Days VIP">30 Days VIP</option>
-                <option value="Unlimited VIP">Unlimited VIP</option>
-            </select>
-        </div>
-        <button onclick="masterGenerateKey()" style="background: linear-gradient(135deg, #ffcc00, #ff9900); color: #000;">GENERATE CUSTOM KEY</button>
-        <div id="masterKeyBox" class="success" style="word-break: break-all; font-weight: bold; margin-top: 8px;"></div>
-        <button type="button" id="copyMasterKeyBtn" class="copy-btn" style="display:none;" onclick="copyTextToClipboard('masterKeyBox')">📋 Copy Key</button>
-    </div>
+<!-- Game Server Key Generation -->
+<div class="card">
+<h4 style="color: #00ff66; margin-top: 0;">🔑 Game Server Key Generation</h4>
+<div class="input-group">
+<label>Select Package</label>
+<select id="keyPackage" onchange="updateDynamicPricing()">
+<option value="1 Day VIP">1 Day VIP (₹150)</option>
+<option value="3 Days VIP">3 Days VIP (₹300)</option>
+<option value="7 Days VIP">7 Days VIP (₹500)</option>
+<option value="15 Days VIP">15 Days VIP (₹700)</option>
+<option value="20 Days VIP">20 Days VIP (₹850)</option>
+<option value="30 Days VIP">30 Days VIP (₹1250)</option>
+<option value="Unlimited VIP">Unlimited VIP (₹3000)</option>
+</select>
+</div>
+<p>Deduction Price: ₹<span id="displayPrice" style="color: #ffcc00; font-weight: bold;">150</span> <span id="priceTierLabel" style="font-size: 11px; color: #aaa;">(Customer Price)</span></p>
+<button onclick="generateGameServerKey()">BUY & GENERATE KEY</button>
+<div id="purchaseKeyBox" class="success" style="word-break: break-all; font-weight: bold; margin-top: 8px;"></div>
+<button type="button" id="copyPurchaseKeyBtn" class="copy-btn" style="display:none;" onclick="copyTextToClipboard('purchaseKeyBox')">📋 Copy Key</button>
+</div>
 
-    <!-- Single-Device Session Restriction & Reset -->
-    <div class="reset-box">
-        <h4 style="color: #0088cc; margin-top: 0;">📱 Single-Device Session Lock</h4>
-        <p style="font-size: 12px; color: #aaa; margin: 0 0 8px 0;">A reseller ID can only remain logged in on one device at a time.</p>
-        <div class="input-group" style="margin-bottom: 8px;">
-            <input type="text" id="resetKeyInput" placeholder="Enter Key or Session ID">
-        </div>
-        <button onclick="resetDeviceBinding()" style="background: #0088cc; color: #fff; padding: 8px;">Reset Device Lock</button>
-        <div id="resetMsg"></div>
-    </div>
+<!-- Deposit & 9-Minute Timer BharatPe Real UPI Integration -->
+<div class="card">
+<h4 style="color: #00ff66; margin-top: 0;">💰 BharatPe Deposit & SMS-Verified UTR</h4>
+<div class="input-group">
+<label>Deposit Amount (₹1000+ auto-upgrades to Reseller)</label>
+<input type="number" id="depositAmount" placeholder="Enter amount (e.g. 1000)">
+</div>
+<button onclick="startSecureDeposit()" style="background: linear-gradient(135deg, #0088cc, #0044cc); color: #fff;">LOCK AMOUNT & GET QR</button>
+<div id="qrSection" style="display: none; margin-top: 15px; text-align: center; background: #000; padding: 12px; border-radius: 8px;">
+<p style="color: #ffcc00; font-size: 13px; margin: 4px 0;">Scan & Pay Exact Locked Amount to KAJIM UDDIN:</p>
+<h3 id="exactAmountText" style="color: #00ff66; margin: 4px 0;">₹0</h3>
+<div style="background: #fff; padding: 8px; display: inline-block; border-radius: 6px; margin: 8px 0;">
+<img id="qrImage" alt="BharatPe QR" style="width: 140px; height: 140px; display: block;">
+</div>
+<p style="font-size: 12px; color: #00ff66; margin: 4px 0;">UPI ID: BHARATPE2G0B0C7V5V23545@unitype</p>
+<p style="color: #ff4d4d; font-size: 13px; font-weight: bold;">Payment Timer: <span id="timerCountdown">09:00</span></p>
+<div class="input-group" style="text-align: left; margin-top: 8px;">
+<label>Strict 12-Digit UTR Verification (SMS Verified)</label>
+<input type="text" id="utrInput" placeholder="Enter 12-digit UTR ID" maxlength="12">
+</div>
+<button onclick="verifyUtrAndCredit()" style="background: #00ff66; color: #0b0f19;">VERIFY SMS & CREDIT WALLET</button>
+<div id="depositMsg"></div>
+</div>
+</div>
 
-    <!-- Game Server Key Generation -->
-    <div class="card">
-        <h4 style="color: #00ff66; margin-top: 0;">🔑 Game Server Key Generation</h4>
-        <div class="input-group">
-            <label>Select Package</label>
-            <select id="keyPackage" onchange="updateDynamicPricing()">
-                <option value="1 Day VIP">1 Day VIP (₹150)</option>
-                <option value="3 Days VIP">3 Days VIP (₹300)</option>
-                <option value="7 Days VIP">7 Days VIP (₹500)</option>
-                <option value="15 Days VIP">15 Days VIP (₹700)</option>
-                <option value="20 Days VIP">20 Days VIP (₹850)</option>
-                <option value="30 Days VIP">30 Days VIP (₹1250)</option>
-                <option value="Unlimited VIP">Unlimited VIP (₹3000)</option>
-            </select>
-        </div>
-        <p>Deduction Price: ₹<span id="displayPrice" style="color: #ffcc00; font-weight: bold;">150</span> <span id="priceTierLabel" style="font-size: 11px; color: #aaa;">(Customer Price)</span></p>
-        <button onclick="generateGameServerKey()">BUY & GENERATE KEY</button>
-        <div id="purchaseKeyBox" class="success" style="word-break: break-all; font-weight: bold; margin-top: 8px;"></div>
-        <button type="button" id="copyPurchaseKeyBtn" class="copy-btn" style="display:none;" onclick="copyTextToClipboard('purchaseKeyBox')">📋 Copy Key</button>
-    </div>
+<!-- History Logs -->
+<div class="card">
+<h4 style="color: #fff; margin-top: 0;">📜 History Logs & Overview</h4>
+<p style="font-size: 12px; color: #aaa;">Midnight Reset active: Stats auto-reset to ₹0 at 12:00 AM daily.</p>
+<div id="keyHistoryList" style="max-height: 120px; overflow-y: auto; margin-top: 8px;">
+<p style="font-size: 12px; color: #777;">No transaction history yet.</p>
+</div>
+</div>
 
-    <!-- Deposit & 9-Minute Timer BharatPe Real UPI Integration -->
-    <div class="card">
-        <h4 style="color: #00ff66; margin-top: 0;">💰 BharatPe Deposit & SMS-Verified UTR</h4>
-        <div class="input-group">
-            <label>Deposit Amount (₹1000+ auto-upgrades to Reseller)</label>
-            <input type="number" id="depositAmount" placeholder="Enter amount (e.g. 1000)">
-        </div>
-        <button onclick="startSecureDeposit()" style="background: linear-gradient(135deg, #0088cc, #0044cc); color: #fff;">LOCK AMOUNT & GET QR</button>
-        
-        <div id="qrSection" style="display: none; margin-top: 15px; text-align: center; background: #000; padding: 12px; border-radius: 8px;">
-            <p style="color: #ffcc00; font-size: 13px; margin: 4px 0;">Scan & Pay Exact Locked Amount to KAJIM UDDIN:</p>
-            <h3 id="exactAmountText" style="color: #00ff66; margin: 4px 0;">₹0</h3>
-            <div style="background: #fff; padding: 8px; display: inline-block; border-radius: 6px; margin: 8px 0;">
-                <img id="qrImage" alt="BharatPe QR" style="width: 140px; height: 140px; display: block;">
-            </div>
-            <p style="font-size: 12px; color: #00ff66; margin: 4px 0;">UPI ID: BHARATPE2G0B0C7V5V23545@unitype</p>
-            <p style="color: #ff4d4d; font-size: 13px; font-weight: bold;">Payment Timer: <span id="timerCountdown">09:00</span></p>
-            
-            <div class="input-group" style="text-align: left; margin-top: 8px;">
-                <label>Strict 12-Digit UTR Verification (SMS Verified)</label>
-                <input type="text" id="utrInput" placeholder="Enter 12-digit UTR ID" maxlength="12">
-            </div>
-            <button onclick="verifyUtrAndCredit()" style="background: #00ff66; color: #0b0f19;">VERIFY SMS & CREDIT WALLET</button>
-            <div id="depositMsg"></div>
-        </div>
-    </div>
-
-    <!-- History Logs -->
-    <div class="card">
-        <h4 style="color: #fff; margin-top: 0;">📜 History Logs & Overview</h4>
-        <p style="font-size: 12px; color: #aaa;">Midnight Reset active: Stats auto-reset to ₹0 at 12:00 AM daily.</p>
-        <div id="keyHistoryList" style="max-height: 120px; overflow-y: auto; margin-top: 8px;">
-            <p style="font-size: 12px; color: #777;">No transaction history yet.</p>
-        </div>
-    </div>
-
-    <button onclick="handleLogout()" style="background: #ff4d4d; color: #fff; margin-top: 10px;">LOGOUT</button>
+<button onclick="handleLogout()" style="background: #ff4d4d; color: #fff; margin-top: 10px;">LOGOUT</button>
 </div>
 </div>
 
@@ -284,15 +279,15 @@ function sendGoogleOtp() {
         passcode: generatedOtpCode,
         time: "15 minutes"
     };
-    
+
     emailjs.send('service_nxa9rzb', 'template_2gamlua', templateParams)
-        .then(function(response) {
-            regMsg.innerHTML = '<span class="success">OTP successfully sent to your Gmail inbox!</span>';
-            alert("OTP successfully sent to " + email);
-        }, function(error) {
-            console.log("EmailJS FAILED:", error);
-            regMsg.innerHTML = '<span class="error">Failed to send via EmailJS. Check configuration.</span>';
-        });
+    .then(function(response) {
+        regMsg.innerHTML = '<span class="success">OTP successfully sent to your Gmail inbox!</span>';
+        alert("OTP successfully sent to " + email);
+    }, function(error) {
+        console.log("EmailJS FAILED:", error);
+        regMsg.innerHTML = '<span class="error">Failed to send via EmailJS. Check configuration.</span>';
+    });
 }
 
 function handleRegister() {
@@ -320,22 +315,21 @@ function handleRegister() {
     db.collection("users").doc(user).get().then((doc) => {
         if(doc.exists) {
             msg.innerHTML = '<span class="error">Username already taken!</span>';
-            return;
+        } else {
+            db.collection("users").doc(user).set({
+                username: user,
+                password: pass,
+                role: "Customer",
+                wallet: 0,
+                todayDeposit: 0,
+                todayKeys: 0,
+                deviceId: "",
+                createdAt: new Date()
+            }).then(() => {
+                msg.innerHTML = '<span class="success">Account created! Please login.</span>';
+                setTimeout(() => switchView('login'), 1500);
+            });
         }
-
-        db.collection("users").doc(user).set({
-            password: pass,
-            role: "Customer",
-            wallet: 0,
-            todayDeposit: 0,
-            todayKeys: 0,
-            createdAt: new Date()
-        }).then(() => {
-            msg.innerHTML = '<span class="success">Registration successful! Please login.</span>';
-            setTimeout(() => { switchView('login'); }, 1500);
-        });
-    }).catch((err) => {
-        msg.innerHTML = `<span class="error">Database error: ${err.message}</span>`;
     });
 }
 
@@ -376,8 +370,6 @@ function handleLogin() {
         todayDepositVal = data.todayDeposit || 0;
         keyCountVal = data.todayKeys || 0;
         initDashboard();
-    }).catch((err) => {
-        msg.innerHTML = `<span class="error">Login error: ${err.message}</span>`;
     });
 }
 
@@ -385,7 +377,7 @@ function initDashboard() {
     document.getElementById('loginFormContainer').style.display = 'none';
     document.getElementById('registerContainer').style.display = 'none';
     document.getElementById('dashboardContainer').style.display = 'block';
-    
+
     document.getElementById('dashUsername').innerText = currentUser;
     document.getElementById('dashRole').innerText = currentRole;
     document.getElementById('walletBalance').innerText = userWallet;
@@ -397,14 +389,13 @@ function initDashboard() {
     } else {
         document.getElementById('masterPanel').style.display = 'none';
     }
-
     updateDynamicPricing();
 }
 
 function generateGameServerKey() {
     const pkg = document.getElementById('keyPackage').value;
     let price = basePricing[pkg] || 150;
-    if(currentRole === "Reseller" || currentRole === "Master") {
+    if (currentRole === "Reseller" || currentRole === "Master") {
         price = Math.round(price * 0.4);
     }
 
@@ -427,13 +418,15 @@ function generateGameServerKey() {
         wallet: userWallet,
         todayKeys: keyCountVal
     }, { merge: true });
+
+    const history = document.getElementById('keyHistoryList');
+    history.innerHTML += `<div class="history-item"><span>Generated Key (${pkg})</span><span style="color:#ffcc00;">-₹${price}</span></div>`;
 }
 
 function masterGenerateKey() {
     const customPrefix = document.getElementById('masterCustomUsername').value.trim() || "VIP";
     const pkg = document.getElementById('masterPackageType').value;
     const generatedKey = `${customPrefix.toUpperCase()}-${pkg.replace(/\s+/g, '').toUpperCase()}-${Math.random().toString(36).substring(2, 10).toUpperCase()}`;
-    
     document.getElementById('masterKeyBox').innerText = generatedKey;
     document.getElementById('copyMasterKeyBtn').style.display = 'inline-block';
 }
@@ -463,15 +456,17 @@ function startSecureDeposit() {
     document.getElementById('qrImage').src = qrApiUrl;
 
     if(paymentTimerRef) clearInterval(paymentTimerRef);
+
     let duration = 9 * 60;
     const timerDisplay = document.getElementById('timerCountdown');
 
-    paymentTimerRef = setInterval(() => {
-        let minutes = Math.floor(duration / 60);
-        let seconds = duration % 60;
+    paymentTimerRef = setInterval(function () {
+        let minutes = parseInt(duration / 60, 10);
+        let seconds = parseInt(duration % 60, 10);
+
         minutes = minutes < 10 ? "0" + minutes : minutes;
         seconds = seconds < 10 ? "0" + seconds : seconds;
-        
+
         timerDisplay.innerText = minutes + ":" + seconds;
 
         if (--duration < 0) {
@@ -533,18 +528,13 @@ function verifyUtrAndCredit() {
                     document.getElementById('walletBalance').innerText = userWallet;
                     document.getElementById('totalDeposit').innerText = todayDepositVal;
                     msg.innerHTML = '<span class="success">✅ SMS Payment Verified! Wallet Credited Successfully.</span>';
-                    
                     document.getElementById('qrSection').style.display = 'none';
                     document.getElementById('depositAmount').value = '';
                     document.getElementById('utrInput').value = '';
-                    
                     if(paymentTimerRef) clearInterval(paymentTimerRef);
                     updateDynamicPricing();
 
                     const history = document.getElementById('keyHistoryList');
-                    if(history.innerHTML.includes("No transaction history yet.")) {
-                        history.innerHTML = "";
-                    }
                     history.innerHTML += `<div class="history-item"><span>SMS Deposit UTR: ${utr}</span><span style="color:#00ff66;">+₹${lockedDepositAmount}</span></div>`;
                 });
             });
@@ -565,8 +555,6 @@ function promoteToReseller() {
 
     db.collection("users").doc(target).set({ role: "Reseller" }, { merge: true }).then(() => {
         msg.innerHTML = `<span class="success">User ${target} upgraded to Reseller!</span>`;
-    }).catch((err) => {
-        msg.innerHTML = `<span class="error">Error: ${err.message}</span>`;
     });
 }
 
@@ -581,8 +569,6 @@ function removeUserAccount() {
 
     db.collection("users").doc(target).delete().then(() => {
         msg.innerHTML = `<span class="success">User ${target} deleted/removed.</span>`;
-    }).catch((err) => {
-        msg.innerHTML = `<span class="error">Error: ${err.message}</span>`;
     });
 }
 
@@ -613,7 +599,6 @@ function resetDeviceBinding() {
 function handleLogout() {
     currentUser = null;
     currentRole = "Customer";
-    if(paymentTimerRef) clearInterval(paymentTimerRef);
     document.getElementById('dashboardContainer').style.display = 'none';
     document.getElementById('loginFormContainer').style.display = 'block';
     document.getElementById('loginUser').value = '';
