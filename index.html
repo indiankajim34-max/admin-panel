@@ -328,7 +328,6 @@ const basePricing = {
 "Unlimited VIP": 3000
 };
 
-// Load dynamic UPI ID from Firestore config if exists
 db.collection("system_config").doc("payment_settings").get().then(doc => {
 if(doc.exists && doc.data().upiId) {
 bharatPeMerchantVpa = doc.data().upiId;
@@ -489,7 +488,7 @@ document.getElementById('masterGlobalList').innerHTML = '<p style="font-size: 12
 });
 }
 
-// Fixed MiniMoth WhatsApp OTP integrated strictly according to official documentation requirements (POST method with JSON body)
+// Real Verified MiniMoth WhatsApp OTP Function (Direct API Integration)
 function sendMiniMothOtp(context) {
 const phoneInputId = context === 'reg' ? 'regPhone' : 'forgotPhone';
 const countryCodeId = context === 'reg' ? 'regCountryCode' : 'forgotCountryCode';
@@ -500,25 +499,25 @@ const rawPhone = document.getElementById(phoneInputId).value.trim();
 const msgElem = document.getElementById(msgId);
 
 if(!rawPhone) {
-alert("Please enter your mobile number first!");
+alert("भाई, पहले सही मोबाइल नंबर तो डालो!");
 return;
 }
 
 const fullPhone = countryCode + rawPhone;
 const generatedOtp = Math.floor(100000 + Math.random() * 900000).toString();
 activeOtpMap[context] = generatedOtp;
-msgElem.innerHTML = '<span style="color: #00ff66;">Sending OTP via MiniMoth WhatsApp...</span>';
 
-// MiniMoth Live API Key configured correctly for POST JSON payload
+msgElem.innerHTML = '<span style="color: #00ff66;">Sending real OTP to WhatsApp...</span>';
+
 const apiKey = 'mm_live_09db69cf493a4391dcc1c8defd511432323e1c8c602f526f4f794ee956f95d0234c880e582aeb558351c92ded80d9edb';
 const targetUrl = 'https://api.minimoth.dev/v1/otp/send';
-const proxyUrl = 'https://corsproxy.io/?' + encodeURIComponent(targetUrl);
 
-fetch(proxyUrl, {
+fetch(targetUrl, {
 method: 'POST',
 headers: {
 'X-Api-Key': apiKey,
-'Content-Type': 'application/json'
+'Content-Type': 'application/json',
+'Accept': 'application/json'
 },
 body: JSON.stringify({ 
 phone: fullPhone,
@@ -527,19 +526,16 @@ otp: generatedOtp
 })
 .then(response => {
 if (!response.ok) {
-throw new Error('MiniMoth API status: ' + response.status);
+throw new Error(`API Error: ${response.status}`);
 }
 return response.json();
 })
 .then(data => {
-msgElem.innerHTML = '<span class="success">✅ OTP successfully dispatched to WhatsApp!</span>';
-alert("OTP successfully triggered to: " + fullPhone);
+msgElem.innerHTML = '<span class="success">✅ असली WhatsApp OTP सफलतापूर्वक भेज दिया गया है!</span>';
 })
 .catch(error => {
-console.log("MiniMoth API proxy error, using fallback scheme:", error);
-// Fallback direct handling
-msgElem.innerHTML = '<span class="success">✅ OTP generated & dispatched via backup channel.</span>';
-alert("OTP sent to: " + fullPhone);
+console.log("MiniMoth Live Error:", error);
+msgElem.innerHTML = `<span class="error">❌ OTP भेजने में विफल: ${error.message}</span>`;
 });
 }
 
