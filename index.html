@@ -396,7 +396,10 @@ keyCountVal += 1;
 document.getElementById('walletBalance').innerText = userWallet;
 document.getElementById('keyCount').innerText = keyCountVal;
 
-const generatedKey = "WINGO-VIP-" + Math.random().toString(36).substring(2, 10).toUpperCase() + "-" + Date.now().toString().slice(-4);
+// Restored exact original key format matching app expectation: WINGO-H-[6 digits]
+const randomNum = Math.floor(100000 + Math.random() * 900000);
+const generatedKey = "WINGO-H-" + randomNum;
+
 document.getElementById('purchaseKeyBox').innerText = generatedKey;
 document.getElementById('copyPurchaseKeyBtn').style.display = 'inline-block';
 
@@ -405,7 +408,7 @@ wallet: userWallet,
 todayKeys: keyCountVal
 }, { merge: true });
 
-// Save generated key directly to Firestore 'keys' collection so app can verify it successfully
+// Save generated key to Firestore 'keys' collection
 db.collection("keys").doc(generatedKey).set({
 key: generatedKey,
 package: pkg,
@@ -419,16 +422,17 @@ console.log("Error saving key to Firestore:", err);
 }
 
 function masterGenerateKey() {
-const customPrefix = document.getElementById('masterCustomUsername').value.trim() || "VIP";
-const pkg = document.getElementById('masterPackageType').value;
-const generatedKey = `${customPrefix.toUpperCase()}-${pkg.replace(/\s+/g, '').toUpperCase()}-${Math.random().toString(36).substring(2, 10).toUpperCase()}`;
+const customPrefix = document.getElementById('masterCustomUsername').value.trim() || "WINGO-H";
+const randomNum = Math.floor(100000 + Math.random() * 900000);
+const generatedKey = `${customPrefix.toUpperCase()}-${randomNum}`;
+
 document.getElementById('masterKeyBox').innerText = generatedKey;
 document.getElementById('copyMasterKeyBtn').style.display = 'inline-block';
 
-// Save master generated key directly to Firestore 'keys' collection
+// Save master generated key to Firestore 'keys' collection
 db.collection("keys").doc(generatedKey).set({
 key: generatedKey,
-package: pkg,
+package: document.getElementById('masterPackageType').value,
 createdBy: currentUser,
 deviceId: "",
 status: "active",
