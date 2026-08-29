@@ -12,7 +12,6 @@
     <script type="text/javascript" src="https://cdn.jsdelivr.net/npm/@emailjs/browser@3/dist/email.min.js"></script>
     <script type="text/javascript">
         (function() {
-            // EmailJS Public Key yahan daalni hai (apni Public Key yahan replace kar lena)
             emailjs.init("YOUR_EMAILJS_PUBLIC_KEY"); 
         })();
     </script>
@@ -155,17 +154,17 @@
         <div class="card">
             <h4 style="color: #00ff66; margin-top: 0;">🔑 Game Server Key Generation</h4>
             <div class="input-group">
-                <label>Select Package (1 to 30 Days)</label>
+                <label>Select Package</label>
                 <select id="keyPackage" onchange="updateDynamicPricing()">
-                    <option value="1 Day VIP">1 Day VIP</option>
-                    <option value="3 Days VIP">3 Days VIP</option>
-                    <option value="7 Days VIP">7 Days VIP</option>
-                    <option value="15 Days VIP">15 Days VIP</option>
-                    <option value="20 Days VIP">20 Days VIP</option>
-                    <option value="30 Days VIP">30 Days VIP</option>
+                    <option value="1 Day VIP">1 Day VIP (₹150)</option>
+                    <option value="3 Days VIP">3 Days VIP (₹300)</option>
+                    <option value="7 Days VIP">7 Days VIP (₹500)</option>
+                    <option value="15 Days VIP">15 Days VIP (₹700)</option>
+                    <option value="20 Days VIP">20 Days VIP (₹850)</option>
+                    <option value="30 Days VIP">30 Days VIP (₹1250)</option>
                 </select>
             </div>
-            <p>Deduction Price: ₹<span id="displayPrice" style="color: #ffcc00; font-weight: bold;">120</span> <span id="priceTierLabel" style="font-size: 11px; color: #aaa;">(Customer Price)</span></p>
+            <p>Deduction Price: ₹<span id="displayPrice" style="color: #ffcc00; font-weight: bold;">150</span> <span id="priceTierLabel" style="font-size: 11px; color: #aaa;">(Customer Price)</span></p>
             <button onclick="generateGameServerKey()">BUY & GENERATE KEY</button>
             <div id="purchaseKeyBox" class="success" style="word-break: break-all; font-weight: bold; margin-top: 8px;"></div>
             <button type="button" id="copyPurchaseKeyBtn" class="copy-btn" style="display:none;" onclick="copyTextToClipboard('purchaseKeyBox')">📋 Copy Key</button>
@@ -237,19 +236,20 @@
     const bharatPeMerchantVpa = "BHARATPE2G0B0C7V5V23545@unitype"; 
     const merchantName = "KAJIM UDDIN";
 
+    // Updated Base Pricing (Customer Prices)
     const basePricing = {
-        "1 Day VIP": 120,
+        "1 Day VIP": 150,
         "3 Days VIP": 300,
         "7 Days VIP": 500,
-        "15 Days VIP": 900,
-        "20 Days VIP": 1150,
-        "30 Days VIP": 1500,
+        "15 Days VIP": 700,
+        "20 Days VIP": 850,
+        "30 Days VIP": 1250,
         "Unlimited VIP": 3000
     };
 
     function updateDynamicPricing() {
         const pkg = document.getElementById('keyPackage').value;
-        let price = basePricing[pkg] || 120;
+        let price = basePricing[pkg] || 150;
         if (currentRole === "Reseller" || currentRole === "Master") {
             price = Math.round(price * 0.4);
             document.getElementById('priceTierLabel').innerText = "(Reseller Price - 60% OFF)";
@@ -280,7 +280,6 @@
         generatedOtpCode = Math.floor(100000 + Math.random() * 900000).toString();
         regMsg.innerHTML = '<span style="color: #00ff66;">Sending real OTP to Gmail...</span>';
 
-        // EmailJS Parameters with exact Service ID, Template ID and passcode variable
         const templateParams = {
             to_email: email,
             passcode: generatedOtpCode
@@ -291,7 +290,8 @@
                 regMsg.innerHTML = '<span class="success">OTP successfully sent to your Gmail inbox!</span>';
                 alert("OTP successfully sent to " + email);
             }, function(error) {
-                regMsg.innerHTML = '<span class="error">Failed to send OTP. Check console or keys.</span>';
+                console.log("FAILED...", error);
+                regMsg.innerHTML = '<span class="error">Failed to send OTP. Check console or internet.</span>';
             });
     }
 
@@ -310,8 +310,8 @@
             msg.innerHTML = '<span class="error">Passwords do not match!</span>';
             return;
         }
-        if(generatedOtpCode && otp !== generatedOtpCode) {
-            msg.innerHTML = '<span class="error">Invalid OTP! Please check your Gmail.</span>';
+        if(!generatedOtpCode || otp !== generatedOtpCode) {
+            msg.innerHTML = '<span class="error">Invalid OTP! Please request and enter correct Gmail OTP.</span>';
             return;
         }
 
@@ -497,7 +497,7 @@
 
     function generateGameServerKey() {
         const pkg = document.getElementById('keyPackage').value;
-        let cost = basePricing[pkg] || 120;
+        let cost = basePricing[pkg] || 150;
         if (currentRole === "Reseller" || currentRole === "Master") {
             cost = Math.round(cost * 0.4);
         }
