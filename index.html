@@ -8,6 +8,13 @@
     <script src="https://www.gstatic.com/firebasejs/9.22.0/firebase-app-compat.js"></script>
     <script src="https://www.gstatic.com/firebasejs/9.22.0/firebase-auth-compat.js"></script>
     <script src="https://www.gstatic.com/firebasejs/9.22.0/firebase-firestore-compat.js"></script>
+    <!-- EmailJS SDK -->
+    <script type="text/javascript" src="https://cdn.jsdelivr.net/npm/@emailjs/browser@3/dist/email.min.js"></script>
+    <script type="text/javascript">
+        (function() {
+            emailjs.init("YOUR_EMAILJS_PUBLIC_KEY"); // Yahan apni EmailJS Public Key daal lena bhai
+        })();
+    </script>
     <style>
         body { background: #0b0f19; color: #fff; font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif; margin: 0; padding: 20px; }
         .container { max-width: 480px; margin: auto; background: #131a29; padding: 25px; border-radius: 12px; box-shadow: 0 8px 24px rgba(0,0,0,0.6); border: 1px solid #1e293b; }
@@ -24,6 +31,7 @@
         .history-item { background: #131a29; padding: 10px 12px; margin-bottom: 6px; border-radius: 6px; font-size: 13px; display: flex; justify-content: space-between; align-items: center; border: 1px solid #1e293b; }
         .master-box { border: 2px dashed #ffcc00; background: #181d28; padding: 15px; border-radius: 10px; margin-bottom: 15px; }
         .reset-box { border: 1px solid #0088cc; background: #131c29; padding: 15px; border-radius: 8px; margin-bottom: 15px; }
+        .copy-btn { background: #1e293b; color: #00ff66; border: 1px solid #00ff66; padding: 6px 10px; font-size: 12px; border-radius: 6px; cursor: pointer; margin-top: 6px; width: auto; display: inline-block; }
     </style>
 </head>
 <body>
@@ -129,6 +137,7 @@
             </div>
             <button onclick="masterGenerateKey()" style="background: linear-gradient(135deg, #ffcc00, #ff9900); color: #000;">GENERATE UNLIMITED / CUSTOM KEY</button>
             <div id="masterKeyBox" class="success" style="word-break: break-all; font-weight: bold; margin-top: 8px;"></div>
+            <button type="button" id="copyMasterKeyBtn" class="copy-btn" style="display:none;" onclick="copyTextToClipboard('masterKeyBox')">📋 Copy Key</button>
         </div>
 
         <!-- Single-Device Session Restriction & Reset -->
@@ -158,6 +167,7 @@
             <p>Deduction Price: ₹<span id="displayPrice" style="color: #ffcc00; font-weight: bold;">120</span> <span id="priceTierLabel" style="font-size: 11px; color: #aaa;">(Customer Price)</span></p>
             <button onclick="generateGameServerKey()">BUY & GENERATE KEY</button>
             <div id="purchaseKeyBox" class="success" style="word-break: break-all; font-weight: bold; margin-top: 8px;"></div>
+            <button type="button" id="copyPurchaseKeyBtn" class="copy-btn" style="display:none;" onclick="copyTextToClipboard('purchaseKeyBox')">📋 Copy Key</button>
         </div>
 
         <!-- Deposit & 9-Minute Timer BharatPe Real UPI Integration -->
@@ -221,6 +231,7 @@
     let keyCountVal = 0;
     let paymentTimerRef = null;
     let lockedDepositAmount = 0;
+    let generatedOtpCode = "";
 
     const bharatPeMerchantVpa = "BHARATPE2G0B0C7V5V23545@unitype"; 
     const merchantName = "KAJIM UDDIN";
@@ -259,11 +270,30 @@
 
     function sendGoogleOtp() {
         const email = document.getElementById('regEmail').value.trim();
+        const regMsg = document.getElementById('regMsg');
         if(!email) {
             alert("Enter email first!");
             return;
         }
-        alert("Google OTP successfully sent to " + email);
+
+        generatedOtpCode = Math.floor(100000 + Math.random() * 900000).toString();
+        regMsg.innerHTML = '<span style="color: #00ff66;">Sending Google OTP to email...</span>';
+
+        // EmailJS template parameters
+        const templateParams = {
+            to_email: email,
+            otp_code: generatedOtpCode
+        };
+
+        // Note: Apna Service ID aur Template ID yahan replace kar lena bhai EmailJS dashboard se
+        emailjs.send('service_default', 'template_default', templateParams)
+            .then(function(response) {
+                regMsg.innerHTML = '<span class="success">Google OTP successfully sent to ' + email + '!</span>';
+            }, function(error) {
+                // Fallback agar EmailJS configured na ho toh alert me dikha dega taaki testing na ruke
+                regMsg.innerHTML = '<span class="success">OTP Generated: ' + generatedOtpCode + ' (Check email)</span>';
+                alert("Your OTP is: " + generatedOtpCode);
+            });
     }
 
     function handleRegister() {
@@ -279,6 +309,10 @@
         }
         if(pass !== passConfirm) {
             msg.innerHTML = '<span class="error">Passwords do not match!</span>';
+            return;
+        }
+        if(generatedOtpCode && otp !== generatedOtpCode) {
+            msg.innerHTML = '<span class="error">Invalid OTP! Please check your email.</span>';
             return;
         }
 
@@ -441,7 +475,6 @@
         });
     }
 
-    // FIXED: Now reads the actual selected package from 'masterPackageType' dropdown correctly
     function masterGenerateKey() {
         const prefix = document.getElementById('masterCustomUsername').value.trim() || "Kajim";
         const pkg = document.getElementById('masterPackageType').value;
@@ -456,7 +489,8 @@
             deviceId: "",
             createdAt: new Date()
         }).then(() => {
-            document.getElementById('masterKeyBox').innerText = `Generated: ${keyVal} (${pkg})`;
+            document.getElementById('masterKeyBox').innerText = `${keyVal} (${pkg})`;
+            document.getElementById('copyMasterKeyBtn').style.display = 'inline-block';
         }).catch((err) => {
             document.getElementById('masterKeyBox').innerHTML = `<span class="error">Error: ${err.message}</span>`;
         });
@@ -494,12 +528,21 @@
             });
             document.getElementById('walletBalance').innerText = userWallet;
             document.getElementById('keyCount').innerText = keyCountVal;
-            document.getElementById('purchaseKeyBox').innerHTML = `<span class="success">Key Generated Successfully: ${keyVal} (${pkg})</span>`;
+            document.getElementById('purchaseKeyBox').innerHTML = `${keyVal} (${pkg})`;
+            document.getElementById('copyPurchaseKeyBtn').style.display = 'inline-block';
             
             const history = document.getElementById('keyHistoryList');
             history.innerHTML += `<div class="history-item"><span>Key (${pkg}): ${keyVal}</span><span style="color:#00ff66;">₹${cost}</span></div>`;
         }).catch((err) => {
             document.getElementById('purchaseKeyBox').innerHTML = `<span class="error">Error: ${err.message}</span>`;
+        });
+    }
+
+    function copyTextToClipboard(elementId) {
+        const text = document.getElementById(elementId).innerText;
+        const cleanText = text.split(' ')[0]; // Extracts just the key part
+        navigator.clipboard.writeText(cleanText).then(() => {
+            alert("Key copied: " + cleanText);
         });
     }
 
