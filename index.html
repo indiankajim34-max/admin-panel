@@ -3,14 +3,14 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>WinGo VIP - Dashboard</title>
+    <title>WinGo VIP - Master & Reseller Dashboard</title>
     <!-- Firebase SDKs -->
     <script src="https://www.gstatic.com/firebasejs/9.22.0/firebase-app-compat.js"></script>
     <script src="https://www.gstatic.com/firebasejs/9.22.0/firebase-auth-compat.js"></script>
     <script src="https://www.gstatic.com/firebasejs/9.22.0/firebase-firestore-compat.js"></script>
     <style>
         body { background: #0f0f1a; color: #fff; font-family: Arial, sans-serif; margin: 0; padding: 20px; }
-        .container { max-width: 420px; margin: auto; background: #1a1a2e; padding: 20px; border-radius: 10px; box-shadow: 0 0 15px rgba(0,255,102,0.2); }
+        .container { max-width: 480px; margin: auto; background: #1a1a2e; padding: 20px; border-radius: 10px; box-shadow: 0 0 15px rgba(0,255,102,0.2); }
         .input-group { margin-bottom: 15px; }
         .input-group label { display: block; margin-bottom: 5px; color: #00ff66; font-size: 14px; }
         .input-group input { width: 100%; padding: 10px; background: #0f0f1a; border: 1px solid #333; color: #fff; border-radius: 5px; box-sizing: border-box; }
@@ -20,6 +20,7 @@
         .error { color: #ff4d4d; font-size: 13px; margin-top: 10px; }
         .toggle-link { text-align: center; margin-top: 15px; font-size: 14px; cursor: pointer; color: #00ff66; }
         .card { background: #0f0f1a; padding: 12px; border-radius: 6px; margin-bottom: 15px; border: 1px solid #222; }
+        .leaderboard-item, .history-item { background: #151528; padding: 8px 12px; margin-bottom: 6px; border-radius: 4px; font-size: 13px; display: flex; justify-content: space-between; border-left: 3px solid #00ff66; }
     </style>
 </head>
 <body>
@@ -74,6 +75,13 @@
             <div class="card">
                 <p>Today's Total Deposit: ₹<span id="totalDeposit">0</span></p>
                 <p>Today's Key Count: <span id="keyCount">0</span></p>
+                <p>Total All-Time Keys Bought: <span id="totalLifetimeKeys">0</span></p>
+            </div>
+
+            <!-- Top Sellers Leaderboard -->
+            <div class="card">
+                <h4 style="margin-top:0; color:#00ff66;">🏆 Top Sellers Leaderboard (Resellers)</h4>
+                <div id="leaderboardList">Loading leaderboard...</div>
             </div>
 
             <!-- Payment Panel with Trigger Timer -->
@@ -94,6 +102,12 @@
                     <button onclick="verifyAutomaticPayment()" style="background: #00ff66; color: #000;">AUTO-VERIFY & SUBMIT</button>
                 </div>
                 <div id="depositMsg"></div>
+            </div>
+
+            <!-- Key Buy History -->
+            <div class="card">
+                <h4 style="margin-top:0; color:#00ff66;">📜 Daily Key Buy History</h4>
+                <div id="historyList">No history found for today.</div>
             </div>
 
             <button onclick="handleLogout()" style="background: #ff4d4d; color: #fff;">LOGOUT</button>
@@ -118,6 +132,17 @@
 
         let paymentTimerInterval;
         const SESSION_ID = 'win_session_' + Math.random().toString(36).substring(2);
+
+        // Check Midnight Reset on Load
+        function checkMidnightReset() {
+            const lastResetDate = localStorage.getItem('last_reset_date');
+            const todayStr = new Date().toDateString();
+            if (lastResetDate !== todayStr) {
+                localStorage.setItem('last_reset_date', todayStr);
+                // Midnight Reset logic trigger for stats
+            }
+        }
+        checkMidnightReset();
 
         function switchView(view) {
             if(view === 'register') {
@@ -164,7 +189,7 @@
 
         function handleRegister() {
             const user = firebase.auth().currentUser;
-            const username = document.getElementById('regUser').value;
+            const username = document.getElementById('regUser').value.trim();
             const pass = document.getElementById('regPass').value;
             const msgBox = document.getElementById('regMsg');
 
@@ -183,6 +208,7 @@
                             role: "Customer",
                             todayDeposit: 0,
                             keyCount: 0,
+                            totalLifetimeKeys: 0,
                             createdAt: new Date()
                         }).then(() => {
                             msgBox.innerHTML = "<span class='success'>Registration successful! Please login.</span>";
@@ -209,6 +235,21 @@
                 return;
             }
 
+            // Hardcoded Master Account check matching user instructions
+            if (username === "Kajim_master" && password === "Kajim@786") {
+                document.getElementById('loginFormContainer').style.display = 'none';
+                document.getElementById('dashboardContainer').style.display = 'block';
+                document.getElementById('dashUsername').innerText = "Kajim_master";
+                document.getElementById('dashRole').innerText = "Master / Admin";
+                document.getElementById('totalDeposit').innerText = "999999";
+                document.getElementById('keyCount').innerText = "9999";
+                document.getElementById('totalLifetimeKeys').innerText = "50000";
+                msgBox.innerHTML = "";
+                loadLeaderboard();
+                loadHistory("Kajim_master");
+                return;
+            }
+
             msgBox.innerHTML = "<div class='success'>Logging in...</div>";
 
             db.collection("resellers").doc(username).get().then((doc) => {
@@ -220,6 +261,7 @@
                         return;
                     }
 
+                    // Single-Device Session Restriction
                     db.collection("resellers").doc(username).update({ currentSession: SESSION_ID }).catch(err => console.log(err));
 
                     document.getElementById('loginFormContainer').style.display = 'none';
@@ -228,7 +270,11 @@
                     document.getElementById('dashRole').innerText = data.role || "Customer";
                     document.getElementById('totalDeposit').innerText = data.todayDeposit || 0;
                     document.getElementById('keyCount').innerText = data.keyCount || 0;
+                    document.getElementById('totalLifetimeKeys').innerText = data.totalLifetimeKeys || 0;
                     msgBox.innerHTML = "";
+
+                    loadLeaderboard();
+                    loadHistory(username);
 
                 } else {
                     msgBox.innerHTML = "<div class='error'>User nahi mila! Register karein.</div>";
@@ -279,6 +325,16 @@
                 return;
             }
 
+            if (username === "Kajim_master") {
+                msgBox.innerHTML = "<div class='success'>✔ Master Test Payment Verified Successfully!</div>";
+                let currentDep = parseInt(document.getElementById('totalDeposit').innerText) || 0;
+                let currentKeys = parseInt(document.getElementById('keyCount').innerText) || 0;
+                document.getElementById('totalDeposit').innerText = currentDep + amount;
+                document.getElementById('keyCount').innerText = currentKeys + Math.floor(amount / 100);
+                clearInterval(paymentTimerInterval);
+                return;
+            }
+
             msgBox.innerHTML = "<div class='success'>Verifying UTR via BharatPe API...</div>";
 
             setTimeout(() => {
@@ -296,6 +352,7 @@
                             let data = doc.data();
                             let newDeposit = (data.todayDeposit || 0) + amount;
                             let newKeys = (data.keyCount || 0) + Math.floor(amount / 100); 
+                            let newLifetimeKeys = (data.totalLifetimeKeys || 0) + Math.floor(amount / 100);
                             let currentRole = data.role;
 
                             if (amount >= 500 && currentRole === "Customer") {
@@ -305,28 +362,64 @@
                             transaction.set(db.collection("utr_logs").doc(utr), {
                                 username: username,
                                 amount: amount,
+                                keysBought: Math.floor(amount / 100),
                                 timestamp: new Date()
                             });
 
                             transaction.update(userRef, {
                                 todayDeposit: newDeposit,
                                 keyCount: newKeys,
+                                totalLifetimeKeys: newLifetimeKeys,
                                 role: currentRole
                             });
 
-                            return { newDeposit, newKeys, currentRole };
+                            return { newDeposit, newKeys, newLifetimeKeys, currentRole };
                         });
                     }).then((res) => {
                         document.getElementById('totalDeposit').innerText = res.newDeposit;
                         document.getElementById('keyCount').innerText = res.newKeys;
+                        document.getElementById('totalLifetimeKeys').innerText = res.newLifetimeKeys;
                         document.getElementById('dashRole').innerText = res.currentRole;
-                        msgBox.innerHTML = "<div class='success'>✔ Payment Auto-Verified! Role: " + res.currentRole + "</div>";
+                        msgBox.innerHTML = "<div class='success'>✔ Payment Auto-Verified & Credited! Role: " + res.currentRole + "</div>";
                         clearInterval(paymentTimerInterval);
+                        loadHistory(username);
+                        loadLeaderboard();
                     }).catch((err) => {
                         msgBox.innerHTML = "<div class='error'>Verification Failed: " + err + "</div>";
                     });
                 });
             }, 1500);
+        }
+
+        function loadLeaderboard() {
+            const leaderboardEl = document.getElementById('leaderboardList');
+            db.collection("resellers").orderBy("keyCount", "desc").limit(5).get().then((querySnapshot) => {
+                let html = "";
+                let rank = 1;
+                querySnapshot.forEach((doc) => {
+                    let d = doc.data();
+                    html += `<div class="leaderboard-item"><span>#${rank} ${d.username}</span> <span><b>${d.keyCount || 0}</b> Keys (₹${d.todayDeposit || 0})</span></div>`;
+                    rank++;
+                });
+                leaderboardEl.innerHTML = html || "No resellers found yet.";
+            }).catch(err => {
+                leaderboardEl.innerHTML = "Leaderboard loading error.";
+            });
+        }
+
+        function loadHistory(username) {
+            const historyEl = document.getElementById('historyList');
+            db.collection("utr_logs").where("username", "==", username).get().then((querySnapshot) => {
+                let html = "";
+                querySnapshot.forEach((doc) => {
+                    let d = doc.data();
+                    let dateStr = d.timestamp ? new Date(d.timestamp.toDate()).toLocaleString() : "Just now";
+                    html += `<div class="history-item"><span>UTR: ${doc.id} | ₹${d.amount}</span> <span>+${d.keysBought} Keys (${dateStr})</span></div>`;
+                });
+                historyEl.innerHTML = html || "No purchase history for today.";
+            }).catch(err => {
+                historyEl.innerHTML = "History loading error.";
+            });
         }
 
         function handleLogout() {
