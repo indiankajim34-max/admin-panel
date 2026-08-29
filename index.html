@@ -15,6 +15,8 @@
     .input-group { margin-bottom: 15px; }
     label { display: block; font-size: 13px; color: #aaa; margin-bottom: 5px; }
     input, select { width: 100%; padding: 10px; background: #0b0f19; border: 1px solid #2d3748; color: #fff; border-radius: 6px; box-sizing: border-box; }
+    .phone-wrapper { display: flex; gap: 8px; }
+    .country-code { width: 75px; background: #181d28; color: #00ff66; text-align: center; font-weight: bold; border: 1px solid #2d3748; border-radius: 6px; padding: 10px 0; display: flex; align-items: center; justify-content: center; }
     button { width: 100%; padding: 12px; background: #00ff66; color: #0b0f19; font-weight: bold; border: none; border-radius: 6px; cursor: pointer; margin-top: 10px; }
     button:hover { opacity: 0.9; }
     .card { background: #181d28; padding: 15px; border-radius: 8px; margin-bottom: 15px; border: 1px solid #2d3748; }
@@ -60,7 +62,10 @@
         </div>
         <div class="input-group">
             <label>WhatsApp / Mobile Number</label>
-            <input type="text" id="regPhone" value="+91" placeholder="+919972903719">
+            <div class="phone-wrapper">
+                <div class="country-code">+91</div>
+                <input type="tel" id="regPhone" placeholder="9972903719" maxlength="10">
+            </div>
         </div>
         <button onclick="sendWhatsAppOtp('register')" style="background: #0088cc; color: #fff;">SEND WHATSAPP OTP</button>
         
@@ -88,7 +93,10 @@
         </div>
         <div class="input-group">
             <label>WhatsApp / Mobile Number</label>
-            <input type="text" id="forgotPhone" value="+91" placeholder="+919972903719">
+            <div class="phone-wrapper">
+                <div class="country-code">+91</div>
+                <input type="tel" id="forgotPhone" placeholder="9972903719" maxlength="10">
+            </div>
         </div>
         <button onclick="sendWhatsAppOtp('forgot')" style="background: #0088cc; color: #fff;">SEND WHATSAPP OTP</button>
         
@@ -237,8 +245,8 @@ if (!firebase.apps.length) {
 }
 const db = firebase.firestore();
 
-// 🔑 यहाँ अपनी MiniMoth एडमिन पैनल वाली लाइव API Key डालें (जैसे: mm_live_1f38...)
-const MINIMOTH_API_KEY = "YOUR_MINIMOTH_API_KEY";
+// MiniMoth Live API Key
+const MINIMOTH_API_KEY = "mm_live_1f388675f7ad7a99cfa0fad19da20e05b072d7d918465d6c091a9e75d66650a45c0ecebe08cec103fea1b6b3f81b9879";
 
 let currentUser = null;
 let currentRole = "Customer";
@@ -271,65 +279,60 @@ function switchView(view) {
     if (view === 'dashboard') document.getElementById('dashboardContainer').classList.remove('hidden');
 }
 
-// MiniMoth WhatsApp OTP integration with Authorization Bearer header
+// MiniMoth WhatsApp OTP implementation (with SMS fallback flow)
 async function sendWhatsAppOtp(type) {
-    let phone = type === 'register' ? document.getElementById('regPhone').value.trim() : document.getElementById('forgotPhone').value.trim();
+    let rawPhone = type === 'register' ? document.getElementById('regPhone').value.trim() : document.getElementById('forgotPhone').value.trim();
     const msgEl = type === 'register' ? document.getElementById('regMsg') : document.getElementById('forgotMsg');
     
-    // Ensure +91 is always prefixed properly
-    if (!phone.startsWith('+')) {
-        phone = '+91' + phone.replace(/^91/, '');
-    }
-
-    if (phone.length < 13) { // +91 plus 10 digits
+    if (!rawPhone || rawPhone.length !== 10) {
         msgEl.innerHTML = '<span class="error">Please enter a valid 10-digit mobile number.</span>';
         return;
     }
 
-    msgEl.innerHTML = '<span style="color:#ffcc00;">Sending WhatsApp OTP...</span>';
+    const phone = '+91' + rawPhone;
+    msgEl.innerHTML = '<span style="color:#ffcc00;">Sending OTP via WhatsApp (with SMS fallback)...</span>';
 
     try {
         const response = await fetch("https://api.minimoth.dev/v1/otp/send", {
             method: "POST",
+            mode: "cors",
             headers: { 
                 "Content-Type": "application/json",
                 "Authorization": `Bearer ${MINIMOTH_API_KEY}`
             },
-            body: JSON.stringify({ phone: phone })
+            body: JSON.stringify({ phone: phone, channel: "whatsapp" })
         });
         
         const data = await response.json();
         if (response.ok && (data.success || data.status === "success" || data.sent)) {
-            msgEl.innerHTML = '<span class="success">✅ OTP sent successfully via WhatsApp!</span>';
+            msgEl.innerHTML = '<span class="success">✅ OTP sent successfully! Check your WhatsApp (or SMS).</span>';
         } else {
-            msgEl.innerHTML = `<span class="error">${data.message || 'Failed to send OTP. Check API Key or Balance.'}</span>`;
+            msgEl.innerHTML = `<span class="error">${data.message || 'Failed to send OTP. Please check mobile number.'}</span>`;
         }
     } catch (err) {
-        msgEl.innerHTML = `<span class="error">Network Error: ${err.message}</span>`;
+        msgEl.innerHTML = `<span class="error">Network Error: ${err.message}. Please check connection.</span>`;
     }
 }
 
 async function verifyAndRegister() {
     const username = document.getElementById('regUsername').value.trim();
-    let phone = document.getElementById('regPhone').value.trim();
+    let rawPhone = document.getElementById('regPhone').value.trim();
     const otp = document.getElementById('regOtpInput').value.trim();
     const password = document.getElementById('regPassword').value.trim();
     const msgEl = document.getElementById('regMsg');
 
-    if (!username || !phone || !otp || !password) {
+    if (!username || !rawPhone || !otp || !password) {
         msgEl.innerHTML = '<span class="error">All fields are required!</span>';
         return;
     }
 
-    if (!phone.startsWith('+')) {
-        phone = '+91' + phone.replace(/^91/, '');
-    }
-
+    const phone = '+91' + rawPhone;
     msgEl.innerHTML = '<span style="color:#ffcc00;">Verifying OTP & Registering...</span>';
 
     try {
         const verifyRes = await fetch("https://api.minimoth.dev/v1/otp/verify", {
             method: "POST",
+            mode: "cors",
             headers: { 
                 "Content-Type": "application/json",
                 "Authorization": `Bearer ${MINIMOTH_API_KEY}`
@@ -364,25 +367,23 @@ async function verifyAndRegister() {
 
 async function verifyAndResetPassword() {
     const username = document.getElementById('forgotUsername').value.trim();
-    let phone = document.getElementById('forgotPhone').value.trim();
+    let rawPhone = document.getElementById('forgotPhone').value.trim();
     const otp = document.getElementById('forgotOtpInput').value.trim();
     const newPassword = document.getElementById('newPassword').value.trim();
     const msgEl = document.getElementById('forgotMsg');
 
-    if (!username || !phone || !otp || !newPassword) {
+    if (!username || !rawPhone || !otp || !newPassword) {
         msgEl.innerHTML = '<span class="error">All fields are required!</span>';
         return;
     }
 
-    if (!phone.startsWith('+')) {
-        phone = '+91' + phone.replace(/^91/, '');
-    }
-
+    const phone = '+91' + rawPhone;
     msgEl.innerHTML = '<span style="color:#ffcc00;">Verifying OTP & Updating Password...</span>';
 
     try {
         const verifyRes = await fetch("https://api.minimoth.dev/v1/otp/verify", {
             method: "POST",
+            mode: "cors",
             headers: { 
                 "Content-Type": "application/json",
                 "Authorization": `Bearer ${MINIMOTH_API_KEY}`
