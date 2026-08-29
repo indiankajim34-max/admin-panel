@@ -24,6 +24,7 @@
     .error { color: #ff4d4d; font-size: 12px; margin-top: 5px; }
     .success { color: #00ff66; font-size: 12px; margin-top: 5px; }
     .hidden { display: none; }
+    .history-item { display: flex; justify-content: space-between; font-size: 12px; padding: 6px 0; border-bottom: 1px solid #2d3748; }
 </style>
 </head>
 <body>
@@ -243,7 +244,6 @@ let todayDepositVal = 0;
 let keyCountVal = 0;
 let paymentTimerRef = null;
 let lockedDepositAmount = 0;
-let currentOtpPhone = "";
 
 const basePricing = {
     "1 Day VIP": 150,
@@ -268,7 +268,7 @@ function switchView(view) {
     if (view === 'dashboard') document.getElementById('dashboardContainer').classList.remove('hidden');
 }
 
-// MiniMoth WhatsApp OTP integration via Firebase Cloud Functions
+// MiniMoth WhatsApp OTP integration (Fixed endpoint and correct payload structure)
 async function sendWhatsAppOtp(type) {
     const phone = type === 'register' ? document.getElementById('regPhone').value.trim() : document.getElementById('forgotPhone').value.trim();
     const msgEl = type === 'register' ? document.getElementById('regMsg') : document.getElementById('forgotMsg');
@@ -278,23 +278,22 @@ async function sendWhatsAppOtp(type) {
         return;
     }
     
-    currentOtpPhone = phone;
     msgEl.innerHTML = '<span style="color:#ffcc00;">Sending WhatsApp OTP...</span>';
 
     try {
-        const response = await fetch("https://sendotpapi-xyz.cloudfunctions.net/sendOtpApi", {
+        const response = await fetch("https://api.minimoth.dev/v1/otp/send", {
             method: "POST",
             headers: { "Content-Type": "application/json" },
             body: JSON.stringify({ phone: phone })
         });
         const data = await response.json();
-        if (data.success) {
+        if (response.ok && (data.success || data.status === "success" || data.sent)) {
             msgEl.innerHTML = '<span class="success">✅ OTP sent successfully via WhatsApp (SMS fallback active)!</span>';
         } else {
-            msgEl.innerHTML = `<span class="error">${data.message || 'Failed to send OTP'}</span>`;
+            msgEl.innerHTML = `<span class="error">${data.message || 'Failed to send OTP. Please check the number.'}</span>`;
         }
     } catch (err) {
-        msgEl.innerHTML = `<span class="error">Error: ${err.message}</span>`;
+        msgEl.innerHTML = `<span class="error">Network Error: ${err.message}</span>`;
     }
 }
 
@@ -313,14 +312,14 @@ async function verifyAndRegister() {
     msgEl.innerHTML = '<span style="color:#ffcc00;">Verifying OTP & Registering...</span>';
 
     try {
-        const verifyRes = await fetch("https://verifyotpapi-xyz.cloudfunctions.net/verifyOtpApi", {
+        const verifyRes = await fetch("https://api.minimoth.dev/v1/otp/verify", {
             method: "POST",
             headers: { "Content-Type": "application/json" },
             body: JSON.stringify({ phone: phone, otp: otp })
         });
         const verifyData = await verifyRes.json();
 
-        if (!verifyData.success) {
+        if (!verifyRes.ok || !(verifyData.success || verifyData.status === "success" || verifyData.verified)) {
             msgEl.innerHTML = '<span class="error">❌ Invalid or expired OTP!</span>';
             return;
         }
@@ -359,14 +358,14 @@ async function verifyAndResetPassword() {
     msgEl.innerHTML = '<span style="color:#ffcc00;">Verifying OTP & Updating Password...</span>';
 
     try {
-        const verifyRes = await fetch("https://verifyotpapi-xyz.cloudfunctions.net/verifyOtpApi", {
+        const verifyRes = await fetch("https://api.minimoth.dev/v1/otp/verify", {
             method: "POST",
             headers: { "Content-Type": "application/json" },
             body: JSON.stringify({ phone: phone, otp: otp })
         });
         const verifyData = await verifyRes.json();
 
-        if (!verifyData.success) {
+        if (!verifyRes.ok || !(verifyData.success || verifyData.status === "success" || verifyData.verified)) {
             msgEl.innerHTML = '<span class="error">❌ Invalid or expired OTP!</span>';
             return;
         }
