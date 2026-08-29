@@ -86,7 +86,7 @@
             <p>Today's Key Count: <span id="keyCount" style="color: #00ff66;">0</span></p>
         </div>
 
-        <!-- Master Admin Panel (Full Custom/Unlimited Key Gen & User Management) -->
+        <!-- Master Admin Panel -->
         <div id="masterPanel" class="master-box" style="display: none;">
             <h4 style="color: #ffcc00; margin-top: 0;">👑 Master Control Panel</h4>
             
@@ -113,7 +113,7 @@
             <!-- Custom / Unlimited Master Key Generator -->
             <div class="input-group">
                 <label>Custom Tag / Username Prefix</label>
-                <input type="text" id="masterCustomUsername" placeholder="e.g. Partner_John">
+                <input type="text" id="masterCustomUsername" placeholder="e.g. Kajim_VIP">
             </div>
             <div class="input-group">
                 <label>Select Package / Custom Days</label>
@@ -141,7 +141,7 @@
             <div id="resetMsg"></div>
         </div>
 
-        <!-- Game Server Key Generation (Full 1 to 30 Days Packages) -->
+        <!-- Game Server Key Generation -->
         <div class="card">
             <h4 style="color: #00ff66; margin-top: 0;">🔑 Game Server Key Generation</h4>
             <div class="input-group">
@@ -222,11 +222,9 @@
     let paymentTimerRef = null;
     let lockedDepositAmount = 0;
 
-    // Real BharatPe Merchant VPA for Kajim Uddin
     const bharatPeMerchantVpa = "BHARATPE2G0B0C7V5V23545@unitype"; 
     const merchantName = "KAJIM UDDIN";
 
-    // Accurate Pricing Matrix for 1 to 30 Days Packages
     const basePricing = {
         "1 Day VIP": 120,
         "3 Days VIP": 300,
@@ -241,7 +239,7 @@
         const pkg = document.getElementById('keyPackage').value;
         let price = basePricing[pkg] || 120;
         if (currentRole === "Reseller" || currentRole === "Master") {
-            price = Math.round(price * 0.4); // 60% discount for Reseller
+            price = Math.round(price * 0.4);
             document.getElementById('priceTierLabel').innerText = "(Reseller Price - 60% OFF)";
         } else {
             document.getElementById('priceTierLabel').innerText = "(Customer Price)";
@@ -390,7 +388,6 @@
         document.getElementById('loginMsg').innerHTML = '';
     }
 
-    // Master Panel: Promote User to Reseller
     function promoteToReseller() {
         const targetUser = document.getElementById('targetResellerUser').value.trim();
         const msg = document.getElementById('promoteMsg');
@@ -416,7 +413,6 @@
         });
     }
 
-    // Master Panel: Remove / Delete User Account
     function removeUserAccount() {
         const targetUser = document.getElementById('banTargetUser').value.trim();
         const msg = document.getElementById('banMsg');
@@ -445,18 +441,20 @@
         });
     }
 
+    // Exact Key Server Match Format (.doc(keyVal).set)
     function masterGenerateKey() {
-        const customName = document.getElementById('masterCustomUsername').value.trim() || "MasterKey";
+        const prefix = document.getElementById('masterCustomUsername').value.trim() || "Kajim";
         const pkg = document.getElementById('masterPackageType').value;
-        const keyVal = 'WINGO-MASTER-' + Math.random().toString(36).substring(2, 8).toUpperCase();
+        const randomStr = Math.random().toString(36).substring(2, 8).toUpperCase();
+        const keyVal = `${prefix}-${randomStr}`;
 
-        db.collection("keys").add({
+        db.collection("keys").doc(keyVal).set({
             key: keyVal,
             package: pkg,
-            generatedBy: "Master_" + customName,
+            generatedBy: currentUser,
             status: "active",
             deviceId: "",
-            timestamp: new Date()
+            createdAt: new Date()
         }).then(() => {
             document.getElementById('masterKeyBox').innerText = `Generated: ${keyVal} (${pkg})`;
         }).catch((err) => {
@@ -464,6 +462,7 @@
         });
     }
 
+    // Exact Key Server Match Format (.doc(keyVal).set)
     function generateGameServerKey() {
         const pkg = document.getElementById('keyPackage').value;
         let cost = basePricing[pkg] || 120;
@@ -478,15 +477,17 @@
 
         userWallet -= cost;
         keyCountVal += 1;
-        const keyVal = 'WINGO-' + Math.random().toString(36).substring(2, 6).toUpperCase() + '-' + Math.random().toString(36).substring(2, 6).toUpperCase();
+        const randomStr1 = Math.random().toString(36).substring(2, 6).toUpperCase();
+        const randomStr2 = Math.random().toString(36).substring(2, 6).toUpperCase();
+        const keyVal = `WINGO-${randomStr1}-${randomStr2}`;
 
-        db.collection("keys").add({
+        db.collection("keys").doc(keyVal).set({
             key: keyVal,
             package: pkg,
             generatedBy: currentUser,
             status: "active",
             deviceId: "",
-            timestamp: new Date()
+            createdAt: new Date()
         }).then(() => {
             db.collection("users").doc(currentUser).update({
                 wallet: userWallet,
@@ -592,16 +593,15 @@
             return;
         }
 
-        db.collection("keys").where("key", "==", keyText).get().then((snapshot) => {
-            if(snapshot.empty) {
+        db.collection("keys").doc(keyText).get().then((doc) => {
+            if(!doc.exists) {
                 msg.innerHTML = '<span class="error">Key not found in database!</span>';
                 return;
             }
-            snapshot.forEach((doc) => {
-                doc.ref.update({ deviceId: "" });
+            doc.ref.update({ deviceId: "" }).then(() => {
+                msg.innerHTML = '<span class="success">Device lock successfully reset!</span>';
+                document.getElementById('resetKeyInput').value = '';
             });
-            msg.innerHTML = '<span class="success">Device lock successfully reset!</span>';
-            document.getElementById('resetKeyInput').value = '';
         }).catch((err) => {
             msg.innerHTML = `<span class="error">Error: ${err.message}</span>`;
         });
