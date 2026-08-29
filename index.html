@@ -70,8 +70,8 @@
         </div>
         <div class="input-group">
             <label>Google OTP Verification (Email)</label>
-            <input type="email" id="regEmail" placeholder="Enter email">
-            <button type="button" onclick="sendGoogleOtp()" style="background: #182232; color: #00ff66; border: 1px solid #00ff66; margin-top: 8px; padding: 8px;">Send Google OTP</button>
+            <input type="email" id="regEmail" placeholder="Enter Gmail address">
+            <button type="button" onclick="sendGoogleOtp()" style="background: #182232; color: #00ff66; border: 1px solid #00ff66; margin-top: 8px; padding: 8px;">Send Gmail OTP</button>
         </div>
         <div class="input-group">
             <label>Enter 6-Digit OTP</label>
@@ -98,9 +98,8 @@
         <div id="masterPanel" class="master-box" style="display: none;">
             <h4 style="color: #ffcc00; margin-top: 0;">👑 Master Control Panel</h4>
             
-            <!-- Direct Reseller Promotion -->
             <div style="background: #131a29; padding: 10px; border-radius: 6px; margin-bottom: 12px; border: 1px solid #333;">
-                <p style="color: #00ff66; font-size: 12px; margin: 0 0 6px 0; font-weight: bold;">Make / Promote User to Reseller:</p>
+                <p style="color: #00ff66; font-size: 12px; margin: 0 0 6px 0; font-weight: bold;">Promote User to Reseller:</p>
                 <div class="input-group" style="margin-bottom: 8px;">
                     <input type="text" id="targetResellerUser" placeholder="Enter existing username">
                 </div>
@@ -108,17 +107,15 @@
                 <div id="promoteMsg" style="font-size: 12px; margin-top: 5px;"></div>
             </div>
 
-            <!-- Remove / Delete User -->
             <div style="background: #131a29; padding: 10px; border-radius: 6px; margin-bottom: 12px; border: 1px solid #333;">
-                <p style="color: #ff4d4d; font-size: 12px; margin: 0 0 6px 0; font-weight: bold;">Remove / Ban User or Reseller:</p>
+                <p style="color: #ff4d4d; font-size: 12px; margin: 0 0 6px 0; font-weight: bold;">Remove / Ban User:</p>
                 <div class="input-group" style="margin-bottom: 8px;">
-                    <input type="text" id="banTargetUser" placeholder="Enter username to delete/remove">
+                    <input type="text" id="banTargetUser" placeholder="Enter username to delete">
                 </div>
                 <button onclick="removeUserAccount()" style="background: #ff4d4d; color: #fff; padding: 8px; font-size: 13px;">DELETE / REMOVE USER</button>
                 <div id="banMsg" style="font-size: 12px; margin-top: 5px;"></div>
             </div>
 
-            <!-- Custom / Unlimited Master Key Generator -->
             <div class="input-group">
                 <label>Custom Tag / Username Prefix</label>
                 <input type="text" id="masterCustomUsername" placeholder="e.g. Kajim_VIP">
@@ -135,7 +132,7 @@
                     <option value="Unlimited VIP">Unlimited VIP</option>
                 </select>
             </div>
-            <button onclick="masterGenerateKey()" style="background: linear-gradient(135deg, #ffcc00, #ff9900); color: #000;">GENERATE UNLIMITED / CUSTOM KEY</button>
+            <button onclick="masterGenerateKey()" style="background: linear-gradient(135deg, #ffcc00, #ff9900); color: #000;">GENERATE CUSTOM KEY</button>
             <div id="masterKeyBox" class="success" style="word-break: break-all; font-weight: bold; margin-top: 8px;"></div>
             <button type="button" id="copyMasterKeyBtn" class="copy-btn" style="display:none;" onclick="copyTextToClipboard('masterKeyBox')">📋 Copy Key</button>
         </div>
@@ -150,7 +147,7 @@
             <div id="resetMsg"></div>
         </div>
 
-        <!-- Game Server Key Generation -->
+        <!-- Game Server Key Generation (With Updated Reseller 60% OFF Prices) -->
         <div class="card">
             <h4 style="color: #00ff66; margin-top: 0;">🔑 Game Server Key Generation</h4>
             <div class="input-group">
@@ -162,6 +159,7 @@
                     <option value="15 Days VIP">15 Days VIP (₹700)</option>
                     <option value="20 Days VIP">20 Days VIP (₹850)</option>
                     <option value="30 Days VIP">30 Days VIP (₹1250)</option>
+                    <option value="Unlimited VIP">Unlimited VIP (₹3000)</option>
                 </select>
             </div>
             <p>Deduction Price: ₹<span id="displayPrice" style="color: #ffcc00; font-weight: bold;">150</span> <span id="priceTierLabel" style="font-size: 11px; color: #aaa;">(Customer Price)</span></p>
@@ -190,7 +188,7 @@
                 
                 <div class="input-group" style="text-align: left; margin-top: 8px;">
                     <label>Strict 12-Digit UTR Verification</label>
-                    <input type="text" id="utrInput" placeholder="Enter UTR / Transaction ID" maxlength="12">
+                    <input type="text" id="utrInput" placeholder="Enter 12-digit UTR ID" maxlength="12">
                 </div>
                 <button onclick="verifyUtrAndCredit()" style="background: #00ff66; color: #0b0f19;">VERIFY UTR & CREDIT WALLET</button>
                 <div id="depositMsg"></div>
@@ -236,6 +234,7 @@
     const bharatPeMerchantVpa = "BHARATPE2G0B0C7V5V23545@unitype"; 
     const merchantName = "KAJIM UDDIN";
 
+    // Customer Base Prices
     const basePricing = {
         "1 Day VIP": 150,
         "3 Days VIP": 300,
@@ -250,7 +249,7 @@
         const pkg = document.getElementById('keyPackage').value;
         let price = basePricing[pkg] || 150;
         if (currentRole === "Reseller" || currentRole === "Master") {
-            price = Math.round(price * 0.4);
+            price = Math.round(price * 0.4); // 60% OFF for Resellers
             document.getElementById('priceTierLabel').innerText = "(Reseller Price - 60% OFF)";
         } else {
             document.getElementById('priceTierLabel').innerText = "(Customer Price)";
@@ -268,32 +267,33 @@
         }
     }
 
+    // EXACT MATCHED EMAILJS FUNCTION WITH YOUR TEMPLATE VARIABLES
     function sendGoogleOtp() {
         const email = document.getElementById('regEmail').value.trim();
         const regMsg = document.getElementById('regMsg');
         if(!email) {
-            alert("Enter email first!");
+            alert("Please enter your Gmail address first!");
             return;
         }
 
         generatedOtpCode = Math.floor(100000 + Math.random() * 900000).toString();
-        regMsg.innerHTML = '<span style="color: #00ff66;">Sending real OTP to Gmail...</span>';
+        regMsg.innerHTML = '<span style="color: #00ff66;">Sending real OTP to Gmail inbox...</span>';
 
+        // Variables precisely mapped to your EmailJS template ({{to_email}}, {{passcode}}, {{time}})
         const templateParams = {
             to_email: email,
             passcode: generatedOtpCode,
             time: "15 minutes"
         };
 
-        // Using correct updated Service ID and Template ID
         emailjs.send('service_nxa9rzb', 'template_2gamlua', templateParams)
             .then(function(response) {
                 regMsg.innerHTML = '<span class="success">OTP successfully sent to your Gmail inbox!</span>';
                 alert("OTP successfully sent to " + email);
             }, function(error) {
                 console.log("EmailJS FAILED:", error);
-                regMsg.innerHTML = `<span class="success">OTP generated! (Fallback Code: <b>${generatedOtpCode}</b>)</span>`;
-                alert("EmailJS service alert. Your verification OTP code is: " + generatedOtpCode);
+                regMsg.innerHTML = '<span class="error">Failed to send via EmailJS. Check console/service configuration.</span>';
+                alert("EmailJS Error: " + JSON.stringify(error));
             });
     }
 
@@ -468,7 +468,7 @@
                 return;
             }
             db.collection("users").doc(targetUser).delete().then(() => {
-                msg.innerHTML = `<span class="success">User '${targetUser}' deleted/removed successfully!</span>`;
+                msg.innerHTML = `<span class="success">User '${targetUser}' deleted successfully!</span>`;
                 document.getElementById('banTargetUser').value = '';
             });
         }).catch((err) => {
@@ -584,7 +584,7 @@
                     status: "Pending (Timeout)",
                     timestamp: new Date()
                 });
-                alert("Payment time expired! Transaction marked as Pending.");
+                alert("Payment time expired!");
             }
         }, 1000);
     }
@@ -601,7 +601,7 @@
         userWallet += lockedDepositAmount;
         todayDepositVal += lockedDepositAmount;
 
-        // FIXED: Automatic Reseller upgrade strictly on first deposit of ₹1000 or above
+        // Auto-upgrade to Reseller on first deposit of ₹1000 or above
         if(currentRole === "Customer" && lockedDepositAmount >= 1000) {
             currentRole = "Reseller";
             document.getElementById('dashRole').innerText = "Reseller (Upgraded)";
@@ -614,7 +614,7 @@
         }).then(() => {
             document.getElementById('walletBalance').innerText = userWallet;
             document.getElementById('totalDeposit').innerText = todayDepositVal;
-            msg.innerHTML = '<span class="success">UTR Verified Successfully! Amount added to wallet.</span>';
+            msg.innerHTML = '<span class="success">UTR Verified Successfully! Wallet credited.</span>';
             document.getElementById('qrSection').style.display = 'none';
             document.getElementById('depositAmount').value = '';
             document.getElementById('utrInput').value = '';
@@ -639,7 +639,7 @@
 
         db.collection("keys").doc(keyText).get().then((doc) => {
             if(!doc.exists) {
-                msg.innerHTML = '<span class="error">Key not found in database!</span>';
+                msg.innerHTML = '<span class="error">Key not found!</span>';
                 return;
             }
             doc.ref.update({ deviceId: "" }).then(() => {
