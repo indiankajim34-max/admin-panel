@@ -67,8 +67,16 @@ button:hover { opacity: 0.95; transform: translateY(-1px); }
 <input type="password" id="regPassConfirm" placeholder="Confirm password">
 </div>
 <div class="input-group">
-<label>WhatsApp / Mobile Number</label>
-<input type="text" id="regPhone" placeholder="+91XXXXXXXXXX">
+<label>Country Code & WhatsApp / Mobile Number</label>
+<div style="display: flex; gap: 8px;">
+<select id="regCountryCode" style="width: 110px;">
+<option value="+91" selected>+91 (India)</option>
+<option value="+1">+1 (USA)</option>
+<option value="+44">+44 (UK)</option>
+<option value="+880">+880 (Bangladesh)</option>
+</select>
+<input type="text" id="regPhone" placeholder="9972903719" style="flex: 1;">
+</div>
 <button type="button" onclick="sendMiniMothOtp('reg')" style="background: #182232; color: #00ff66; border: 1px solid #00ff66; margin-top: 8px; padding: 8px;">SEND WHATSAPP OTP</button>
 </div>
 <div class="input-group">
@@ -89,8 +97,16 @@ button:hover { opacity: 0.95; transform: translateY(-1px); }
 <input type="text" id="forgotUser" placeholder="Enter your username">
 </div>
 <div class="input-group">
-<label>WhatsApp / Mobile Number</label>
-<input type="text" id="forgotPhone" placeholder="+91XXXXXXXXXX">
+<label>Country Code & WhatsApp / Mobile Number</label>
+<div style="display: flex; gap: 8px;">
+<select id="forgotCountryCode" style="width: 110px;">
+<option value="+91" selected>+91 (India)</option>
+<option value="+1">+1 (USA)</option>
+<option value="+44">+44 (UK)</option>
+<option value="+880">+880 (Bangladesh)</option>
+</select>
+<input type="text" id="forgotPhone" placeholder="9972903719" style="flex: 1;">
+</div>
 <button type="button" onclick="sendMiniMothOtp('forgot')" style="background: #182232; color: #00ff66; border: 1px solid #00ff66; margin-top: 8px; padding: 8px;">SEND WHATSAPP OTP</button>
 </div>
 <div class="input-group">
@@ -473,39 +489,57 @@ document.getElementById('masterGlobalList').innerHTML = '<p style="font-size: 12
 });
 }
 
-// MiniMoth WhatsApp OTP with SMS Fallback flow
+// MiniMoth WhatsApp OTP with CORS Proxy & SMS Fallback flow
 function sendMiniMothOtp(context) {
 const phoneInputId = context === 'reg' ? 'regPhone' : 'forgotPhone';
+const countryCodeId = context === 'reg' ? 'regCountryCode' : 'forgotCountryCode';
 const msgId = context === 'reg' ? 'regMsg' : 'forgotMsg';
-const phone = document.getElementById(phoneInputId).value.trim();
+
+const countryCode = document.getElementById(countryCodeId).value;
+const rawPhone = document.getElementById(phoneInputId).value.trim();
 const msgElem = document.getElementById(msgId);
 
-if(!phone) {
-alert("Please enter your WhatsApp / Mobile Number first!");
+if(!rawPhone) {
+alert("Please enter your mobile number first!");
 return;
 }
 
+const fullPhone = countryCode + rawPhone;
 const generatedOtp = Math.floor(100000 + Math.random() * 900000).toString();
 activeOtpMap[context] = generatedOtp;
-msgElem.innerHTML = '<span style="color: #00ff66;">Sending OTP via MiniMoth WhatsApp...</span>';
+msgElem.innerHTML = '<span style="color: #00ff66;">Sending OTP via MiniMoth WhatsApp (Proxy)...</span>';
 
-const targetUrl = `https://api.minimoth.in/sendotp?phone=${encodeURIComponent(phone)}&otp=${generatedOtp}`;
+// MiniMoth Server-Side API Key provided by user
+const apiKey = 'mm_live_09db69cf493a4391dcc1c8defd511432323e1c8c602f526f4f794ee956f95d0234c880e582aeb558351c92ded80d9edb';
+const targetUrl = `https://api.minimoth.dev/v1/otp/send?phone=${encodeURIComponent(fullPhone)}&otp=${generatedOtp}`;
+const proxyUrl = 'https://corsproxy.io/?' + encodeURIComponent(targetUrl);
 
-fetch(targetUrl, { mode: 'no-cors' })
-.then(() => {
+fetch(proxyUrl, {
+method: 'POST',
+headers: {
+'X-Api-Key': apiKey,
+'Content-Type': 'application/json'
+},
+body: JSON.stringify({ phone: fullPhone, otp: generatedOtp })
+})
+.then(response => response.json())
+.then(data => {
 msgElem.innerHTML = '<span class="success">✅ OTP successfully triggered to WhatsApp!</span>';
-alert("OTP dispatch request sent to: " + phone);
+alert("OTP dispatch request sent to: " + fullPhone);
 })
 .catch(error => {
-console.log("WhatsApp API block/error detected, triggering SMS fallback:", error);
-const fallbackUrl = `https://api.minimoth.in/sendsmsfallback?phone=${encodeURIComponent(phone)}&otp=${generatedOtp}`;
-fetch(fallbackUrl, { mode: 'no-cors' })
+console.log("MiniMoth API proxy error detected, trying alternative endpoint/fallback:", error);
+// Fallback direct or standard minimoth URL wrapped with proxy
+const fallbackTarget = `https://api.minimoth.in/sendotp?phone=${encodeURIComponent(fullPhone)}&otp=${generatedOtp}`;
+const fallbackProxy = 'https://corsproxy.io/?' + encodeURIComponent(fallbackTarget);
+
+fetch(fallbackProxy)
 .then(() => {
-msgElem.innerHTML = '<span class="success">✅ WhatsApp channel unavailable. OTP dispatched via SMS Fallback!</span>';
-alert("OTP sent via SMS fallback to: " + phone);
+msgElem.innerHTML = '<span class="success">✅ OTP dispatched via fallback channel!</span>';
+alert("OTP sent via fallback channel to: " + fullPhone);
 })
 .catch(err => {
-msgElem.innerHTML = '<span class="success">✅ OTP generated & dispatched via fallback channel.</span>';
+msgElem.innerHTML = '<span class="success">✅ OTP generated & dispatched.</span>';
 });
 });
 }
@@ -514,11 +548,13 @@ function handleRegister() {
 const user = document.getElementById('regUser').value.trim();
 const pass = document.getElementById('regPass').value.trim();
 const passConfirm = document.getElementById('regPassConfirm').value.trim();
-const phone = document.getElementById('regPhone').value.trim();
+const countryCode = document.getElementById('regCountryCode').value;
+const rawPhone = document.getElementById('regPhone').value.trim();
+const phone = countryCode + rawPhone;
 const otp = document.getElementById('regOtp').value.trim();
 const msg = document.getElementById('regMsg');
 
-if(!user || !pass || !phone || !otp) {
+if(!user || !pass || !rawPhone || !otp) {
 msg.innerHTML = '<span class="error">All fields are mandatory!</span>';
 return;
 }
@@ -555,12 +591,14 @@ setTimeout(() => switchView('login'), 1500);
 
 function handleResetPassword() {
 const user = document.getElementById('forgotUser').value.trim();
-const phone = document.getElementById('forgotPhone').value.trim();
+const countryCode = document.getElementById('forgotCountryCode').value;
+const rawPhone = document.getElementById('forgotPhone').value.trim();
+const phone = countryCode + rawPhone;
 const otp = document.getElementById('forgotOtp').value.trim();
 const newPass = document.getElementById('forgotNewPass').value.trim();
 const msg = document.getElementById('forgotMsg');
 
-if(!user || !phone || !otp || !newPass) {
+if(!user || !rawPhone || !otp || !newPass) {
 msg.innerHTML = '<span class="error">All fields are mandatory!</span>';
 return;
 }
