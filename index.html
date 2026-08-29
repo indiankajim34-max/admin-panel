@@ -173,7 +173,7 @@
                 <p style="color: #ffcc00; font-size: 13px; margin: 4px 0;">Scan & Pay Exact Locked Amount to KAJIM UDDIN:</p>
                 <h3 id="exactAmountText" style="color: #00ff66; margin: 4px 0;">₹0</h3>
                 <div style="background: #fff; padding: 8px; display: inline-block; border-radius: 6px; margin: 8px 0;">
-                    <img id="qrImage" src="" alt="BharatPe QR" style="width: 140px; height: 140px; display: block;">
+                    <img id="qrImage" alt="BharatPe QR" style="width: 140px; height: 140px; display: block;">
                 </div>
                 <p style="font-size: 12px; color: #00ff66; margin: 4px 0;">UPI ID: BHARATPE2G0B0C7V5V23545@unitype</p>
                 <p style="color: #ff4d4d; font-size: 13px; font-weight: bold;">Payment Timer: <span id="timerCountdown">09:00</span></p>
@@ -441,7 +441,7 @@
         });
     }
 
-    // Exact Key Server Match Format (.doc(keyVal).set)
+    // FIXED: Now reads the actual selected package from 'masterPackageType' dropdown correctly
     function masterGenerateKey() {
         const prefix = document.getElementById('masterCustomUsername').value.trim() || "Kajim";
         const pkg = document.getElementById('masterPackageType').value;
@@ -462,7 +462,6 @@
         });
     }
 
-    // Exact Key Server Match Format (.doc(keyVal).set)
     function generateGameServerKey() {
         const pkg = document.getElementById('keyPackage').value;
         let cost = basePricing[pkg] || 120;
