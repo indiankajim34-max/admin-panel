@@ -141,19 +141,19 @@
                 <div id="leaderboardList">Loading leaderboard...</div>
             </div>
 
-            <!-- Payment Panel with Master QR Code & Fixed Amount Lock -->
+            <!-- Payment Panel with BharatPe QR Code & Fixed Amount Lock -->
             <div class="card">
-                <h4>Master QR / Auto-Verify Deposit</h4>
+                <h4>BharatPe QR / Auto-Verify Deposit</h4>
                 <div class="input-group">
                     <label>Enter Deposit Amount (₹)</label>
                     <input type="number" id="depositAmount" placeholder="Enter amount e.g. 100 or 500">
                 </div>
                 <button onclick="initiatePaymentProcess()" id="startPaymentBtn" style="background: #0088cc; color: #fff; margin-bottom: 10px;">PROCEED & SHOW QR (9-Min Timer)</button>
                 
-                <!-- Master QR Code Container -->
+                <!-- BharatPe QR Code Container -->
                 <div id="qrCodeContainer" style="text-align: center; display: none; margin: 15px 0; background: #fff; padding: 10px; border-radius: 5px;">
-                    <p style="color: #000; font-weight: bold; margin: 0 0 5px 0; font-size: 13px;">Scan & Pay (Amount Locked)</p>
-                    <img id="dynamicMasterQR" src="" alt="Master QR Code" style="width: 180px; height: 180px;">
+                    <p style="color: #000; font-weight: bold; margin: 0 0 5px 0; font-size: 13px;">Scan & Pay (BharatPe - KAJIM UDDIN)</p>
+                    <img id="dynamicMasterQR" src="" alt="BharatPe QR Code" style="width: 180px; height: 180px;">
                     <p id="qrAmountLabel" style="color: #000; font-size: 12px; margin: 5px 0 0 0; font-weight: bold;"></p>
                 </div>
 
@@ -196,22 +196,24 @@
         const db = firebase.firestore();
 
         let paymentTimerInterval;
-        const SESSION_ID = 'win_session_' + Math.random().toString(36).substring(2);
         let currentUserRole = "Customer";
         let userWalletBalance = 0;
         let activeLoggedInUser = "";
+        let sessionListener = null;
 
-        const MASTER_UPI = "kajim@paytm"; 
-        const MASTER_NAME = "Kajim Uddin";
+        // Aapki BharatPe UPI ID aur Naam
+        const MASTER_UPI = "BHARATPE2G0B0C7V5V23545@unitype"; 
+        const MASTER_NAME = "KAJIM UDDIN";
 
-        function checkMidnightReset() {
+        // Midnight Reset & Session Token Generation
+        function checkMidnightResetAndSession() {
             const lastResetDate = localStorage.getItem('last_reset_date');
             const todayStr = new Date().toDateString();
             if (lastResetDate !== todayStr) {
                 localStorage.setItem('last_reset_date', todayStr);
             }
         }
-        checkMidnightReset();
+        checkMidnightResetAndSession();
 
         function switchView(view) {
             if(view === 'register') {
@@ -255,7 +257,7 @@
             const email = document.getElementById('regEmail').value;
             const pass = document.getElementById('regPass').value;
             const confirmPass = document.getElementById('regPassConfirm').value;
-            const username = document.getElementById('regUser').value;
+            const username = document.getElementById('regUser').value.trim();
 
             if (!username || !email || !pass) {
                 alert("Pehle Username, Password aur Email bhariye!");
@@ -335,12 +337,10 @@
 
             msgBox.innerHTML = "<div class='success'>Logging in...</div>";
 
-            // 1. Pehle 'admins' collection mein 'master' document check karein (Aapke database ke hisab se)
             db.collection("admins").doc("master").get().then((adminDoc) => {
                 let matchedAdmin = false;
                 if (adminDoc.exists) {
                     const aData = adminDoc.data();
-                    // Agar username 'kajim_master' ya 'master' ho aur password match ho jaye
                     if ((usernameInput.toLowerCase() === "kajim_master" || usernameInput.toLowerCase() === "master") && aData.password === password) {
                         matchedAdmin = true;
                         currentUserRole = "Master / Admin";
@@ -366,7 +366,6 @@
                 }
 
                 if (!matchedAdmin) {
-                    // 2. Agar admin nahi hai, toh 'resellers' collection mein check karein
                     db.collection("resellers").doc(usernameInput).get().then((doc) => {
                         if(doc.exists) {
                             const data = doc.data();
@@ -376,23 +375,42 @@
                                 return;
                             }
 
-                            currentUserRole = data.role || "Customer";
-                            userWalletBalance = data.walletBalance || 0;
-                            activeLoggedInUser = usernameInput;
+                            // Single-Device Session Token Generation
+                            const currentDeviceToken = 'token_' + Math.random().toString(36).substring(2);
+                            
+                            db.collection("resellers").doc(usernameInput).update({
+                                activeSessionToken: currentDeviceToken
+                            }).then(() => {
+                                currentUserRole = data.role || "Customer";
+                                userWalletBalance = data.walletBalance || 0;
+                                activeLoggedInUser = usernameInput;
 
-                            document.getElementById('loginFormContainer').style.display = 'none';
-                            document.getElementById('dashboardContainer').style.display = 'block';
-                            document.getElementById('dashUsername').innerText = usernameInput;
-                            document.getElementById('dashRole').innerText = currentUserRole;
-                            document.getElementById('walletBalance').innerText = userWalletBalance;
-                            document.getElementById('totalDeposit').innerText = data.todayDeposit || 0;
-                            document.getElementById('keyCount').innerText = data.keyCount || 0;
-                            document.getElementById('totalLifetimeKeys').innerText = data.totalLifetimeKeys || 0;
+                                document.getElementById('loginFormContainer').style.display = 'none';
+                                document.getElementById('dashboardContainer').style.display = 'block';
+                                document.getElementById('dashUsername').innerText = usernameInput;
+                                document.getElementById('dashRole').innerText = currentUserRole;
+                                document.getElementById('walletBalance').innerText = userWalletBalance;
+                                document.getElementById('totalDeposit').innerText = data.todayDeposit || 0;
+                                document.getElementById('keyCount').innerText = data.keyCount || 0;
+                                document.getElementById('totalLifetimeKeys').innerText = data.totalLifetimeKeys || 0;
 
-                            updateKeyPricing();
-                            msgBox.innerHTML = "";
-                            loadLeaderboard();
-                            loadHistory(usernameInput);
+                                updateKeyPricing();
+                                msgBox.innerHTML = "";
+                                loadLeaderboard();
+                                loadHistory(usernameInput);
+
+                                // Listen for session override (Single-Device Enforcement)
+                                if (sessionListener) sessionListener();
+                                sessionListener = db.collection("resellers").doc(usernameInput).onSnapshot((docSnap) => {
+                                    if (docSnap.exists) {
+                                        const sData = docSnap.data();
+                                        if (sData.activeSessionToken && sData.activeSessionToken !== currentDeviceToken) {
+                                            alert("Aapka account kisi doosre device par login ho gaya hai, isliye is device se logout kiya ja raha hai.");
+                                            handleLogout();
+                                        }
+                                    }
+                                });
+                            });
                         } else {
                             msgBox.innerHTML = "<div class='error'>Yeh Username database mein nahi mila! Pehle Register karein.</div>";
                         }
@@ -404,6 +422,7 @@
         }
 
         function handleLogout() {
+            if (sessionListener) sessionListener();
             location.reload();
         }
 
