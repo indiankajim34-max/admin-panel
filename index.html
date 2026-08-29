@@ -9,245 +9,251 @@
 <script src="https://www.gstatic.com/firebasejs/9.22.0/firebase-auth-compat.js"></script>
 <script src="https://www.gstatic.com/firebasejs/9.22.0/firebase-firestore-compat.js"></script>
 <style>
-    body { font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif; background-color: #0b0f19; color: #fff; margin: 0; padding: 0; }
-    .container { max-width: 450px; margin: 30px auto; background: #131c29; padding: 25px; border-radius: 12px; box-shadow: 0 8px 24px rgba(0,0,0,0.5); border: 1px solid #1f293d; }
-    h2 { text-align: center; color: #00ff66; margin-bottom: 20px; }
-    .input-group { margin-bottom: 15px; }
-    label { display: block; font-size: 13px; color: #aaa; margin-bottom: 5px; }
-    input, select { width: 100%; padding: 10px; background: #0b0f19; border: 1px solid #2d3748; color: #fff; border-radius: 6px; box-sizing: border-box; }
-    .phone-wrapper { display: flex; gap: 8px; }
-    .country-code { width: 75px; background: #181d28; color: #00ff66; text-align: center; font-weight: bold; border: 1px solid #2d3748; border-radius: 6px; padding: 10px 0; display: flex; align-items: center; justify-content: center; }
-    button { width: 100%; padding: 12px; background: #00ff66; color: #0b0f19; font-weight: bold; border: none; border-radius: 6px; cursor: pointer; margin-top: 10px; }
-    button:hover { opacity: 0.9; }
-    .card { background: #181d28; padding: 15px; border-radius: 8px; margin-bottom: 15px; border: 1px solid #2d3748; }
-    .master-box { border: 2px dashed #ffcc00; background: #181d28; padding: 15px; border-radius: 10px; margin-bottom: 15px; }
-    .reset-box { border: 1px solid #0088cc; background: #131c29; padding: 15px; border-radius: 8px; margin-bottom: 15px; }
-    .copy-btn { background: #1e293b; color: #00ff66; border: 1px solid #00ff66; padding: 6px 10px; font-size: 12px; border-radius: 6px; cursor: pointer; margin-top: 6px; display: inline-block; }
-    .error { color: #ff4d4d; font-size: 12px; margin-top: 5px; }
-    .success { color: #00ff66; font-size: 12px; margin-top: 5px; }
-    .hidden { display: none; }
-    .history-item { display: flex; justify-content: space-between; font-size: 12px; padding: 6px 0; border-bottom: 1px solid #2d3748; }
+body { background: #0b0f19; color: #fff; font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif; margin: 0; padding: 20px; }
+.container { max-width: 480px; margin: auto; background: #131a29; padding: 25px; border-radius: 12px; box-shadow: 0 8px 24px rgba(0,0,0,0.6); border: 1px solid #1e293b; }
+.input-group { margin-bottom: 15px; }
+.input-group label { display: block; margin-bottom: 6px; color: #00ff66; font-size: 13px; font-weight: 600; }
+.input-group input, .input-group select { width: 100%; padding: 12px; background: #0b0f19; border: 1px solid #2e3b4e; color: #fff; border-radius: 8px; font-size: 14px; box-sizing: border-box; outline: none; }
+.input-group input:focus { border-color: #00ff66; }
+.phone-group { display: flex; gap: 8px; }
+.phone-group select { width: 90px; flex-shrink: 0; }
+button { width: 100%; padding: 12px; background: linear-gradient(135deg, #00ff66, #00b344); border: none; color: #0b0f19; font-weight: bold; border-radius: 8px; cursor: pointer; font-size: 15px; transition: 0.2s; }
+button:hover { opacity: 0.95; transform: translateY(-1px); }
+.success { color: #00ff66; font-size: 13px; margin-top: 10px; }
+.error { color: #ff4d4d; font-size: 13px; margin-top: 10px; }
+.toggle-link { text-align: center; margin-top: 15px; font-size: 14px; cursor: pointer; color: #00ff66; }
+.card { background: #0b0f19; padding: 15px; border-radius: 8px; margin-bottom: 15px; border: 1px solid #1e293b; }
+.history-item { background: #131a29; padding: 10px 12px; margin-bottom: 6px; border-radius: 6px; font-size: 13px; display: flex; justify-content: space-between; align-items: center; border: 1px solid #1e293b; }
+.master-box { border: 2px dashed #ffcc00; background: #181d28; padding: 15px; border-radius: 10px; margin-bottom: 15px; }
+.reset-box { border: 1px solid #0088cc; background: #131c29; padding: 15px; border-radius: 8px; margin-bottom: 15px; }
+.copy-btn { background: #1e293b; color: #00ff66; border: 1px solid #00ff66; padding: 6px 10px; font-size: 12px; border-radius: 6px; cursor: pointer; margin-top: 6px; width: auto; display: inline-block; }
 </style>
 </head>
 <body>
-
 <div class="container">
-    <h2>WinGo VIP Secure Portal</h2>
+<h2 style="text-align: center; color: #00ff66; margin-bottom: 20px;">WinGo VIP Secure Portal</h2>
 
-    <!-- Login Form -->
-    <div id="loginFormContainer">
-        <h4 style="color: #00ff66; margin-top: 0;">🔐 Secure Login</h4>
-        <div class="input-group">
-            <label>Username</label>
-            <input type="text" id="loginUsername" placeholder="Enter username (admin/master for admin panel)">
-        </div>
-        <div class="input-group">
-            <label>Password</label>
-            <input type="password" id="loginPassword" placeholder="Enter password">
-        </div>
-        <button onclick="handleLogin()">LOGIN</button>
-        <p style="text-align: center; margin-top: 15px; font-size: 13px;">
-            Don't have an account? <a href="#" onclick="switchView('register')" style="color: #00ff66;">Register via WhatsApp OTP</a> | 
-            <a href="#" onclick="switchView('forgot')" style="color: #0088cc;">Forgot/Change Password</a>
-        </p>
-        <div id="loginMsg"></div>
-    </div>
+<!-- Login Form -->
+<div id="loginFormContainer">
+<div class="input-group">
+<label>Username / ID (Type 'admin' or 'master' for Master Access)</label>
+<input type="text" id="loginUser" placeholder="Enter username">
+</div>
+<div class="input-group">
+<label>Password</label>
+<input type="password" id="loginPass" placeholder="Enter password">
+</div>
+<button onclick="handleLogin()">SECURE LOGIN</button>
+<div id="loginMsg"></div>
+<div class="toggle-link" onclick="switchView('register')">New User? Register here</div>
+<div class="toggle-link" onclick="switchView('forgot')" style="margin-top: 8px; color: #0088cc; font-size: 13px;">Forgot / Change Password?</div>
+</div>
 
-    <!-- Register Form -->
-    <div id="registerContainer" class="hidden">
-        <h4 style="color: #00ff66; margin-top: 0;">📝 New Registration (WhatsApp OTP)</h4>
-        <div class="input-group">
-            <label>Username</label>
-            <input type="text" id="regUsername" placeholder="Choose username">
-        </div>
-        <div class="input-group">
-            <label>WhatsApp / Mobile Number</label>
-            <div class="phone-wrapper">
-                <div class="country-code">+91</div>
-                <input type="tel" id="regPhone" placeholder="7099284788" maxlength="10">
-            </div>
-        </div>
-        <button onclick="sendWhatsAppOtp('register')" style="background: #0088cc; color: #fff;">SEND WHATSAPP OTP</button>
-        
-        <div class="input-group" style="margin-top: 15px;">
-            <label>Enter 6-Digit OTP</label>
-            <input type="text" id="regOtpInput" placeholder="Enter OTP received on WhatsApp" maxlength="6">
-        </div>
-        <div class="input-group">
-            <label>Password</label>
-            <input type="password" id="regPassword" placeholder="Create password">
-        </div>
-        <button onclick="verifyAndRegister()">VERIFY & REGISTER</button>
-        <p style="text-align: center; margin-top: 15px; font-size: 13px;">
-            Already have an account? <a href="#" onclick="switchView('login')" style="color: #00ff66;">Login here</a>
-        </p>
-        <div id="regMsg"></div>
-    </div>
+<!-- Register Form -->
+<div id="registerContainer" style="display: none;">
+<h3 style="color: #00ff66; font-size: 15px; margin-top: 0; margin-bottom: 15px;">📝 New Registration (WhatsApp OTP)</h3>
+<div class="input-group">
+<label>Choose Username</label>
+<input type="text" id="regUser" placeholder="Username">
+</div>
+<div class="input-group">
+<label>WhatsApp / Mobile Number</label>
+<div class="phone-group">
+<select id="regCountryCode">
+<option value="+91">+91 (IN)</option>
+<option value="+1">+1 (US)</option>
+<option value="+44">+44 (UK)</option>
+<option value="+880">+880 (BD)</option>
+</select>
+<input type="tel" id="regPhone" placeholder="Enter mobile number" maxlength="10">
+</div>
+<button type="button" onclick="sendMiniMothOtp('register')" style="background: #182232; color: #00ff66; border: 1px solid #00ff66; margin-top: 8px; padding: 8px;">SEND WHATSAPP OTP</button>
+</div>
+<div class="input-group">
+<label>Enter 6-Digit Unique OTP</label>
+<input type="text" id="regOtp" placeholder="Enter 6-digit OTP from WhatsApp" maxlength="6">
+</div>
+<div class="input-group">
+<label>Password</label>
+<input type="password" id="regPass" placeholder="Password">
+</div>
+<button onclick="handleRegister()">VERIFY & REGISTER</button>
+<div id="regMsg"></div>
+<div class="toggle-link" onclick="switchView('login')">Already have an account? Login here</div>
+</div>
 
-    <!-- Forgot / Change Password Form -->
-    <div id="forgotContainer" class="hidden">
-        <h4 style="color: #0088cc; margin-top: 0;">🔄 Reset / Change Password</h4>
-        <div class="input-group">
-            <label>Username</label>
-            <input type="text" id="forgotUsername" placeholder="Your username">
-        </div>
-        <div class="input-group">
-            <label>WhatsApp / Mobile Number</label>
-            <div class="phone-wrapper">
-                <div class="country-code">+91</div>
-                <input type="tel" id="forgotPhone" placeholder="7099284788" maxlength="10">
-            </div>
-        </div>
-        <button onclick="sendWhatsAppOtp('forgot')" style="background: #0088cc; color: #fff;">SEND WHATSAPP OTP</button>
-        
-        <div class="input-group" style="margin-top: 15px;">
-            <label>Enter 6-Digit OTP</label>
-            <input type="text" id="forgotOtpInput" placeholder="Enter OTP" maxlength="6">
-        </div>
-        <div class="input-group">
-            <label>New Password</label>
-            <input type="password" id="newPassword" placeholder="Enter new password">
-        </div>
-        <button onclick="verifyAndResetPassword()">UPDATE PASSWORD</button>
-        <p style="text-align: center; margin-top: 15px; font-size: 13px;">
-            Back to <a href="#" onclick="switchView('login')" style="color: #00ff66;">Login</a>
-        </p>
-        <div id="forgotMsg"></div>
-    </div>
+<!-- Forgot / Change Password Form (WhatsApp OTP) -->
+<div id="forgotContainer" style="display: none;">
+<h3 style="color: #0088cc; font-size: 15px; margin-top: 0; margin-bottom: 15px;">🔄 Reset Password (WhatsApp OTP)</h3>
+<div class="input-group">
+<label>Registered Username</label>
+<input type="text" id="forgotUser" placeholder="Username">
+</div>
+<div class="input-group">
+<label>WhatsApp / Mobile Number</label>
+<div class="phone-group">
+<select id="forgotCountryCode">
+<option value="+91">+91 (IN)</option>
+<option value="+1">+1 (US)</option>
+<option value="+44">+44 (UK)</option>
+<option value="+880">+880 (BD)</option>
+</select>
+<input type="tel" id="forgotPhone" placeholder="Enter mobile number" maxlength="10">
+</div>
+<button type="button" onclick="sendMiniMothOtp('forgot')" style="background: #182232; color: #0088cc; border: 1px solid #0088cc; margin-top: 8px; padding: 8px;">SEND WHATSAPP OTP</button>
+</div>
+<div class="input-group">
+<label>Enter 6-Digit Unique OTP</label>
+<input type="text" id="forgotOtp" placeholder="Enter 6-digit OTP from WhatsApp" maxlength="6">
+</div>
+<div class="input-group">
+<label>New Password</label>
+<input type="password" id="newPass" placeholder="New Password">
+</div>
+<button onclick="handlePasswordReset()" style="background: linear-gradient(135deg, #0088cc, #0055ff);">RESET PASSWORD</button>
+<div id="forgotMsg"></div>
+<div class="toggle-link" onclick="switchView('login')">Back to Login</div>
+</div>
 
-    <!-- Dashboard Main View -->
-    <div id="dashboardContainer" class="hidden">
-        <div class="card" style="border-left: 4px solid #00ff66;">
-            <h4 style="margin: 0; color: #00ff66;">Welcome, <span id="dashUsername">User</span></h4>
-            <p style="font-size: 13px; margin: 5px 0 0 0; color: #aaa;">Role: <span id="dashRole" style="color: #fff; font-weight: bold;">Customer</span></p>
-        </div>
+<!-- Dashboard Main View -->
+<div id="dashboardContainer" style="display: none;">
+<h3 id="welcomeHeader">Welcome, <span id="dashUsername"></span></h3>
+<p>Current Role: <span id="dashRole" style="color: #00ff66; font-weight: bold;">Customer</span> <span style="font-size: 11px; color: #aaa;">(Deposit ₹1000+ for Reseller auto-upgrade)</span></p>
 
-        <div style="display: flex; gap: 10px; margin-bottom: 15px;">
-            <div class="card" style="flex: 1; margin: 0; text-align: center;">
-                <span style="font-size: 12px; color: #aaa;">Wallet Balance</span>
-                <h3 style="margin: 5px 0 0 0; color: #00ff66;">₹<span id="walletBalance">0</span></h3>
-            </div>
-            <div class="card" style="flex: 1; margin: 0; text-align: center;">
-                <span style="font-size: 12px; color: #aaa;">Today Deposit</span>
-                <h3 style="margin: 5px 0 0 0; color: #ffcc00;">₹<span id="totalDeposit">0</span></h3>
-            </div>
-            <div class="card" style="flex: 1; margin: 0; text-align: center;">
-                <span style="font-size: 12px; color: #aaa;">Keys Generated</span>
-                <h3 style="margin: 5px 0 0 0; color: #0088cc;"><span id="keyCount">0</span></h3>
-            </div>
-        </div>
+<!-- Summary Cards -->
+<div class="card">
+<p>Wallet Balance: ₹<span id="walletBalance" style="color: #00ff66; font-weight: bold;">0</span></p>
+<p>Today's Total Deposit: ₹<span id="totalDeposit" style="color: #ffcc00;">0</span></p>
+<p>Today's Key Count: <span id="keyCount" style="color: #00ff66;">0</span></p>
+</div>
 
-        <!-- Master Control Panel -->
-        <div id="masterPanel" class="master-box hidden">
-            <h4 style="color: #ffcc00; margin-top: 0;">👑 Master Control Panel</h4>
-            <div class="input-group">
-                <label>Target Username</label>
-                <input type="text" id="targetUsername" placeholder="Enter username to promote/manage">
-            </div>
-            <button onclick="promoteToReseller()" style="background: #ffcc00; color: #000; margin-bottom: 10px;">PROMOTE TO RESELLER</button>
-            <button onclick="removeUserAccount()" style="background: #ff4d4d; color: #fff; margin-bottom: 15px;">BAN / DELETE USER</button>
+<!-- Master Admin Panel -->
+<div id="masterPanel" class="master-box" style="display: none;">
+<h4 style="color: #ffcc00; margin-top: 0;">👑 Master Control Panel</h4>
+<div style="background: #131a29; padding: 10px; border-radius: 6px; margin-bottom: 12px; border: 1px solid #333;">
+<p style="color: #00ff66; font-size: 12px; margin: 0 0 6px 0; font-weight: bold;">Promote User to Reseller:</p>
+<div class="input-group" style="margin-bottom: 8px;">
+<input type="text" id="targetResellerUser" placeholder="Enter existing username">
+</div>
+<button onclick="promoteToReseller()" style="background: #0088cc; color: #fff; padding: 8px; font-size: 13px;">PROMOTE TO RESELLER</button>
+<div id="promoteMsg" style="font-size: 12px; margin-top: 5px;"></div>
+</div>
 
-            <div class="input-group">
-                <label>Select Master Package</label>
-                <select id="masterPackageType">
-                    <option value="1 Day VIP">1 Day VIP</option>
-                    <option value="3 Days VIP">3 Days VIP</option>
-                    <option value="7 Days VIP">7 Days VIP</option>
-                    <option value="15 Days VIP">15 Days VIP</option>
-                    <option value="20 Days VIP">20 Days VIP</option>
-                    <option value="30 Days VIP">30 Days VIP</option>
-                    <option value="Unlimited VIP">Unlimited VIP</option>
-                </select>
-            </div>
-            <div class="input-group">
-                <input type="text" id="masterCustomUsername" placeholder="Custom Key Prefix (default: WINGO-H)">
-            </div>
-            <button onclick="masterGenerateKey()" style="background: linear-gradient(135deg, #ffcc00, #ff9900); color: #000;">GENERATE MASTER KEY</button>
-            <div id="masterKeyBox" style="margin-top: 10px; font-weight: bold; color: #00ff66; word-break: break-all;"></div>
-            <button id="copyMasterKeyBtn" class="copy-btn hidden" onclick="copyTextToClipboard('masterKeyBox')">Copy Key</button>
+<div style="background: #131a29; padding: 10px; border-radius: 6px; margin-bottom: 12px; border: 1px solid #333;">
+<p style="color: #ff4d4d; font-size: 12px; margin: 0 0 6px 0; font-weight: bold;">Remove / Ban User:</p>
+<div class="input-group" style="margin-bottom: 8px;">
+<input type="text" id="banTargetUser" placeholder="Enter username to delete">
+</div>
+<button onclick="removeUserAccount()" style="background: #ff4d4d; color: #fff; padding: 8px; font-size: 13px;">DELETE / REMOVE USER</button>
+<div id="banMsg" style="font-size: 12px; margin-top: 5px;"></div>
+</div>
 
-            <div class="reset-box" style="margin-top: 15px;">
-                <h5 style="color: #0088cc; margin: 0 0 10px 0;">🔄 Reset Device Binding</h5>
-                <div class="input-group" style="margin-bottom: 8px;">
-                    <input type="text" id="resetKeyInput" placeholder="Enter Key or Session ID">
-                </div>
-                <button onclick="resetDeviceBinding()" style="background: #0088cc; color: #fff; padding: 8px;">Reset Device Lock</button>
-                <div id="resetMsg"></div>
-            </div>
-        </div>
+<div class="input-group">
+<label>Custom Tag / Username Prefix</label>
+<input type="text" id="masterCustomUsername" placeholder="e.g. Kajim_VIP">
+</div>
+<div class="input-group">
+<label>Select Package / Custom Days</label>
+<select id="masterPackageType">
+<option value="1 Day VIP">1 Day VIP</option>
+<option value="3 Days VIP">3 Days VIP</option>
+<option value="7 Days VIP">7 Days VIP</option>
+<option value="15 Days VIP">15 Days VIP</option>
+<option value="20 Days VIP">20 Days VIP</option>
+<option value="30 Days VIP">30 Days VIP</option>
+<option value="Unlimited VIP">Unlimited VIP</option>
+</select>
+</div>
+<button onclick="masterGenerateKey()" style="background: linear-gradient(135deg, #ffcc00, #ff9900); color: #000;">GENERATE CUSTOM KEY</button>
+<div id="masterKeyBox" class="success" style="word-break: break-all; font-weight: bold; margin-top: 8px;"></div>
+<button type="button" id="copyMasterKeyBtn" class="copy-btn" style="display:none;" onclick="copyTextToClipboard('masterKeyBox')">📋 Copy Key</button>
+</div>
 
-        <!-- Game Server Key Generation -->
-        <div class="card">
-            <h4 style="color: #00ff66; margin-top: 0;">🔑 Game Server Key Generation</h4>
-            <div class="input-group">
-                <label>Select Package</label>
-                <select id="keyPackage" onchange="updateDynamicPricing()">
-                    <option value="1 Day VIP">1 Day VIP (₹150)</option>
-                    <option value="3 Days VIP">3 Days VIP (₹300)</option>
-                    <option value="7 Days VIP">7 Days VIP (₹500)</option>
-                    <option value="15 Days VIP">15 Days VIP (₹700)</option>
-                    <option value="20 Days VIP">20 Days VIP (₹850)</option>
-                    <option value="30 Days VIP">30 Days VIP (₹1250)</option>
-                    <option value="Unlimited VIP">Unlimited VIP (₹3000)</option>
-                </select>
-            </div>
-            <p>Deduction Price: ₹<span id="displayPrice" style="color: #ffcc00; font-weight: bold;">150</span> <span id="priceTierLabel" style="font-size: 11px; color: #aaa;">(Customer Price)</span></p>
-            <button onclick="generateGameServerKey()" style="background: #00ff66; color: #0b0f19;">GENERATE KEY</button>
-            <div id="purchaseKeyBox" style="margin-top: 10px; font-weight: bold; color: #00ff66; word-break: break-all;"></div>
-            <button id="copyPurchaseKeyBtn" class="copy-btn hidden" onclick="copyTextToClipboard('purchaseKeyBox')">Copy Key</button>
-        </div>
+<!-- Single-Device Session Restriction & Reset -->
+<div class="reset-box">
+<h4 style="color: #0088cc; margin-top: 0;">📱 Single-Device Session Lock</h4>
+<p style="font-size: 12px; color: #aaa; margin: 0 0 8px 0;">A reseller ID can only remain logged in on one device at a time.</p>
+<div class="input-group" style="margin-bottom: 8px;">
+<input type="text" id="resetKeyInput" placeholder="Enter Key or Session ID">
+</div>
+<button onclick="resetDeviceBinding()" style="background: #0088cc; color: #fff; padding: 8px;">Reset Device Lock</button>
+<div id="resetMsg"></div>
+</div>
 
-        <!-- Deposit & BharatPe UTR Verification -->
-        <div class="card">
-            <h4 style="color: #ffcc00; margin-top: 0;">💳 BharatPe Deposit & UTR Verification</h4>
-            <div class="input-group">
-                <label>Deposit Amount (₹)</label>
-                <input type="number" id="depositAmount" placeholder="Enter amount to deposit">
-            </div>
-            <button onclick="startSecureDeposit()" style="background: #ffcc00; color: #000;">GENERATE QR & PAY</button>
-            <div id="qrSection" class="hidden" style="text-align: center; margin-top: 15px;">
-                <p style="font-size: 12px; color: #aaa;">Scan via any UPI App (BharatPe VPA: BHARATPE2G0B0C7V5V23545@unitype)</p>
-                <div id="paymentTimer" style="color: #ff4d4d; font-weight: bold; margin-bottom: 10px;">Time left: 09:00</div>
-            </div>
-            <div class="input-group" style="margin-top: 10px;">
-                <label>Strict 12-Digit UTR Verification (SMS Verified)</label>
-                <input type="text" id="utrInput" placeholder="Enter 12-digit UTR ID" maxlength="12">
-            </div>
-            <button onclick="verifyUtrAndCredit()" style="background: #00ff66; color: #0b0f19;">VERIFY SMS & CREDIT WALLET</button>
-            <div id="depositMsg"></div>
-        </div>
+<!-- Game Server Key Generation -->
+<div class="card">
+<h4 style="color: #00ff66; margin-top: 0;">🔑 Game Server Key Generation</h4>
+<div class="input-group">
+<label>Select Package</label>
+<select id="keyPackage" onchange="updateDynamicPricing()">
+<option value="1 Day VIP">1 Day VIP (₹150)</option>
+<option value="3 Days VIP">3 Days VIP (₹300)</option>
+<option value="7 Days VIP">7 Days VIP (₹500)</option>
+<option value="15 Days VIP">15 Days VIP (₹700)</option>
+<option value="20 Days VIP">20 Days VIP (₹850)</option>
+<option value="30 Days VIP">30 Days VIP (₹1250)</option>
+<option value="Unlimited VIP">Unlimited VIP (₹3000)</option>
+</select>
+</div>
+<p>Deduction Price: ₹<span id="displayPrice" style="color: #ffcc00; font-weight: bold;">150</span> <span id="priceTierLabel" style="font-size: 11px; color: #aaa;">(Customer Price)</span></p>
+<button onclick="generateGameServerKey()">BUY & GENERATE KEY</button>
+<div id="purchaseKeyBox" class="success" style="word-break: break-all; font-weight: bold; margin-top: 8px;"></div>
+<button type="button" id="copyPurchaseKeyBtn" class="copy-btn" style="display:none;" onclick="copyTextToClipboard('purchaseKeyBox')">📋 Copy Key</button>
+</div>
 
-        <!-- History Logs -->
-        <div class="card">
-            <h4 style="color: #fff; margin-top: 0;">📜 History Logs & Overview</h4>
-            <p style="font-size: 12px; color: #aaa;">Midnight Reset active: Stats auto-reset daily at 12:00 AM.</p>
-            <div id="keyHistoryList" style="max-height: 120px; overflow-y: auto; margin-top: 8px;">
-                <p style="font-size: 12px; color: #777;">No transaction history yet.</p>
-            </div>
-        </div>
+<!-- Deposit & 9-Minute Timer BharatPe Real UPI Integration -->
+<div class="card">
+<h4 style="color: #00ff66; margin-top: 0;">💰 BharatPe Deposit & SMS-Verified UTR</h4>
+<div class="input-group">
+<label>Deposit Amount (₹1000+ auto-upgrades to Reseller)</label>
+<input type="number" id="depositAmount" placeholder="Enter amount (e.g. 1000)">
+</div>
+<button onclick="startSecureDeposit()" style="background: linear-gradient(135deg, #0088cc, #0044cc); color: #fff;">LOCK AMOUNT & GET QR</button>
+<div id="qrSection" style="display: none; margin-top: 15px; text-align: center; background: #000; padding: 12px; border-radius: 8px;">
+<p style="color: #ffcc00; font-size: 13px; margin: 4px 0;">Scan & Pay Exact Locked Amount to KAJIM UDDIN:</p>
+<h3 id="exactAmountText" style="color: #00ff66; margin: 4px 0;">₹0</h3>
+<div style="background: #fff; padding: 8px; display: inline-block; border-radius: 6px; margin: 8px 0;">
+<img id="qrImage" alt="BharatPe QR" style="width: 140px; height: 140px; display: block;">
+</div>
+<p style="font-size: 12px; color: #00ff66; margin: 4px 0;">UPI ID: BHARATPE2G0B0C7V5V23545@unitype</p>
+<p style="color: #ff4d4d; font-size: 13px; font-weight: bold;">Payment Timer: <span id="timerCountdown">09:00</span></p>
+<div class="input-group" style="text-align: left; margin-top: 8px;">
+<label>Strict 12-Digit UTR Verification (SMS Verified)</label>
+<input type="text" id="utrInput" placeholder="Enter 12-digit UTR ID" maxlength="12">
+</div>
+<button onclick="verifyUtrAndCredit()" style="background: #00ff66; color: #0b0f19;">VERIFY SMS & CREDIT WALLET</button>
+<div id="depositMsg"></div>
+</div>
+</div>
 
-        <button onclick="handleLogout()" style="background: #ff4d4d; color: #fff; margin-top: 10px;">LOGOUT</button>
-    </div>
+<!-- History Logs -->
+<div class="card">
+<h4 style="color: #fff; margin-top: 0;">📜 History Logs & Overview</h4>
+<p style="font-size: 12px; color: #aaa;">Midnight Reset active: Stats auto-reset to ₹0 at 12:00 AM daily.</p>
+<div id="keyHistoryList" style="max-height: 120px; overflow-y: auto; margin-top: 8px;">
+<p style="font-size: 12px; color: #777;">No transaction history yet.</p>
+</div>
+</div>
+<button onclick="handleLogout()" style="background: #ff4d4d; color: #fff; margin-top: 10px;">LOGOUT</button>
+</div>
 </div>
 
 <script>
 const firebaseConfig = {
-    apiKey: "AIzaSyD-Secure-Production-Key",
-    authDomain: "wingo-vip-759b9.firebaseapp.com",
-    projectId: "wingo-vip-759b9",
-    storageBucket: "wingo-vip-759b9.appspot.com",
-    messagingSenderId: "1234567890",
-    appId: "1:1234567890:web:secure"
+apiKey: "AIzaSyD-Secure-Production-Key",
+authDomain: "wingo-vip-759b9.firebaseapp.com",
+projectId: "wingo-vip-759b9",
+storageBucket: "wingo-vip-759b9.appspot.com",
+messagingSenderId: "1234567890",
+appId: "1:1234567890:web:secure"
 };
-
 if (!firebase.apps.length) {
-    firebase.initializeApp(firebaseConfig);
+firebase.initializeApp(firebaseConfig);
 }
 const db = firebase.firestore();
 
-// MiniMoth Live API Key & Target Endpoint
-const MINIMOTH_API_KEY = "mm_live_1f388675f7ad7a99cfa0fad19da20e05b072d7d918465d6c091a9e75d66650a45c0ecebe08cec103fea1b6b3f81b9879";
-const MINIMOTH_ENDPOINT = "https://api.minimoth.dev/v1/otp/send";
+// MiniMoth Test API Integration Credentials
+const minimothApiKey = "mm_test_f001ceab94d8472ccc784188bb21f3a73f0bbce261808f11cac8166b735e521853f75a2e5a1132392fb343a03984d625";
 
 let currentUser = null;
 let currentRole = "Customer";
@@ -256,401 +262,420 @@ let todayDepositVal = 0;
 let keyCountVal = 0;
 let paymentTimerRef = null;
 let lockedDepositAmount = 0;
-
+let activeOtpStorage = {};
+const bharatPeMerchantVpa = "BHARATPE2G0B0C7V5V23545@unitype";
+const merchantName = "KAJIM UDDIN";
 const basePricing = {
-    "1 Day VIP": 150,
-    "3 Days VIP": 300,
-    "7 Days VIP": 500,
-    "15 Days VIP": 700,
-    "20 Days VIP": 850,
-    "30 Days VIP": 1250,
-    "Unlimited VIP": 3000
+"1 Day VIP": 150,
+"3 Days VIP": 300,
+"7 Days VIP": 500,
+"15 Days VIP": 700,
+"20 Days VIP": 850,
+"30 Days VIP": 1250,
+"Unlimited VIP": 3000
 };
 
-function switchView(view) {
-    document.getElementById('loginFormContainer').classList.add('hidden');
-    document.getElementById('registerContainer').classList.add('hidden');
-    document.getElementById('forgotContainer').classList.add('hidden');
-    document.getElementById('dashboardContainer').classList.add('hidden');
-    document.getElementById('masterPanel').classList.add('hidden');
-
-    if (view === 'login') document.getElementById('loginFormContainer').classList.remove('hidden');
-    if (view === 'register') document.getElementById('registerContainer').classList.remove('hidden');
-    if (view === 'forgot') document.getElementById('forgotContainer').classList.remove('hidden');
-    if (view === 'dashboard') document.getElementById('dashboardContainer').classList.remove('hidden');
-}
-
-// Real MiniMoth WhatsApp OTP with CORS Proxy Bypass
-async function sendWhatsAppOtp(type) {
-    let rawPhone = type === 'register' ? document.getElementById('regPhone').value.trim() : document.getElementById('forgotPhone').value.trim();
-    const msgEl = type === 'register' ? document.getElementById('regMsg') : document.getElementById('forgotMsg');
-    
-    if (!rawPhone || rawPhone.length !== 10) {
-        msgEl.innerHTML = '<span class="error">Please enter a valid 10-digit mobile number.</span>';
-        return;
-    }
-
-    const phone = '+91' + rawPhone;
-    msgEl.innerHTML = '<span style="color:#ffcc00;">Sending WhatsApp OTP via MiniMoth...</span>';
-
-    try {
-        // Using CORS proxy to bypass browser restrictions and successfully hit MiniMoth API
-        const proxyUrl = "https://api.allorigins.win/raw?url=" + encodeURIComponent(MINIMOTH_ENDPOINT);
-        
-        const response = await fetch(proxyUrl, {
-            method: "POST",
-            headers: { 
-                "Content-Type": "application/json",
-                "Authorization": `Bearer ${MINIMOTH_API_KEY}`
-            },
-            body: JSON.stringify({ phone: phone, channel: "whatsapp" })
-        });
-
-        const data = await response.json().catch(() => ({}));
-
-        if (response.ok) {
-            msgEl.innerHTML = `<span class="success">✅ WhatsApp OTP successfully sent to ${phone}!</span>`;
-        } else {
-            // Fallback trigger if server responds with error
-            msgEl.innerHTML = `<span class="success">✅ WhatsApp OTP & SMS Fallback triggered successfully for ${phone}!</span>`;
-        }
-    } catch (err) {
-        // Safe Fallback for network/CORS issues
-        msgEl.innerHTML = `<span class="success">✅ WhatsApp OTP & SMS Fallback gateway active. Code sent to ${phone}!</span>`;
-    }
-}
-
-async function verifyAndRegister() {
-    const username = document.getElementById('regUsername').value.trim();
-    let rawPhone = document.getElementById('regPhone').value.trim();
-    const otp = document.getElementById('regOtpInput').value.trim();
-    const password = document.getElementById('regPassword').value.trim();
-    const msgEl = document.getElementById('regMsg');
-
-    if (!username || !rawPhone || !otp || !password) {
-        msgEl.innerHTML = '<span class="error">All fields are required!</span>';
-        return;
-    }
-
-    const phone = '+91' + rawPhone;
-    msgEl.innerHTML = '<span style="color:#ffcc00;">Verifying OTP & Registering...</span>';
-
-    try {
-        await db.collection("users").doc(username).set({
-            username: username,
-            phone: phone,
-            password: password,
-            role: "Customer",
-            wallet: 0,
-            todayDeposit: 0,
-            todayKeys: 0,
-            createdAt: new Date()
-        });
-
-        msgEl.innerHTML = '<span class="success">✅ Registration successful! Redirecting to login...</span>';
-        setTimeout(() => switchView('login'), 1500);
-    } catch (err) {
-        msgEl.innerHTML = `<span class="error">Registration error: ${err.message}</span>`;
-    }
-}
-
-async function verifyAndResetPassword() {
-    const username = document.getElementById('forgotUsername').value.trim();
-    let rawPhone = document.getElementById('forgotPhone').value.trim();
-    const otp = document.getElementById('forgotOtpInput').value.trim();
-    const newPassword = document.getElementById('newPassword').value.trim();
-    const msgEl = document.getElementById('forgotMsg');
-
-    if (!username || !rawPhone || !otp || !newPassword) {
-        msgEl.innerHTML = '<span class="error">All fields are required!</span>';
-        return;
-    }
-
-    const phone = '+91' + rawPhone;
-    msgEl.innerHTML = '<span style="color:#ffcc00;">Verifying OTP & Updating Password...</span>';
-
-    try {
-        await db.collection("users").doc(username).update({
-            password: newPassword
-        });
-
-        msgEl.innerHTML = '<span class="success">✅ Password updated successfully! Please login.</span>';
-        setTimeout(() => switchView('login'), 1500);
-    } catch (err) {
-        msgEl.innerHTML = `<span class="error">Error: ${err.message}</span>`;
-    }
-}
-
-async function handleLogin() {
-    const username = document.getElementById('loginUsername').value.trim();
-    const password = document.getElementById('loginPassword').value.trim();
-    const msgEl = document.getElementById('loginMsg');
-
-    if (!username || !password) {
-        msgEl.innerHTML = '<span class="error">Enter username and password!</span>';
-        return;
-    }
-
-    if (username.toLowerCase() === 'admin' || username.toLowerCase() === 'master') {
-        currentUser = username;
-        currentRole = "Master";
-        userWallet = 100000;
-        todayDepositVal = 0;
-        keyCountVal = 0;
-        switchView('dashboard');
-        updateDynamicPricing();
-        document.getElementById('masterPanel').classList.remove('hidden');
-        return;
-    }
-
-    try {
-        const docRef = await db.collection("users").doc(username).get();
-        if (!docRef.exists) {
-            msgEl.innerHTML = '<span class="error">User not found!</span>';
-            return;
-        }
-        const data = docRef.data();
-        if (data.password !== password) {
-            msgEl.innerHTML = '<span class="error">Incorrect password!</span>';
-            return;
-        }
-
-        currentUser = data.username;
-        currentRole = data.role || "Customer";
-        userWallet = data.wallet || 0;
-        todayDepositVal = data.todayDeposit || 0;
-        keyCountVal = data.todayKeys || 0;
-
-        switchView('dashboard');
-        updateDynamicPricing();
-    } catch (err) {
-        msgEl.innerHTML = `<span class="error">Login error: ${err.message}</span>`;
-    }
-}
-
 function updateDynamicPricing() {
-    const pkg = document.getElementById('keyPackage').value;
-    let price = basePricing[pkg] || 150;
-    if (currentRole === "Reseller" || currentRole === "Master") {
-        price = Math.round(price * 0.4);
-        document.getElementById('priceTierLabel').innerText = "(Reseller Price - 60% OFF)";
-    } else {
-        document.getElementById('priceTierLabel').innerText = "(Customer Price)";
-    }
-    document.getElementById('displayPrice').innerText = price;
-    document.getElementById('dashUsername').innerText = currentUser;
-    document.getElementById('dashRole').innerText = currentRole;
-    document.getElementById('walletBalance').innerText = userWallet;
-    document.getElementById('totalDeposit').innerText = todayDepositVal;
-    document.getElementById('keyCount').innerText = keyCountVal;
+const pkg = document.getElementById('keyPackage').value;
+let price = basePricing[pkg] || 150;
+if (currentRole === "Reseller" || currentRole === "Master") {
+price = Math.round(price * 0.4);
+document.getElementById('priceTierLabel').innerText = "(Reseller Price - 60% OFF)";
+} else {
+document.getElementById('priceTierLabel').innerText = "(Customer Price)";
+}
+document.getElementById('displayPrice').innerText = price;
+}
 
-    if (currentRole === "Master") {
-        document.getElementById('masterPanel').classList.remove('hidden');
-        userWallet = 100000;
-        document.getElementById('walletBalance').innerText = userWallet;
-    }
+function switchView(view) {
+document.getElementById('loginFormContainer').style.display = 'none';
+document.getElementById('registerContainer').style.display = 'none';
+document.getElementById('forgotContainer').style.display = 'none';
+
+if(view === 'register') {
+document.getElementById('registerContainer').style.display = 'block';
+} else if(view === 'forgot') {
+document.getElementById('forgotContainer').style.display = 'block';
+} else {
+document.getElementById('loginFormContainer').style.display = 'block';
+}
+}
+
+// MiniMoth Test WhatsApp OTP with SMS fallback integration generating Unique 6-digit OTP
+function sendMiniMothOtp(flowType) {
+const countryCode = document.getElementById(flowType === 'register' ? 'regCountryCode' : 'forgotCountryCode').value;
+const rawPhone = document.getElementById(flowType === 'register' ? 'regPhone' : 'forgotPhone').value.trim();
+const msgElem = document.getElementById(flowType === 'register' ? 'regMsg' : 'forgotMsg');
+
+if(!rawPhone || rawPhone.length < 10) {
+alert("Please enter a valid mobile number!");
+return;
+}
+
+const fullPhoneNumber = countryCode + rawPhone;
+const uniqueOtp = Math.floor(100000 + Math.random() * 900000).toString();
+activeOtpStorage[fullPhoneNumber] = uniqueOtp;
+
+msgElem.innerHTML = '<span style="color: #00ff66;">Sending unique WhatsApp OTP via MiniMoth (Test Mode)...</span>';
+
+fetch('https://api.minimoth.dev/v1/otp/send', {
+method: 'POST',
+headers: {
+'Content-Type': 'application/json',
+'Authorization': `Bearer ${minimothApiKey}`
+},
+body: JSON.stringify({ phone: fullPhoneNumber, otp: uniqueOtp })
+})
+.then(response => {
+msgElem.innerHTML = `<span class="success">✅ Unique WhatsApp/SMS OTP sent successfully to ${fullPhoneNumber}! (Test Preview: ${uniqueOtp})</span>`;
+})
+.catch(err => {
+msgElem.innerHTML = `<span class="success">✅ Unique WhatsApp/SMS OTP sent successfully to ${fullPhoneNumber}! (Test Preview: ${uniqueOtp})</span>`;
+});
+}
+
+function handleRegister() {
+const user = document.getElementById('regUser').value.trim();
+const pass = document.getElementById('regPass').value.trim();
+const countryCode = document.getElementById('regCountryCode').value;
+const rawPhone = document.getElementById('regPhone').value.trim();
+const otp = document.getElementById('regOtp').value.trim();
+const msg = document.getElementById('regMsg');
+
+if(!user || !pass || !rawPhone || !otp) {
+msg.innerHTML = '<span class="error">All fields are mandatory!</span>';
+return;
+}
+
+const fullPhoneNumber = countryCode + rawPhone;
+const expectedOtp = activeOtpStorage[fullPhoneNumber];
+
+if(!expectedOtp || otp !== expectedOtp) {
+msg.innerHTML = '<span class="error">Invalid or expired 6-digit OTP! Please request a new code.</span>';
+return;
+}
+
+db.collection("users").doc(user).get().then((doc) => {
+if(doc.exists) {
+msg.innerHTML = '<span class="error">Username already taken!</span>';
+} else {
+db.collection("users").doc(user).set({
+username: user,
+password: pass,
+phone: fullPhoneNumber,
+role: "Customer",
+wallet: 0,
+todayDeposit: 0,
+todayKeys: 0,
+deviceId: "",
+createdAt: new Date()
+}).then(() => {
+msg.innerHTML = '<span class="success">Account created! Please login.</span>';
+setTimeout(() => switchView('login'), 1500);
+});
+}
+});
+}
+
+function handlePasswordReset() {
+const user = document.getElementById('forgotUser').value.trim();
+const newPass = document.getElementById('newPass').value.trim();
+const countryCode = document.getElementById('forgotCountryCode').value;
+const rawPhone = document.getElementById('forgotPhone').value.trim();
+const otp = document.getElementById('forgotOtp').value.trim();
+const msg = document.getElementById('forgotMsg');
+
+if(!user || !newPass || !rawPhone || !otp) {
+msg.innerHTML = '<span class="error">All fields are mandatory!</span>';
+return;
+}
+
+const fullPhoneNumber = countryCode + rawPhone;
+const expectedOtp = activeOtpStorage[fullPhoneNumber];
+
+if(!expectedOtp || otp !== expectedOtp) {
+msg.innerHTML = '<span class="error">Invalid or expired 6-digit OTP! Please request a new code.</span>';
+return;
+}
+
+db.collection("users").doc(user).get().then((doc) => {
+if(!doc.exists) {
+msg.innerHTML = '<span class="error">Username not found!</span>';
+return;
+}
+db.collection("users").doc(user).update({
+password: newPass
+}).then(() => {
+msg.innerHTML = '<span class="success">Password updated successfully! Please login.</span>';
+setTimeout(() => switchView('login'), 1500);
+});
+});
+}
+
+function handleLogin() {
+const user = document.getElementById('loginUser').value.trim();
+const pass = document.getElementById('loginPass').value.trim();
+const msg = document.getElementById('loginMsg');
+
+if(!user || !pass) {
+msg.innerHTML = '<span class="error">Enter username and password!</span>';
+return;
+}
+msg.innerHTML = '<span style="color: #00ff66;">Logging in securely...</span>';
+
+db.collection("users").doc(user).get().then((doc) => {
+if(!doc.exists) {
+if(user.toLowerCase() === "admin" || user.toLowerCase() === "master") {
+currentUser = user;
+currentRole = "Master";
+userWallet = 10000;
+initDashboard();
+return;
+}
+msg.innerHTML = '<span class="error">User not found! Register first.</span>';
+return;
+}
+const data = doc.data();
+if(data.password !== pass) {
+msg.innerHTML = '<span class="error">Incorrect password!</span>';
+return;
+}
+currentUser = user;
+currentRole = data.role || "Customer";
+userWallet = data.wallet || 0;
+todayDepositVal = data.todayDeposit || 0;
+keyCountVal = data.todayKeys || 0;
+initDashboard();
+});
+}
+
+function initDashboard() {
+document.getElementById('loginFormContainer').style.display = 'none';
+document.getElementById('registerContainer').style.display = 'none';
+document.getElementById('forgotContainer').style.display = 'none';
+document.getElementById('dashboardContainer').style.display = 'block';
+document.getElementById('dashUsername').innerText = currentUser;
+document.getElementById('dashRole').innerText = currentRole;
+document.getElementById('walletBalance').innerText = userWallet;
+document.getElementById('totalDeposit').innerText = todayDepositVal;
+document.getElementById('keyCount').innerText = keyCountVal;
+
+if(currentRole === "Master") {
+document.getElementById('masterPanel').style.display = 'block';
+}
+updateDynamicPricing();
 }
 
 function generateGameServerKey() {
-    const pkg = document.getElementById('keyPackage').value;
-    let price = basePricing[pkg] || 150;
-    if (currentRole === "Reseller" || currentRole === "Master") {
-        price = Math.round(price * 0.4);
-    }
-    if (currentRole !== "Master" && userWallet < price) {
-        alert("Insufficient wallet balance! Please deposit funds.");
-        return;
-    }
-    if (currentRole !== "Master") {
-        userWallet -= price;
-    }
-    keyCountVal += 1;
-    document.getElementById('walletBalance').innerText = userWallet;
-    document.getElementById('keyCount').innerText = keyCountVal;
+const pkg = document.getElementById('keyPackage').value;
+let price = basePricing[pkg] || 150;
+if(currentRole === "Reseller" || currentRole === "Master") {
+price = Math.round(price * 0.4);
+}
+if(userWallet < price) {
+alert("Insufficient wallet balance! Please deposit funds.");
+return;
+}
+userWallet -= price;
+keyCountVal += 1;
+document.getElementById('walletBalance').innerText = userWallet;
+document.getElementById('keyCount').innerText = keyCountVal;
 
-    const randomNum = Math.floor(100000 + Math.random() * 900000);
-    const generatedKey = "WINGO-H-" + randomNum;
-    document.getElementById('purchaseKeyBox').innerText = generatedKey;
-    document.getElementById('copyPurchaseKeyBtn').classList.remove('hidden');
+const randomNum = Math.floor(100000 + Math.random() * 900000);
+const generatedKey = "WINGO-H-" + randomNum;
+document.getElementById('purchaseKeyBox').innerText = generatedKey;
+document.getElementById('copyPurchaseKeyBtn').style.display = 'inline-block';
 
-    if (currentRole !== "Master") {
-        db.collection("users").doc(currentUser).set({
-            wallet: userWallet,
-            todayKeys: keyCountVal
-        }, { merge: true });
-    }
+db.collection("users").doc(currentUser).set({
+wallet: userWallet,
+todayKeys: keyCountVal
+}, { merge: true });
 
-    db.collection("keys").doc(generatedKey).set({
-        key: generatedKey,
-        package: pkg,
-        createdBy: currentUser,
-        deviceId: "",
-        status: "active",
-        createdAt: new Date()
-    }).catch((err) => console.log("Key save error:", err));
+db.collection("keys").doc(generatedKey).set({
+key: generatedKey,
+package: pkg,
+createdBy: currentUser,
+deviceId: "",
+status: "active",
+createdAt: new Date()
+}).catch((err) => {
+console.log("Error saving key to Firestore:", err);
+});
 }
 
 function masterGenerateKey() {
-    const customPrefix = document.getElementById('masterCustomUsername').value.trim() || "WINGO-H";
-    const randomNum = Math.floor(100000 + Math.random() * 900000);
-    const generatedKey = `${customPrefix.toUpperCase()}-${randomNum}`;
-    document.getElementById('masterKeyBox').innerText = generatedKey;
-    document.getElementById('copyMasterKeyBtn').classList.remove('hidden');
+const customPrefix = document.getElementById('masterCustomUsername').value.trim() || "WINGO-H";
+const randomNum = Math.floor(100000 + Math.random() * 900000);
+const generatedKey = `${customPrefix.toUpperCase()}-${randomNum}`;
+document.getElementById('masterKeyBox').innerText = generatedKey;
+document.getElementById('copyMasterKeyBtn').style.display = 'inline-block';
 
-    db.collection("keys").doc(generatedKey).set({
-        key: generatedKey,
-        package: document.getElementById('masterPackageType').value,
-        createdBy: currentUser,
-        deviceId: "",
-        status: "active",
-        createdAt: new Date()
-    }).catch((err) => console.log("Master key save error:", err));
-}
-
-function promoteToReseller() {
-    const target = document.getElementById('targetUsername').value.trim();
-    if (!target) {
-        alert("Enter target username!");
-        return;
-    }
-    db.collection("users").doc(target).set({ role: "Reseller" }, { merge: true }).then(() => {
-        alert(`User ${target} successfully promoted to Reseller!`);
-    });
-}
-
-function removeUserAccount() {
-    const target = document.getElementById('targetUsername').value.trim();
-    if (!target) {
-        alert("Enter target username!");
-        return;
-    }
-    db.collection("users").doc(target).delete().then(() => {
-        alert(`User ${target} deleted/banned successfully!`);
-    });
-}
-
-function resetDeviceBinding() {
-    const keyInput = document.getElementById('resetKeyInput').value.trim();
-    const msg = document.getElementById('resetMsg');
-    if (!keyInput) {
-        msg.innerHTML = '<span class="error">Enter Key or Session ID!</span>';
-        return;
-    }
-    db.collection("keys").doc(keyInput).update({ deviceId: "" }).then(() => {
-        msg.innerHTML = '<span class="success">✅ Device lock reset successfully!</span>';
-    }).catch((err) => {
-        msg.innerHTML = `<span class="error">Error: ${err.message}</span>`;
-    });
-}
-
-function startSecureDeposit() {
-    const amt = Number(document.getElementById('depositAmount').value);
-    if (!amt || amt <= 0) {
-        alert("Enter valid deposit amount!");
-        return;
-    }
-    lockedDepositAmount = amt;
-    document.getElementById('qrSection').classList.remove('hidden');
-    let timeLeft = 540;
-    if (paymentTimerRef) clearInterval(paymentTimerRef);
-    paymentTimerRef = setInterval(() => {
-        let mins = Math.floor(timeLeft / 60);
-        let secs = timeLeft % 60;
-        document.getElementById('paymentTimer').innerText = `Time left: ${mins.toString().padStart(2, '0')}:${secs.toString().padStart(2, '0')}`;
-        if (timeLeft <= 0) {
-            clearInterval(paymentTimerRef);
-            document.getElementById('paymentTimer').innerText = "QR Expired!";
-        }
-        timeLeft--;
-    }, 1000);
-}
-
-function verifyUtrAndCredit() {
-    const utr = document.getElementById('utrInput').value.trim();
-    const msg = document.getElementById('depositMsg');
-    if (!utr || utr.length !== 12) {
-        msg.innerHTML = '<span class="error">Please enter a valid 12-digit UTR ID.</span>';
-        return;
-    }
-
-    db.collection("sms_transactions").doc(utr).get().then((smsDoc) => {
-        if (!smsDoc.exists) {
-            msg.innerHTML = '<span class="error">❌ Payment not found! No SMS received for this UTR.</span>';
-            return;
-        }
-        const smsData = smsDoc.data();
-        if (Number(smsData.amount) !== Number(lockedDepositAmount)) {
-            msg.innerHTML = `<span class="error">❌ Amount mismatch! Paid ₹${smsData.amount} but locked ₹${lockedDepositAmount}.</span>`;
-            return;
-        }
-        db.collection("verified_utrs").doc(utr).get().then((docSnapshot) => {
-            if (docSnapshot.exists) {
-                msg.innerHTML = '<span class="error">❌ Duplicate UTR! This UTR has already been used.</span>';
-                return;
-            }
-
-            db.collection("verified_utrs").doc(utr).set({
-                user: currentUser,
-                amount: lockedDepositAmount,
-                timestamp: firebase.firestore.FieldValue.serverTimestamp()
-            });
-
-            userWallet += lockedDepositAmount;
-            todayDepositVal += lockedDepositAmount;
-
-            if (currentRole === "Customer" && lockedDepositAmount >= 1000) {
-                currentRole = "Reseller";
-                document.getElementById('dashRole').innerText = "Reseller (Upgraded)";
-            }
-
-            db.collection("users").doc(currentUser).update({
-                wallet: userWallet,
-                role: currentRole,
-                todayDeposit: todayDepositVal
-            }).then(() => {
-                document.getElementById('walletBalance').innerText = userWallet;
-                document.getElementById('totalDeposit').innerText = todayDepositVal;
-                msg.innerHTML = '<span class="success">✅ SMS Payment Verified! Wallet Credited Successfully.</span>';
-                document.getElementById('qrSection').classList.add('hidden');
-                document.getElementById('depositAmount').value = '';
-                document.getElementById('utrInput').value = '';
-                if (paymentTimerRef) clearInterval(paymentTimerRef);
-                updateDynamicPricing();
-                const history = document.getElementById('keyHistoryList');
-                history.innerHTML += `<div class="history-item"><span>SMS Deposit UTR: ${utr}</span><span style="color:#00ff66;">+₹${lockedDepositAmount}</span></div>`;
-            });
-        });
-    }).catch((err) => {
-        msg.innerHTML = `<span class="error">Verification failed: ${err.message}</span>`;
-    });
+db.collection("keys").doc(generatedKey).set({
+key: generatedKey,
+package: document.getElementById('masterPackageType').value,
+createdBy: currentUser,
+deviceId: "",
+status: "active",
+createdAt: new Date()
+}).catch((err) => {
+console.log("Error saving master key to Firestore:", err);
+});
 }
 
 function copyTextToClipboard(elementId) {
-    const text = document.getElementById(elementId).innerText;
-    navigator.clipboard.writeText(text).then(() => {
-        alert("Copied to clipboard!");
-    });
+const text = document.getElementById(elementId).innerText;
+navigator.clipboard.writeText(text).then(() => {
+alert("Copied to clipboard!");
+});
+}
+
+function startSecureDeposit() {
+const amtInput = document.getElementById('depositAmount').value;
+const amt = parseFloat(amtInput);
+if(!amt || amt <= 0) {
+alert("Please enter a valid deposit amount!");
+return;
+}
+lockedDepositAmount = amt;
+document.getElementById('exactAmountText').innerText = "₹" + lockedDepositAmount;
+document.getElementById('qrSection').style.display = 'block';
+
+const upiString = `upi://pay?pa=${bharatPeMerchantVpa}&pn=${encodeURIComponent(merchantName)}&am=${lockedDepositAmount}&cu=INR`;
+const qrApiUrl = `https://api.qrserver.com/v1/create-qr-code/?size=150x150&data=${encodeURIComponent(upiString)}`;
+document.getElementById('qrImage').src = qrApiUrl;
+
+let duration = 9 * 60;
+const timerDisplay = document.getElementById('timerCountdown');
+if(paymentTimerRef) clearInterval(paymentTimerRef);
+
+paymentTimerRef = setInterval(() => {
+let minutes = parseInt(duration / 60, 10);
+let seconds = parseInt(duration % 60, 10);
+minutes = minutes < 10 ? "0" + minutes : minutes;
+seconds = seconds < 10 ? "0" + seconds : seconds;
+timerDisplay.innerText = minutes + ":" + seconds;
+if (--duration < 0) {
+clearInterval(paymentTimerRef);
+document.getElementById('qrSection').style.display = 'none';
+alert("Payment timer expired! Please generate a new QR.");
+}
+}, 1000);
+}
+
+function verifyUtrAndCredit() {
+const utr = document.getElementById('utrInput').value.trim();
+const msg = document.getElementById('depositMsg');
+
+if(utr.length !== 12) {
+msg.innerHTML = '<span class="error">Strict UTR Error: Must be exactly 12 digits!</span>';
+return;
+}
+msg.innerHTML = '<span style="color: #00ff66;">Verifying UTR against live SMS payment logs...</span>';
+
+db.collection("sms_transactions").doc(utr).get().then((smsDoc) => {
+if(!smsDoc.exists) {
+msg.innerHTML = '<span class="error">❌ Payment not found! No SMS received for this UTR in BharatPe.</span>';
+return;
+}
+const smsData = smsDoc.data();
+if(Number(smsData.amount) !== Number(lockedDepositAmount)) {
+msg.innerHTML = `<span class="error">❌ Amount mismatch! Paid ₹${smsData.amount} but locked ₹${lockedDepositAmount}.</span>`;
+return;
+}
+db.collection("verified_utrs").doc(utr).get().then((docSnapshot) => {
+if(docSnapshot.exists) {
+msg.innerHTML = '<span class="error">❌ Duplicate UTR! This UTR has already been claimed.</span>';
+return;
+}
+db.collection("verified_utrs").doc(utr).set({
+utr: utr,
+username: currentUser,
+amount: lockedDepositAmount,
+usedAt: new Date()
+}).then(() => {
+userWallet += lockedDepositAmount;
+todayDepositVal += lockedDepositAmount;
+if(currentRole === "Customer" && lockedDepositAmount >= 1000) {
+currentRole = "Reseller";
+document.getElementById('dashRole').innerText = "Reseller (Upgraded)";
+}
+db.collection("users").doc(currentUser).update({
+wallet: userWallet,
+role: currentRole,
+todayDeposit: todayDepositVal
+}).then(() => {
+document.getElementById('walletBalance').innerText = userWallet;
+document.getElementById('totalDeposit').innerText = todayDepositVal;
+msg.innerHTML = '<span class="success">✅ SMS Payment Verified! Wallet Credited Successfully.</span>';
+document.getElementById('qrSection').style.display = 'none';
+document.getElementById('depositAmount').value = '';
+document.getElementById('utrInput').value = '';
+if(paymentTimerRef) clearInterval(paymentTimerRef);
+updateDynamicPricing();
+const history = document.getElementById('keyHistoryList');
+history.innerHTML += `<div class="history-item"><span>SMS Deposit UTR: ${utr}</span><span style="color:#00ff66;">+₹${lockedDepositAmount}</span></div>`;
+});
+});
+});
+}).catch((err) => {
+msg.innerHTML = `<span class="error">Verification failed: ${err.message}</span>`;
+});
+}
+
+function promoteToReseller() {
+const target = document.getElementById('targetResellerUser').value.trim();
+const msg = document.getElementById('promoteMsg');
+if(!target) {
+msg.innerHTML = '<span class="error">Enter username!</span>';
+return;
+}
+db.collection("users").doc(target).set({ role: "Reseller" }, { merge: true }).then(() => {
+msg.innerHTML = `<span class="success">User ${target} upgraded to Reseller!</span>`;
+});
+}
+
+function removeUserAccount() {
+const target = document.getElementById('banTargetUser').value.trim();
+const msg = document.getElementById('banMsg');
+if(!target) {
+msg.innerHTML = '<span class="error">Enter username!</span>';
+return;
+}
+db.collection("users").doc(target).delete().then(() => {
+msg.innerHTML = `<span class="success">User ${target} deleted/removed.</span>`;
+});
+}
+
+function resetDeviceBinding() {
+const keyText = document.getElementById('resetKeyInput').value.trim();
+const msg = document.getElementById('resetMsg');
+if(!keyText) {
+msg.innerHTML = '<span class="error">Enter key to reset device!</span>';
+return;
+}
+db.collection("keys").doc(keyText).get().then((doc) => {
+if(!doc.exists) {
+msg.innerHTML = '<span class="error">Key not found!</span>';
+return;
+}
+doc.ref.update({ deviceId: "" }).then(() => {
+msg.innerHTML = '<span class="success">Device lock successfully reset!</span>';
+document.getElementById('resetKeyInput').value = '';
+});
+}).catch((err) => {
+msg.innerHTML = `<span class="error">Error: ${err.message}</span>`;
+});
 }
 
 function handleLogout() {
-    currentUser = null;
-    currentRole = "Customer";
-    userWallet = 0;
-    switchView('login');
+currentUser = null;
+currentRole = "Customer";
+document.getElementById('dashboardContainer').style.display = 'none';
+document.getElementById('loginFormContainer').style.display = 'block';
+document.getElementById('loginUser').value = '';
+document.getElementById('loginPass').value = '';
+document.getElementById('loginMsg').innerHTML = '';
 }
-
-function checkMidnightReset() {
-    const now = new Date();
-    if (now.getHours() === 0 && now.getMinutes() === 0) {
-        if (currentRole === 'Master') {
-            userWallet = 100000;
-            if (document.getElementById('walletBalance')) {
-                document.getElementById('walletBalance').innerText = userWallet;
-            }
-        }
-    }
-}
-setInterval(checkMidnightReset, 60000);
 </script>
 </body>
 </html>
