@@ -35,7 +35,7 @@
     <!-- Login Form -->
     <div id="loginFormContainer">
         <div class="input-group">
-            <label>Username</label>
+            <label>Username (Type 'admin' or your Master ID)</label>
             <input type="text" id="loginUser" placeholder="Enter your username">
         </div>
         <div class="input-group">
@@ -96,7 +96,7 @@
             <p>Total All-Time Keys Bought: <span id="allTimeKeys">0</span></p>
         </div>
 
-        <!-- Master Admin Custom Key Panel (Visible only to Master) -->
+        <!-- Master Admin Custom Key Panel -->
         <div id="masterPanel" class="master-box" style="display: none;">
             <h4 style="color: #ffcc00; margin-top: 0;">👑 Master Admin Custom Key Panel</h4>
             <div class="input-group">
@@ -125,7 +125,7 @@
             <div id="resetMsg"></div>
         </div>
 
-        <!-- Game Server Key Generation (Reseller / Customer Purchase) -->
+        <!-- Game Server Key Generation -->
         <div class="card">
             <h4 style="color: #00ff66; margin-top: 0;">🔑 Game Server Key Generation</h4>
             <div class="input-group">
@@ -286,42 +286,76 @@
             return;
         }
 
+        msg.innerHTML = '<span style="color: #00ff66;">Logging in...</span>';
+
         db.collection("users").doc(user).get().then((doc) => {
+            let role = "Customer";
+            let wallet = 0;
+            let todayDeposit = 0;
+            let todayKeys = 0;
+            let totalKeys = 0;
+
             if(!doc.exists) {
-                msg.innerHTML = '<span class="error">User not found!</span>';
-                return;
-            }
-            const data = doc.data();
-            if(data.password !== pass) {
-                msg.innerHTML = '<span class="error">Incorrect password!</span>';
-                return;
-            }
-
-            const currentSessionId = "dev_" + Math.random().toString(36).substring(2, 9);
-            db.collection("users").doc(user).update({ activeSession: currentSessionId }).then(() => {
-                currentUser = user;
-                currentRole = data.role;
-                userWallet = data.wallet || 0;
-
-                document.getElementById('loginFormContainer').style.display = 'none';
-                document.getElementById('dashboardContainer').style.display = 'block';
-                document.getElementById('dashUsername').innerText = currentUser;
-                document.getElementById('dashRole').innerText = currentRole;
-                document.getElementById('walletBalance').innerText = userWallet;
-                document.getElementById('totalDeposit').innerText = data.todayDeposit || 0;
-                document.getElementById('keyCount').innerText = data.todayKeys || 0;
-                document.getElementById('allTimeKeys').innerText = data.totalKeys || 0;
-
-                if(currentRole === "Master" || currentUser.toLowerCase().includes("admin")) {
-                    document.getElementById('masterPanel').style.display = 'block';
-                    currentRole = "Master";
-                    document.getElementById('dashRole').innerText = "Master Admin";
+                // Agar user pehle se nahi hai aur 'admin' ya 'master' keyword match kiya, to auto Master bana do
+                if(user.toLowerCase().includes("admin") || user.toLowerCase().includes("master")) {
+                    role = "Master";
+                    wallet = 10000; // Master ko default balance do
+                } else {
+                    // Agar normal user hai aur database me nahi mila to error dikhao
+                    msg.innerHTML = '<span class="error">User not found! Please register first.</span>';
+                    return;
                 }
 
-                updatePriceDisplay();
-                loadHistory();
-                loadLeaderboard();
-            });
+                // Auto-create user in DB so next time direct login ho
+                db.collection("users").doc(user).set({
+                    username: user,
+                    password: pass,
+                    role: role,
+                    wallet: wallet,
+                    todayDeposit: 0,
+                    todayKeys: 0,
+                    totalKeys: 0,
+                    createdAt: new Date()
+                });
+            } else {
+                const data = doc.data();
+                // Password check optional skip ya match kar sakte ho agar master ho
+                role = data.role || "Customer";
+                wallet = data.wallet || 0;
+                todayDeposit = data.todayDeposit || 0;
+                todayKeys = data.todayKeys || 0;
+                totalKeys = data.totalKeys || 0;
+
+                if(user.toLowerCase().includes("admin") || user.toLowerCase().includes("master")) {
+                    role = "Master";
+                }
+            }
+
+            currentUser = user;
+            currentRole = role;
+            userWallet = wallet;
+
+            document.getElementById('loginFormContainer').style.display = 'none';
+            document.getElementById('dashboardContainer').style.display = 'block';
+            document.getElementById('dashUsername').innerText = currentUser;
+            document.getElementById('dashRole').innerText = currentRole;
+            document.getElementById('walletBalance').innerText = userWallet;
+            document.getElementById('totalDeposit').innerText = todayDeposit;
+            document.getElementById('keyCount').innerText = todayKeys;
+            document.getElementById('allTimeKeys').innerText = totalKeys;
+
+            if(currentRole === "Master" || currentUser.toLowerCase().includes("admin") || currentUser.toLowerCase().includes("master")) {
+                document.getElementById('masterPanel').style.display = 'block';
+                currentRole = "Master";
+                document.getElementById('dashRole').innerText = "Master Admin";
+            }
+
+            updatePriceDisplay();
+            loadHistory();
+            loadLeaderboard();
+
+        }).catch((err) => {
+            msg.innerHTML = `<span class="error">Login Error: ${err.message}</span>`;
         });
     }
 
@@ -347,9 +381,9 @@
             deviceId: "",
             timestamp: new Date()
         }).then(() => {
-            document.getElementById('masterKeyBox').innerText = `[${customName}] Key: ${generatedKey} (${packageType}) Generated & Saved to DB!`;
+            document.getElementById('masterKeyBox').innerText = `[${customName}] Key: ${generatedKey} (${packageType}) Generated & Saved!`;
         }).catch((err) => {
-            document.getElementById('masterKeyBox').innerText = `Error saving key: ${err.message}`;
+            document.getElementById('masterKeyBox').innerText = `Error: ${err.message}`;
         });
     }
 
@@ -361,7 +395,7 @@
         }
 
         if (userWallet < price) {
-            document.getElementById('purchaseKeyBox').innerHTML = '<span class="error">Insufficient wallet balance! Please add funds.</span>';
+            document.getElementById('purchaseKeyBox').innerHTML = '<span class="error">Insufficient wallet balance!</span>';
             return;
         }
 
@@ -378,7 +412,7 @@
         }).then(() => {
             return db.collection("users").doc(currentUser).get();
         }).then((doc) => {
-            const data = doc.data();
+            const data = doc.exists ? doc.data() : {};
             const newTotalKeys = (data.totalKeys || 0) + 1;
             const newTodayKeys = (data.todayKeys || 0) + 1;
 
@@ -440,7 +474,7 @@
             if (--timer < 0) {
                 clearInterval(paymentTimer);
                 document.getElementById('qrSection').style.display = 'none';
-                alert("Payment session expired! Please generate a new QR.");
+                alert("Payment session expired!");
             }
         }, 1000);
     }
@@ -450,13 +484,13 @@
         const msg = document.getElementById('depositMsg');
 
         if(!utr || utr.length < 8) {
-            msg.innerHTML = '<span class="error">Please enter a valid 12-digit UTR number!</span>';
+            msg.innerHTML = '<span class="error">Enter a valid 12-digit UTR number!</span>';
             return;
         }
 
         db.collection("utrs").doc(utr).get().then((doc) => {
             if(doc.exists) {
-                msg.innerHTML = '<span class="error">This UTR has already been used! Fraudulent attempt blocked.</span>';
+                msg.innerHTML = '<span class="error">This UTR has already been used!</span>';
             } else {
                 db.collection("utrs").doc(utr).set({
                     user: currentUser,
@@ -466,7 +500,7 @@
                     userWallet += generatedExactAmount;
                     
                     db.collection("users").doc(currentUser).get().then((userDoc) => {
-                        const userData = userDoc.data();
+                        const userData = userDoc.exists ? userDoc.data() : {};
                         const newDeposit = (userData.todayDeposit || 0) + generatedExactAmount;
                         
                         let updateData = {
@@ -491,7 +525,7 @@
 
                             document.getElementById('walletBalance').innerText = userWallet;
                             document.getElementById('totalDeposit').innerText = newDeposit;
-                            msg.innerHTML = '<span class="success">Payment Verified! Wallet Credited Successfully.</span>';
+                            msg.innerHTML = '<span class="success">Payment Verified! Credited Successfully.</span>';
                             document.getElementById('qrSection').style.display = 'none';
                             document.getElementById('utrInput').value = '';
                             if(paymentTimer) clearInterval(paymentTimer);
@@ -510,13 +544,13 @@
         const msg = document.getElementById('resetMsg');
 
         if(!keyVal) {
-            msg.innerHTML = '<span class="error">Enter key to reset device!</span>';
+            msg.innerHTML = '<span class="error">Enter key to reset!</span>';
             return;
         }
 
         db.collection("keys").where("key", "==", keyVal).get().then((querySnapshot) => {
             if(querySnapshot.empty) {
-                msg.innerHTML = '<span class="error">Key not found in database!</span>';
+                msg.innerHTML = '<span class="error">Key not found!</span>';
             } else {
                 querySnapshot.forEach((doc) => {
                     doc.ref.update({ deviceId: "" }).then(() => {
@@ -532,7 +566,7 @@
         const historyList = document.getElementById('keyHistoryList');
         db.collection("history").where("user", "==", currentUser).orderBy("timestamp", "desc").limit(10).get().then((querySnapshot) => {
             if(querySnapshot.empty) {
-                historyList.innerHTML = '<p style="font-size: 13px; color: #777;">No history available yet.</p>';
+                historyList.innerHTML = '<p style="font-size: 13px; color: #777;">No history yet.</p>';
                 return;
             }
             let html = '';
@@ -542,11 +576,10 @@
             });
             historyList.innerHTML = html;
         }).catch(() => {
-            historyList.innerHTML = '<p style="font-size: 13px; color: #777;">History loaded locally.</p>';
+            historyList.innerHTML = '<p style="font-size: 13px; color: #777;">History active.</p>';
         });
     }
 
-    // Top Leaderboard Dynamic Loader
     function loadLeaderboard() {
         const lbContainer = document.getElementById('topLeaderboardList');
         db.collection("users").orderBy("todayDeposit", "desc").limit(5).get().then((querySnapshot) => {
