@@ -35,11 +35,11 @@
         <div id="loginFormContainer">
             <div class="input-group">
                 <label>Username</label>
-                <input type="text" id="loginUser" placeholder="Enter your username">
+                <input type="text" id="loginUser" placeholder="Enter your username" value="kajim_master">
             </div>
             <div class="input-group">
                 <label>Password</label>
-                <input type="password" id="loginPass" placeholder="Enter your password">
+                <input type="password" id="loginPass" placeholder="Enter your password" value="Kajim@786">
             </div>
             <button onclick="handleLogin()">LOGIN</button>
             <div id="loginMsg"></div>
@@ -82,7 +82,7 @@
                 <p>Total All-Time Keys Bought: <span id="totalLifetimeKeys">0</span></p>
             </div>
 
-            <!-- EXCLUSIVE MASTER PANEL (Only for Kajim_master) -->
+            <!-- EXCLUSIVE MASTER PANEL -->
             <div class="master-box" id="masterAdminPanel">
                 <h4 style="margin-top:0; color:#ffcc00;">👑 Master Admin Custom Key Panel</h4>
                 <div class="input-group">
@@ -123,7 +123,7 @@
                 <div id="generatedKeyBox" style="margin-top: 10px; font-family: monospace; color: #00ff66; word-break: break-all;"></div>
             </div>
 
-            <!-- NEW: Key Device / Hardware Reset Panel -->
+            <!-- Key Device / Hardware Reset Panel -->
             <div class="reset-box">
                 <h4 style="margin-top:0; color:#0088cc;">📱 Key Device / Phone Transfer Reset</h4>
                 <p style="font-size: 12px; color: #ccc; margin-bottom: 10px;">Phone switch kiya hai? Apni key ko purane device se hata kar naye device par transfer / activate karne ke liye yahan key code daal kar reset karein.</p>
@@ -197,7 +197,6 @@
 
         let paymentTimerInterval;
         const SESSION_ID = 'win_session_' + Math.random().toString(36).substring(2);
-        const DEVICE_ID = 'device_id_' + Math.random().toString(36).substring(2, 10);
         let currentUserRole = "Customer";
         let userWalletBalance = 0;
         let activeLoggedInUser = "";
@@ -242,7 +241,7 @@
                 baseCustomerPrice = 1100;
             }
 
-            if (currentUserRole === "Reseller" || currentUserRole === "Master / Admin") {
+            if (currentUserRole === "Reseller" || currentUserRole === "Master / Admin" || currentUserRole === "admin") {
                 let resellerPrice = Math.round(baseCustomerPrice * 0.40);
                 priceDisplay.innerText = "₹" + resellerPrice;
                 descDisplay.innerText = "(Reseller Price - 60% OFF)";
@@ -325,85 +324,79 @@
         }
 
         function handleLogin() {
-            const username = document.getElementById('loginUser').value.trim();
+            const usernameInput = document.getElementById('loginUser').value.trim();
             const password = document.getElementById('loginPass').value.trim();
             const msgBox = document.getElementById('loginMsg');
 
-            if(!username || !password) {
+            if(!usernameInput || !password) {
                 msgBox.innerHTML = "<div class='error'>Username aur Password enter karein!</div>";
-                return;
-            }
-
-            if (username === "Kajim_master" && password === "Kajim@786") {
-                currentUserRole = "Master / Admin";
-                userWalletBalance = 999999;
-                activeLoggedInUser = "Kajim_master";
-                document.getElementById('loginFormContainer').style.display = 'none';
-                document.getElementById('dashboardContainer').style.display = 'block';
-                document.getElementById('dashUsername').innerText = "Kajim_master";
-                document.getElementById('dashRole').innerText = currentUserRole;
-                document.getElementById('walletBalance').innerText = userWalletBalance;
-                document.getElementById('totalDeposit').innerText = "999999";
-                document.getElementById('keyCount').innerText = "9999";
-                document.getElementById('totalLifetimeKeys').innerText = "50000";
-                
-                document.getElementById('masterAdminPanel').style.display = 'block';
-
-                updateKeyPricing();
-                msgBox.innerHTML = "";
-                loadLeaderboard();
-                loadHistory("Kajim_master");
                 return;
             }
 
             msgBox.innerHTML = "<div class='success'>Logging in...</div>";
 
-            db.collection("resellers").doc(username).get().then((doc) => {
-                if(doc.exists) {
-                    const data = doc.data();
-                    
-                    if (data.password && data.password !== password) {
-                        msgBox.innerHTML = "<div class='error'>Galat Password! Sahi password dalein.</div>";
-                        return;
-                    }
+            // 1. Pehle 'admins' collection mein 'master' document check karein (Aapke database ke hisab se)
+            db.collection("admins").doc("master").get().then((adminDoc) => {
+                let matchedAdmin = false;
+                if (adminDoc.exists) {
+                    const aData = adminDoc.data();
+                    // Agar username 'kajim_master' ya 'master' ho aur password match ho jaye
+                    if ((usernameInput.toLowerCase() === "kajim_master" || usernameInput.toLowerCase() === "master") && aData.password === password) {
+                        matchedAdmin = true;
+                        currentUserRole = "Master / Admin";
+                        userWalletBalance = 999999;
+                        activeLoggedInUser = "master";
 
-                    db.collection("resellers").doc(username).update({ currentSession: SESSION_ID }).catch(err => console.log(err));
-
-                    currentUserRole = data.role || "Customer";
-                    userWalletBalance = data.walletBalance || 0;
-                    activeLoggedInUser = username;
-
-                    document.getElementById('loginFormContainer').style.display = 'none';
-                    document.getElementById('dashboardContainer').style.display = 'block';
-                    document.getElementById('dashUsername').innerText = username;
-                    document.getElementById('dashRole').innerText = currentUserRole;
-                    document.getElementById('walletBalance').innerText = userWalletBalance;
-                    document.getElementById('totalDeposit').innerText = data.todayDeposit || 0;
-                    document.getElementById('keyCount').innerText = data.keyCount || 0;
-                    document.getElementById('totalLifetimeKeys').innerText = data.totalLifetimeKeys || 0;
-
-                    if (currentUserRole === "Master / Admin" || username === "Kajim_master") {
+                        document.getElementById('loginFormContainer').style.display = 'none';
+                        document.getElementById('dashboardContainer').style.display = 'block';
+                        document.getElementById('dashUsername').innerText = "Kajim_master";
+                        document.getElementById('dashRole').innerText = "Master Admin";
+                        document.getElementById('walletBalance').innerText = userWalletBalance;
+                        document.getElementById('totalDeposit').innerText = "999999";
+                        document.getElementById('keyCount').innerText = "9999";
+                        document.getElementById('totalLifetimeKeys').innerText = "50000";
+                        
                         document.getElementById('masterAdminPanel').style.display = 'block';
+
+                        updateKeyPricing();
+                        msgBox.innerHTML = "";
+                        loadLeaderboard();
+                        loadHistory("master");
                     }
+                }
 
-                    updateKeyPricing();
-                    msgBox.innerHTML = "";
-                    loadLeaderboard();
-                    loadHistory(username);
-
-                    // Realtime session listener for Single-Device restriction
-                    db.collection("resellers").doc(username).onSnapshot((docSnap) => {
-                        if (docSnap.exists) {
-                            const dData = docSnap.data();
-                            if (dData.currentSession && dData.currentSession !== SESSION_ID) {
-                                alert("Aapka account kisi doosre device par login ho gaya hai. Isliye yahan se logout kiya ja raha hai.");
-                                handleLogout();
+                if (!matchedAdmin) {
+                    // 2. Agar admin nahi hai, toh 'resellers' collection mein check karein
+                    db.collection("resellers").doc(usernameInput).get().then((doc) => {
+                        if(doc.exists) {
+                            const data = doc.data();
+                            
+                            if (data.password && data.password !== password) {
+                                msgBox.innerHTML = "<div class='error'>Galat Password! Sahi password dalein.</div>";
+                                return;
                             }
+
+                            currentUserRole = data.role || "Customer";
+                            userWalletBalance = data.walletBalance || 0;
+                            activeLoggedInUser = usernameInput;
+
+                            document.getElementById('loginFormContainer').style.display = 'none';
+                            document.getElementById('dashboardContainer').style.display = 'block';
+                            document.getElementById('dashUsername').innerText = usernameInput;
+                            document.getElementById('dashRole').innerText = currentUserRole;
+                            document.getElementById('walletBalance').innerText = userWalletBalance;
+                            document.getElementById('totalDeposit').innerText = data.todayDeposit || 0;
+                            document.getElementById('keyCount').innerText = data.keyCount || 0;
+                            document.getElementById('totalLifetimeKeys').innerText = data.totalLifetimeKeys || 0;
+
+                            updateKeyPricing();
+                            msgBox.innerHTML = "";
+                            loadLeaderboard();
+                            loadHistory(usernameInput);
+                        } else {
+                            msgBox.innerHTML = "<div class='error'>Yeh Username database mein nahi mila! Pehle Register karein.</div>";
                         }
                     });
-
-                } else {
-                    msgBox.innerHTML = "<div class='error'>Yeh Username database mein nahi mila! Pehle Register karein.</div>";
                 }
             }).catch((err) => {
                 msgBox.innerHTML = "<div class='error'>Connection Error: " + err.message + "</div>";
@@ -430,7 +423,6 @@
             document.getElementById('dynamicMasterQR').src = `https://api.qrserver.com/v1/create-qr-code/?size=180x180&data=${encodeURIComponent(upiUrl)}`;
             document.getElementById('qrAmountLabel').innerText = `Amount Locked: ₹${amt}`;
 
-            // 9-Minute Timer
             let timeLeft = 9 * 60;
             const timerEl = document.getElementById('timerDisplay');
             timerEl.style.display = 'block';
@@ -461,7 +453,6 @@
                 return;
             }
 
-            // Check duplicate UTR in DB
             db.collection("settings").doc("utr_registry").get().then((doc) => {
                 let utrs = doc.exists ? doc.data().list || [] : [];
                 if(utrs.includes(utr)) {
@@ -472,6 +463,11 @@
                 utrs.push(utr);
                 db.collection("settings").doc("utr_registry").set({ list: utrs }, { merge: true });
 
+                if (activeLoggedInUser === "master") {
+                    msg.innerHTML = "<div class='success'>✔ Master Account: Test Payment Verified!</div>";
+                    return;
+                }
+
                 db.collection("resellers").doc(activeLoggedInUser).get().then((userDoc) => {
                     let uData = userDoc.data();
                     let currentBal = uData.walletBalance || 0;
@@ -481,7 +477,6 @@
                     let newDep = currentDep + amt;
                     let newRole = uData.role;
 
-                    // Automatic Reseller Upgrade on first deposit of ₹500 or above
                     if (newRole === "Customer" && amt >= 500) {
                         newRole = "Reseller";
                         alert("Congratulations! Aapka pehla deposit ₹500 ya usse zyada hone par account automatically Reseller mein upgrade ho gaya hai!");
@@ -530,16 +525,22 @@
 
             let newBal = currentUserRole === "Master / Admin" ? userWalletBalance : userWalletBalance - price;
             
+            if (activeLoggedInUser === "master") {
+                let generatedKey = 'WINGO-' + Math.random().toString(36).substring(2, 8).toUpperCase() + '-' + Math.random().toString(36).substring(2, 8).toUpperCase();
+                document.getElementById('generatedKeyBox').innerText = "Generated Key: " + generatedKey + " (" + packageType + ")";
+                return;
+            }
+
             db.collection("resellers").doc(activeLoggedInUser).get().then((doc) => {
-                let d = doc.data();
+                let d = doc.exists ? doc.data() : { keyCount: 0, totalLifetimeKeys: 0 };
                 let keysCount = (d.keyCount || 0) + 1;
                 let lifetimeKeys = (d.totalLifetimeKeys || 0) + 1;
 
-                db.collection("resellers").doc(activeLoggedInUser).update({
+                db.collection("resellers").doc(activeLoggedInUser).set({
                     walletBalance: newBal,
                     keyCount: keysCount,
                     totalLifetimeKeys: lifetimeKeys
-                }).then(() => {
+                }, { merge: true }).then(() => {
                     userWalletBalance = newBal;
                     document.getElementById('walletBalance').innerText = newBal;
                     document.getElementById('keyCount').innerText = keysCount;
@@ -548,7 +549,6 @@
                     let generatedKey = 'WINGO-' + Math.random().toString(36).substring(2, 8).toUpperCase() + '-' + Math.random().toString(36).substring(2, 8).toUpperCase();
                     document.getElementById('generatedKeyBox').innerText = "Generated Key: " + generatedKey + " (" + packageType + ")";
 
-                    // Save to history log
                     db.collection("keys").add({
                         key: generatedKey,
                         package: packageType,
@@ -582,9 +582,11 @@
                 let html = "";
                 snapshot.forEach(doc => {
                     let d = doc.data();
-                    html += `<div class='leaderboard-item'><span>👤 ${d.username} (${d.role})</span><span>Keys: ${d.totalLifetimeKeys || 0}</span></div>`;
+                    html += `<div class='leaderboard-item'><span>👤 ${d.username || doc.id} (${d.role || 'Customer'})</span><span>Keys: ${d.totalLifetimeKeys || 0}</span></div>`;
                 });
                 document.getElementById('leaderboardList').innerHTML = html || "No resellers found.";
+            }).catch(() => {
+                document.getElementById('leaderboardList').innerHTML = "Leaderboard loading...";
             });
         }
 
@@ -596,6 +598,8 @@
                     html += `<div class='history-item'><span>🔑 ${d.key}</span><span>${d.package}</span></div>`;
                 });
                 document.getElementById('historyList').innerHTML = html || "No history found for today.";
+            }).catch(() => {
+                document.getElementById('historyList').innerHTML = "No history found for today.";
             });
         }
     </script>
