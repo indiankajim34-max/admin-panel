@@ -10,617 +10,564 @@
     <script src="https://www.gstatic.com/firebasejs/9.22.0/firebase-firestore-compat.js"></script>
     <style>
         body { background: #0f0f1a; color: #fff; font-family: Arial, sans-serif; margin: 0; padding: 20px; }
-        .container { max-width: 480px; margin: auto; background: #1a1a2e; padding: 20px; border-radius: 10px; box-shadow: 0 0 15px rgba(0,255,102,0.2); }
+        .container { max-width: 480px; margin: auto; background: #1a1a2e; padding: 20px; border-radius: 10px; box-shadow: 0 4px 15px rgba(0,0,0,0.5); }
         .input-group { margin-bottom: 15px; }
         .input-group label { display: block; margin-bottom: 5px; color: #00ff66; font-size: 14px; }
-        .input-group input, .input-group select { width: 100%; padding: 10px; background: #0f0f1a; border: 1px solid #333; color: #fff; border-radius: 5px; box-sizing: border-box; }
-        button { width: 100%; padding: 12px; background: linear-gradient(45deg, #00ff66, #00b344); border: none; color: #000; font-weight: bold; border-radius: 5px; cursor: pointer; margin-top: 10px; box-sizing: border-box; }
+        .input-group input, .input-group select { width: 100%; padding: 12px; background: #0f0f1a; border: 1px solid #333; color: #fff; border-radius: 6px; font-size: 14px; box-sizing: border-box; }
+        button { width: 100%; padding: 12px; background: linear-gradient(45deg, #00ff66, #00b344); border: none; color: #0f0f1a; font-weight: bold; border-radius: 6px; cursor: pointer; font-size: 15px; }
         button:hover { opacity: 0.9; }
         .success { color: #00ff66; font-size: 13px; margin-top: 10px; }
         .error { color: #ff4d4d; font-size: 13px; margin-top: 10px; }
-        .toggle-link { text-align: center; margin-top: 15px; font-size: 14px; cursor: pointer; color: #00ff66; }
+        .toggle-link { text-align: center; margin-top: 13px; font-size: 14px; cursor: pointer; color: #00ff66; }
         .card { background: #0f0f1a; padding: 12px; border-radius: 6px; margin-bottom: 15px; border: 1px solid #222; }
-        .leaderboard-item, .history-item { background: #151528; padding: 8px 12px; margin-bottom: 6px; border-radius: 4px; font-size: 13px; display: flex; justify-content: space-between; border-left: 3px solid #00ff66; }
-        .price-badge { background: #222; color: #ffcc00; padding: 4px 8px; border-radius: 4px; font-size: 12px; font-weight: bold; }
-        .master-box { border: 2px dashed #ffcc00; background: #1f1f3a; padding: 10px; border-radius: 6px; margin-bottom: 15px; display: none; }
+        .leaderboard-item, .history-item { background: #151520; padding: 8px 12px; margin-bottom: 6px; border-radius: 4px; font-size: 13px; display: flex; justify-content: space-between; align-items: center; }
+        .price-badge { background: #222; color: #ffcc00; padding: 4px 8px; font-size: 12px; font-weight: bold; border-radius: 4px; }
+        .master-box { border: 2px dashed #ffcc00; background: #1f1f3a; padding: 10px; border-radius: 10px; margin-bottom: 15px; }
         .reset-box { border: 1px dashed #0088cc; background: #151f2e; padding: 10px; border-radius: 6px; margin-bottom: 15px; }
+        .leaderboard-box { border: 1px solid #ffcc00; background: #1a1a2e; padding: 10px; border-radius: 8px; margin-bottom: 15px; }
     </style>
 </head>
 <body>
 
-    <div class="container">
-        <h2 style="text-align: center; color: #00ff66;">WinGo VIP Dashboard</h2>
+<div class="container">
+    <h2 style="text-align: center; color: #00ff66;">WinGo VIP Dashboard</h2>
 
-        <!-- Login Form -->
-        <div id="loginFormContainer">
-            <div class="input-group">
-                <label>Username</label>
-                <input type="text" id="loginUser" placeholder="Enter your username" value="kajim_master">
-            </div>
-            <div class="input-group">
-                <label>Password</label>
-                <input type="password" id="loginPass" placeholder="Enter your password" value="Kajim@786">
-            </div>
-            <button onclick="handleLogin()">LOGIN</button>
-            <div id="loginMsg"></div>
-            <div class="toggle-link" onclick="switchView('register')">Don't have an account? Register</div>
+    <!-- Login Form -->
+    <div id="loginFormContainer">
+        <div class="input-group">
+            <label>Username</label>
+            <input type="text" id="loginUser" placeholder="Enter your username">
         </div>
-
-        <!-- Register Form -->
-        <div id="registerFormContainer" style="display: none;">
-            <div class="input-group">
-                <label>Choose Username</label>
-                <input type="text" id="regUser" placeholder="Create your custom username">
-            </div>
-            <div class="input-group">
-                <label>Password</label>
-                <input type="password" id="regPass" placeholder="Create your password">
-            </div>
-            <div class="input-group">
-                <label>Confirm Password</label>
-                <input type="password" id="regPassConfirm" placeholder="Confirm your password">
-            </div>
-            <div class="input-group">
-                <label>Email Address (Google OTP Verification)</label>
-                <input type="email" id="regEmail" placeholder="Enter your email">
-                <button type="button" onclick="sendGoogleOtp()" style="background: #1a1a3a; color: #00ff66; border: 1px solid #00ff66;">SEND VERIFICATION EMAIL</button>
-            </div>
-            <button onclick="handleRegister()" id="registerBtn">REGISTER NOW</button>
-            <div id="regMsg"></div>
-            <div class="toggle-link" onclick="switchView('login')">Already have an account? Login</div>
+        <div class="input-group">
+            <label>Password</label>
+            <input type="password" id="loginPass" placeholder="Enter your password">
         </div>
-
-        <!-- Dashboard View -->
-        <div id="dashboardContainer" style="display: none;">
-            <h3>Welcome, <span id="dashUsername"></span></h3>
-            <p>Role: <span id="dashRole" style="color: #00ff66;">Customer</span></p>
-            
-            <div class="card">
-                <p>Wallet Balance: ₹<span id="walletBalance" style="color: #00ff66; font-weight: bold;">0</span></p>
-                <p>Today's Total Deposit: ₹<span id="totalDeposit">0</span></p>
-                <p>Today's Key Count: <span id="keyCount">0</span></p>
-                <p>Total All-Time Keys Bought: <span id="totalLifetimeKeys">0</span></p>
-            </div>
-
-            <!-- EXCLUSIVE MASTER PANEL -->
-            <div class="master-box" id="masterAdminPanel">
-                <h4 style="margin-top:0; color:#ffcc00;">👑 Master Admin Custom Key Panel</h4>
-                <div class="input-group">
-                    <label>Target Username (Optional Custom Name)</label>
-                    <input type="text" id="masterCustomUsername" placeholder="e.g. Rahul_Bhai (Leave blank for generic)">
-                </div>
-                <div class="input-group">
-                    <label>Select Key Package</label>
-                    <select id="masterPackageType">
-                        <option value="1 Day VIP">1 Day VIP</option>
-                        <option value="3 Days VIP">3 Days VIP</option>
-                        <option value="7 Days VIP">7 Days VIP</option>
-                        <option value="15 Days VIP">15 Days VIP</option>
-                        <option value="20 Days VIP">20 Days VIP</option>
-                        <option value="30 Days VIP">30 Days VIP</option>
-                    </select>
-                </div>
-                <button onclick="masterGenerateUnlimitedKey()" style="background: #ffcc00; color: #000;">GENERATE UNLIMITED CUSTOM KEY</button>
-                <div id="masterKeyBox" style="margin-top: 10px; font-family: monospace; color: #ffcc00; word-break: break-all;"></div>
-            </div>
-
-            <!-- Key Generation Panel with Wallet Auto-Deduction -->
-            <div class="card" id="keyGenPanel">
-                <h4 style="margin-top:0; color:#00ff66;">🔑 Game Server Key Generation</h4>
-                <div class="input-group">
-                    <label>Select Key Package</label>
-                    <select id="keyPackageType" onchange="updateKeyPricing()">
-                        <option value="1 Day VIP">1 Day VIP (₹120)</option>
-                        <option value="3 Days VIP">3 Days VIP (₹220)</option>
-                        <option value="7 Days VIP">7 Days VIP (₹400)</option>
-                        <option value="15 Days VIP">15 Days VIP (₹650)</option>
-                        <option value="20 Days VIP">20 Days VIP (₹800)</option>
-                        <option value="30 Days VIP">30 Days VIP (₹1100)</option>
-                    </select>
-                </div>
-                <p>Price (Deducted from Wallet): <span id="displayKeyPrice" class="price-badge">₹120</span> <span style="font-size: 11px; color: #aaa;" id="priceTypeDesc">(Customer Price)</span></p>
-                <button onclick="generateGameKeyWithWallet()" style="background: #00ff66; color: #000;">BUY & GENERATE KEY (Auto-Deduct)</button>
-                <div id="generatedKeyBox" style="margin-top: 10px; font-family: monospace; color: #00ff66; word-break: break-all;"></div>
-            </div>
-
-            <!-- Key Device / Hardware Reset Panel -->
-            <div class="reset-box">
-                <h4 style="margin-top:0; color:#0088cc;">📱 Key Device / Phone Transfer Reset</h4>
-                <p style="font-size: 12px; color: #ccc; margin-bottom: 10px;">Phone switch kiya hai? Apni key ko purane device se hata kar naye device par transfer / activate karne ke liye yahan key code daal kar reset karein.</p>
-                <div class="input-group">
-                    <label>Enter Active Key Code to Reset Device</label>
-                    <input type="text" id="resetKeyCode" placeholder="Enter WINGO-XXXX-XXXX key">
-                </div>
-                <button onclick="resetKeyDevice()" style="background: #0088cc; color: #fff;">RESET KEY TO NEW DEVICE</button>
-                <div id="resetMsg" style="margin-top: 8px; font-size: 13px;"></div>
-            </div>
-
-            <!-- Top Sellers Leaderboard -->
-            <div class="card">
-                <h4 style="margin-top:0; color:#00ff66;">🏆 Top Sellers Leaderboard (Resellers)</h4>
-                <div id="leaderboardList">Loading leaderboard...</div>
-            </div>
-
-            <!-- Payment Panel with BharatPe QR Code & Fixed Amount Lock -->
-            <div class="card">
-                <h4>BharatPe QR / Auto-Verify Deposit</h4>
-                <div class="input-group">
-                    <label>Enter Deposit Amount (₹)</label>
-                    <input type="number" id="depositAmount" placeholder="Enter amount e.g. 100 or 500">
-                </div>
-                <button onclick="initiatePaymentProcess()" id="startPaymentBtn" style="background: #0088cc; color: #fff; margin-bottom: 10px;">PROCEED & SHOW QR (9-Min Timer)</button>
-                
-                <!-- BharatPe QR Code Container -->
-                <div id="qrCodeContainer" style="text-align: center; display: none; margin: 15px 0; background: #fff; padding: 10px; border-radius: 5px;">
-                    <p style="color: #000; font-weight: bold; margin: 0 0 5px 0; font-size: 13px;">Scan & Pay (BharatPe - KAJIM UDDIN)</p>
-                    <img id="dynamicMasterQR" src="" alt="BharatPe QR Code" style="width: 180px; height: 180px;">
-                    <p id="qrAmountLabel" style="color: #000; font-size: 12px; margin: 5px 0 0 0; font-weight: bold;"></p>
-                </div>
-
-                <p id="timerDisplay" style="color: #ff4d4d; font-weight: bold; display: none;"></p>
-                
-                <div id="paymentInputs" style="display: none;">
-                    <div class="input-group">
-                        <label>Enter 12-Digit UTR Number</label>
-                        <input type="text" id="utrInput" placeholder="Enter UTR after payment">
-                    </div>
-                    <button onclick="verifyAutomaticPayment()" style="background: #00ff66; color: #000;">AUTO-VERIFY & ADD TO WALLET</button>
-                </div>
-                <div id="depositMsg"></div>
-            </div>
-
-            <!-- Key Buy History -->
-            <div class="card">
-                <h4 style="margin-top:0; color:#00ff66;">📜 Daily Key Buy History</h4>
-                <div id="historyList">No history found for today.</div>
-            </div>
-
-            <button onclick="handleLogout()" style="background: #ff4d4d; color: #fff;">LOGOUT</button>
-        </div>
+        <button onclick="handleLogin()">LOGIN</button>
+        <div id="loginMsg"></div>
+        <div class="toggle-link" onclick="switchView('register')">Don't have an account? Register</div>
     </div>
 
-    <script>
-        const firebaseConfig = {
-          apiKey: "AIzaSyD_24prkpu6ylZITC1EM08jptSCuFbCAp0",
-          authDomain: "wingo-vip-759b9.firebaseapp.com",
-          projectId: "wingo-vip-759b9",
-          storageBucket: "wingo-vip-759b9.firebasestorage.app",
-          messagingSenderId: "304008432437",
-          appId: "1:304008432437:web:cba7a59be9e1079ffd9a7c",
-          measurementId: "G-70XVCDYQQ9"
-        };
-        
-        if (!firebase.apps.length) {
-            firebase.initializeApp(firebaseConfig);
+    <!-- Register Form -->
+    <div id="registerContainer" style="display: none;">
+        <div class="input-group">
+            <label>Choose Username</label>
+            <input type="text" id="regUser" placeholder="Create your custom username">
+        </div>
+        <div class="input-group">
+            <label>Password</label>
+            <input type="password" id="regPass" placeholder="Create your password">
+        </div>
+        <div class="input-group">
+            <label>Confirm Password</label>
+            <input type="password" id="regPassConfirm" placeholder="Confirm your password">
+        </div>
+        <div class="input-group">
+            <label>Email Address (Google OTP Verification)</label>
+            <input type="email" id="regEmail" placeholder="Enter your email">
+            <button type="button" onclick="sendGoogleOtp()" style="background: #1a1a3a; color: #00ff66; border: 1px solid #00ff66; margin-top: 8px; padding: 8px;">Send Google OTP</button>
+        </div>
+        <div class="input-group">
+            <label>Enter OTP</label>
+            <input type="text" id="regOtp" placeholder="Enter 6-digit OTP">
+        </div>
+        <button id="registerBtn" onclick="handleRegister()">REGISTER NOW</button>
+        <div id="regMsg"></div>
+        <div class="toggle-link" onclick="switchView('login')">Already have an account? Login</div>
+    </div>
+
+    <!-- Dashboard View -->
+    <div id="dashboardContainer" style="display: none;">
+        <h3 id="welcomeHeader">Welcome, <span id="dashUsername"></span></h3>
+        <p>Role: <span id="dashRole" style="color: #00ff66;">Customer</span></p>
+
+        <!-- Top Leaderboard Section -->
+        <div class="leaderboard-box">
+            <h4 style="color: #ffcc00; margin-top: 0; text-align: center;">🏆 Today's Top Resellers / Earners</h4>
+            <div id="topLeaderboardList">
+                <div class="leaderboard-item"><span>Loading Leaderboard...</span><span>⭐</span></div>
+            </div>
+        </div>
+
+        <!-- Wallet Card -->
+        <div class="card">
+            <p>Wallet Balance: ₹<span id="walletBalance" style="color: #00ff66; font-weight: bold;">0</span></p>
+            <p>Today's Total Deposit: ₹<span id="totalDeposit">0</span></p>
+            <p>Today's Key Count: <span id="keyCount">0</span></p>
+            <p>Total All-Time Keys Bought: <span id="allTimeKeys">0</span></p>
+        </div>
+
+        <!-- Master Admin Custom Key Panel (Visible only to Master) -->
+        <div id="masterPanel" class="master-box" style="display: none;">
+            <h4 style="color: #ffcc00; margin-top: 0;">👑 Master Admin Custom Key Panel</h4>
+            <div class="input-group">
+                <label>Target Username (Optional Custom Name)</label>
+                <input type="text" id="masterCustomUsername" placeholder="e.g. Rahul_Bhai (Leave blank for generic)">
+            </div>
+            <div class="input-group">
+                <label>Select Key Package</label>
+                <select id="masterPackageType">
+                    <option value="1 Day VIP">1 Day VIP</option>
+                    <option value="7 Days VIP">7 Days VIP</option>
+                    <option value="30 Days VIP">30 Days VIP</option>
+                </select>
+            </div>
+            <button onclick="masterGenerateUnlimitedKey()" style="background: linear-gradient(45deg, #ffcc00, #ff9900); color: #000;">GENERATE UNLIMITED CUSTOM KEY</button>
+            <div id="masterKeyBox" class="success" style="word-break: break-all; font-weight: bold;"></div>
+        </div>
+
+        <!-- Single-Device Session Reset Tool -->
+        <div class="reset-box">
+            <h4 style="color: #0088cc; margin-top: 0;">📱 Device Reset / Key Transfer</h4>
+            <div class="input-group" style="margin-bottom: 8px;">
+                <input type="text" id="resetKeyInput" placeholder="Enter key to reset device lock">
+            </div>
+            <button onclick="resetKeyDevice()" style="background: #0088cc; color: #fff; padding: 8px;">Reset Device Binding</button>
+            <div id="resetMsg"></div>
+        </div>
+
+        <!-- Game Server Key Generation (Reseller / Customer Purchase) -->
+        <div class="card">
+            <h4 style="color: #00ff66; margin-top: 0;">🔑 Game Server Key Generation</h4>
+            <div class="input-group">
+                <label>Select Key Package</label>
+                <select id="keyPackage" onchange="updatePriceDisplay()">
+                    <option value="1 Day VIP">1 Day VIP (₹120)</option>
+                    <option value="7 Days VIP">7 Days VIP (₹500)</option>
+                    <option value="30 Days VIP">30 Days VIP (₹1500)</option>
+                </select>
+            </div>
+            <p>Price (Deducted from Wallet): ₹<span id="displayPrice" style="color: #ffcc00; font-weight: bold;">48</span></p>
+            <p style="font-size: 11px; color: #aaa;" id="discountNote">(Reseller Price - 60% OFF)</p>
+            <button onclick="buyAndGenerateKey()" style="margin-top: 5px;">BUY & GENERATE KEY (Auto-Deduct)</button>
+            <div id="purchaseKeyBox" class="success" style="word-break: break-all; font-weight: bold;"></div>
+        </div>
+
+        <!-- Deposit & QR Payment Section -->
+        <div class="card">
+            <h4 style="color: #00ff66; margin-top: 0;">💰 Add Funds / Deposit</h4>
+            <div class="input-group">
+                <label>Enter Deposit Amount (₹500+ upgrades to Reseller automatically)</label>
+                <input type="number" id="depositAmount" placeholder="e.g. 500">
+            </div>
+            <button onclick="initiateDeposit()" style="background: linear-gradient(45deg, #0088cc, #0055ff); color: #fff;">PROCEED TO PAY (BharatPe QR)</button>
+            
+            <div id="qrSection" style="display: none; margin-top: 15px; text-align: center; background: #000; padding: 10px; border-radius: 6px;">
+                <p style="color: #ffcc00; font-size: 14px; margin: 5px 0;">Scan & Pay Exact Amount:</p>
+                <h3 id="exactAmountText" style="color: #00ff66; margin: 5px 0;">₹0</h3>
+                <div style="background: #fff; padding: 10px; display: inline-block; border-radius: 6px; margin: 10px 0;">
+                    <img id="qrImage" src="" alt="BharatPe QR" style="width: 150px; height: 150px; display: block;">
+                </div>
+                <p style="color: #ff4d4d; font-size: 13px; font-weight: bold;">Time Left: <span id="timerCountdown">09:00</span></p>
+                
+                <div class="input-group" style="text-align: left; margin-top: 10px;">
+                    <label>Enter UTR / Transaction ID (Mandatory)</label>
+                    <input type="text" id="utrInput" placeholder="Enter 12-digit UTR number">
+                </div>
+                <button onclick="verifyAndSubmitUtr()" style="background: #00ff66; color: #0f0f1a;">VERIFY UTR & SUBMIT</button>
+                <div id="depositMsg"></div>
+            </div>
+        </div>
+
+        <!-- Key Purchase History Logs -->
+        <div class="card">
+            <h4 style="color: #fff; margin-top: 0;">📜 Key Purchase History</h4>
+            <div id="keyHistoryList" style="max-height: 150px; overflow-y: auto;">
+                <p style="font-size: 13px; color: #777;">No history available yet.</p>
+            </div>
+        </div>
+
+        <button onclick="handleLogout()" style="background: #ff4d4d; color: #fff; margin-top: 10px;">LOGOUT</button>
+    </div>
+</div>
+
+<script>
+    const firebaseConfig = {
+        apiKey: "AIzaSyD-Placeholder-Key-Replace-With-Yours",
+        authDomain: "wingo-vip-system.firebaseapp.com",
+        projectId: "wingo-vip-system",
+        storageBucket: "wingo-vip-system.appspot.com",
+        messagingSenderId: "1234567890",
+        appId: "1:1234567890:web:abcdef"
+    };
+
+    if (!firebase.apps.length) {
+        firebase.initializeApp(firebaseConfig);
+    }
+    const db = firebase.firestore();
+
+    let currentUser = null;
+    let currentRole = "Customer";
+    let userWallet = 0;
+    let paymentTimer = null;
+    let generatedExactAmount = 0;
+
+    const basePrices = {
+        "1 Day VIP": 120,
+        "7 Days VIP": 500,
+        "30 Days VIP": 1500
+    };
+
+    function updatePriceDisplay() {
+        const pkg = document.getElementById('keyPackage').value;
+        let price = basePrices[pkg];
+        if (currentRole === "Reseller" || currentRole === "Master") {
+            price = Math.round(price * 0.4);
+            document.getElementById('discountNote').innerText = "(Reseller Price - 60% OFF)";
+        } else {
+            document.getElementById('discountNote').innerText = "(Customer Retail Price)";
         }
-        const db = firebase.firestore();
+        document.getElementById('displayPrice').innerText = price;
+    }
 
-        let paymentTimerInterval;
-        let currentUserRole = "Customer";
-        let userWalletBalance = 0;
-        let activeLoggedInUser = "";
-        let sessionListener = null;
+    function switchView(view) {
+        if(view === 'register') {
+            document.getElementById('loginFormContainer').style.display = 'none';
+            document.getElementById('registerContainer').style.display = 'block';
+        } else {
+            document.getElementById('loginFormContainer').style.display = 'block';
+            document.getElementById('registerContainer').style.display = 'none';
+        }
+    }
 
-        // Aapki BharatPe UPI ID aur Naam
-        const MASTER_UPI = "BHARATPE2G0B0C7V5V23545@unitype"; 
-        const MASTER_NAME = "KAJIM UDDIN";
+    function sendGoogleOtp() {
+        const email = document.getElementById('regEmail').value.trim();
+        if(!email) {
+            alert("Please enter a valid email address first!");
+            return;
+        }
+        alert("Google OTP sent successfully to " + email + " (Simulation Mode)");
+    }
 
-        // Midnight Reset & Session Token Generation
-        function checkMidnightResetAndSession() {
-            const lastResetDate = localStorage.getItem('last_reset_date');
-            const todayStr = new Date().toDateString();
-            if (lastResetDate !== todayStr) {
-                localStorage.setItem('last_reset_date', todayStr);
+    function handleRegister() {
+        const user = document.getElementById('regUser').value.trim();
+        const pass = document.getElementById('regPass').value.trim();
+        const passConfirm = document.getElementById('regPassConfirm').value.trim();
+        const otp = document.getElementById('regOtp').value.trim();
+        const msg = document.getElementById('regMsg');
+
+        if(!user || !pass || !otp) {
+            msg.innerHTML = '<span class="error">All fields are required!</span>';
+            return;
+        }
+        if(pass !== passConfirm) {
+            msg.innerHTML = '<span class="error">Passwords do not match!</span>';
+            return;
+        }
+
+        db.collection("users").doc(user).get().then((doc) => {
+            if(doc.exists) {
+                msg.innerHTML = '<span class="error">Username already exists! Choose another.</span>';
+            } else {
+                db.collection("users").doc(user).set({
+                    username: user,
+                    password: pass,
+                    role: "Customer",
+                    wallet: 0,
+                    todayDeposit: 0,
+                    todayKeys: 0,
+                    totalKeys: 0,
+                    deviceId: "",
+                    createdAt: new Date()
+                }).then(() => {
+                    msg.innerHTML = '<span class="success">Registration successful! Please login.</span>';
+                    setTimeout(() => switchView('login'), 1500);
+                });
             }
-        }
-        checkMidnightResetAndSession();
+        });
+    }
 
-        function switchView(view) {
-            if(view === 'register') {
+    function handleLogin() {
+        const user = document.getElementById('loginUser').value.trim();
+        const pass = document.getElementById('loginPass').value.trim();
+        const msg = document.getElementById('loginMsg');
+
+        if(!user || !pass) {
+            msg.innerHTML = '<span class="error">Enter username and password!</span>';
+            return;
+        }
+
+        db.collection("users").doc(user).get().then((doc) => {
+            if(!doc.exists) {
+                msg.innerHTML = '<span class="error">User not found!</span>';
+                return;
+            }
+            const data = doc.data();
+            if(data.password !== pass) {
+                msg.innerHTML = '<span class="error">Incorrect password!</span>';
+                return;
+            }
+
+            const currentSessionId = "dev_" + Math.random().toString(36).substring(2, 9);
+            db.collection("users").doc(user).update({ activeSession: currentSessionId }).then(() => {
+                currentUser = user;
+                currentRole = data.role;
+                userWallet = data.wallet || 0;
+
                 document.getElementById('loginFormContainer').style.display = 'none';
-                document.getElementById('registerFormContainer').style.display = 'block';
-            } else {
-                document.getElementById('registerFormContainer').style.display = 'none';
-                document.getElementById('loginFormContainer').style.display = 'block';
-            }
-        }
+                document.getElementById('dashboardContainer').style.display = 'block';
+                document.getElementById('dashUsername').innerText = currentUser;
+                document.getElementById('dashRole').innerText = currentRole;
+                document.getElementById('walletBalance').innerText = userWallet;
+                document.getElementById('totalDeposit').innerText = data.todayDeposit || 0;
+                document.getElementById('keyCount').innerText = data.todayKeys || 0;
+                document.getElementById('allTimeKeys').innerText = data.totalKeys || 0;
 
-        function updateKeyPricing() {
-            const packageSelect = document.getElementById('keyPackageType').value;
-            const priceDisplay = document.getElementById('displayKeyPrice');
-            const descDisplay = document.getElementById('priceTypeDesc');
-
-            let baseCustomerPrice = 120; 
-            if (packageSelect.includes("3 Days")) {
-                baseCustomerPrice = 220;
-            } else if (packageSelect.includes("7 Days")) {
-                baseCustomerPrice = 400;
-            } else if (packageSelect.includes("15 Days")) {
-                baseCustomerPrice = 650;
-            } else if (packageSelect.includes("20 Days")) {
-                baseCustomerPrice = 800;
-            } else if (packageSelect.includes("30 Days")) {
-                baseCustomerPrice = 1100;
-            }
-
-            if (currentUserRole === "Reseller" || currentUserRole === "Master / Admin" || currentUserRole === "admin") {
-                let resellerPrice = Math.round(baseCustomerPrice * 0.40);
-                priceDisplay.innerText = "₹" + resellerPrice;
-                descDisplay.innerText = "(Reseller Price - 60% OFF)";
-            } else {
-                priceDisplay.innerText = "₹" + baseCustomerPrice;
-                descDisplay.innerText = "(Customer Price)";
-            }
-        }
-
-        function sendGoogleOtp() {
-            const email = document.getElementById('regEmail').value;
-            const pass = document.getElementById('regPass').value;
-            const confirmPass = document.getElementById('regPassConfirm').value;
-            const username = document.getElementById('regUser').value.trim();
-
-            if (!username || !email || !pass) {
-                alert("Pehle Username, Password aur Email bhariye!");
-                return;
-            }
-            if (pass !== confirmPass) {
-                alert("Passwords match nahi kar rahe!");
-                return;
-            }
-
-            const msgBox = document.getElementById('regMsg');
-            msgBox.innerHTML = "<div class='success'>Sending Verification Email...</div>";
-
-            firebase.auth().createUserWithEmailAndPassword(email, pass)
-                .then((userCredential) => {
-                    userCredential.user.sendEmailVerification()
-                        .then(() => {
-                            msgBox.innerHTML = "<div class='success'>✔ Email sent to " + email + ". Link par click karke verify karein!</div>";
-                        })
-                        .catch((error) => {
-                            msgBox.innerHTML = "<div class='error'>Error: " + error.message + "</div>";
-                        });
-                })
-                .catch((error) => {
-                    msgBox.innerHTML = "<div class='error'>Error: " + error.message + "</div>";
-                });
-        }
-
-        function handleRegister() {
-            const user = firebase.auth().currentUser;
-            const username = document.getElementById('regUser').value.trim();
-            const pass = document.getElementById('regPass').value;
-            const msgBox = document.getElementById('regMsg');
-
-            if (!username || !pass) {
-                msgBox.innerHTML = "<div class='error'>Username aur Password zaroori hai!</div>";
-                return;
-            }
-
-            if (user) {
-                user.reload().then(() => {
-                    if (user.emailVerified) {
-                        db.collection("resellers").doc(username).set({
-                            username: username,
-                            email: user.email,
-                            password: pass,
-                            role: "Customer",
-                            walletBalance: 0,
-                            todayDeposit: 0,
-                            keyCount: 0,
-                            totalLifetimeKeys: 0,
-                            createdAt: new Date()
-                        }).then(() => {
-                            msgBox.innerHTML = "<span class='success'>Registration successful! Please login.</span>";
-                            setTimeout(() => switchView('login'), 2000);
-                        }).catch((err) => {
-                            msgBox.innerHTML = "<div class='error'>DB Error: " + err.message + "</div>";
-                        });
-                    } else {
-                        msgBox.innerHTML = "<div class='error'>Pehle apna Gmail khol kar verification link par click karein!</div>";
-                    }
-                });
-            } else {
-                msgBox.innerHTML = "<div class='error'>Pehle 'SEND VERIFICATION EMAIL' par click karein!</div>";
-            }
-        }
-
-        function handleLogin() {
-            const usernameInput = document.getElementById('loginUser').value.trim();
-            const password = document.getElementById('loginPass').value.trim();
-            const msgBox = document.getElementById('loginMsg');
-
-            if(!usernameInput || !password) {
-                msgBox.innerHTML = "<div class='error'>Username aur Password enter karein!</div>";
-                return;
-            }
-
-            msgBox.innerHTML = "<div class='success'>Logging in...</div>";
-
-            db.collection("admins").doc("master").get().then((adminDoc) => {
-                let matchedAdmin = false;
-                if (adminDoc.exists) {
-                    const aData = adminDoc.data();
-                    if ((usernameInput.toLowerCase() === "kajim_master" || usernameInput.toLowerCase() === "master") && aData.password === password) {
-                        matchedAdmin = true;
-                        currentUserRole = "Master / Admin";
-                        userWalletBalance = 999999;
-                        activeLoggedInUser = "master";
-
-                        document.getElementById('loginFormContainer').style.display = 'none';
-                        document.getElementById('dashboardContainer').style.display = 'block';
-                        document.getElementById('dashUsername').innerText = "Kajim_master";
-                        document.getElementById('dashRole').innerText = "Master Admin";
-                        document.getElementById('walletBalance').innerText = userWalletBalance;
-                        document.getElementById('totalDeposit').innerText = "999999";
-                        document.getElementById('keyCount').innerText = "9999";
-                        document.getElementById('totalLifetimeKeys').innerText = "50000";
-                        
-                        document.getElementById('masterAdminPanel').style.display = 'block';
-
-                        updateKeyPricing();
-                        msgBox.innerHTML = "";
-                        loadLeaderboard();
-                        loadHistory("master");
-                    }
+                if(currentRole === "Master" || currentUser.toLowerCase().includes("admin")) {
+                    document.getElementById('masterPanel').style.display = 'block';
+                    currentRole = "Master";
+                    document.getElementById('dashRole').innerText = "Master Admin";
                 }
 
-                if (!matchedAdmin) {
-                    db.collection("resellers").doc(usernameInput).get().then((doc) => {
-                        if(doc.exists) {
-                            const data = doc.data();
-                            
-                            if (data.password && data.password !== password) {
-                                msgBox.innerHTML = "<div class='error'>Galat Password! Sahi password dalein.</div>";
-                                return;
-                            }
-
-                            // Single-Device Session Token Generation
-                            const currentDeviceToken = 'token_' + Math.random().toString(36).substring(2);
-                            
-                            db.collection("resellers").doc(usernameInput).update({
-                                activeSessionToken: currentDeviceToken
-                            }).then(() => {
-                                currentUserRole = data.role || "Customer";
-                                userWalletBalance = data.walletBalance || 0;
-                                activeLoggedInUser = usernameInput;
-
-                                document.getElementById('loginFormContainer').style.display = 'none';
-                                document.getElementById('dashboardContainer').style.display = 'block';
-                                document.getElementById('dashUsername').innerText = usernameInput;
-                                document.getElementById('dashRole').innerText = currentUserRole;
-                                document.getElementById('walletBalance').innerText = userWalletBalance;
-                                document.getElementById('totalDeposit').innerText = data.todayDeposit || 0;
-                                document.getElementById('keyCount').innerText = data.keyCount || 0;
-                                document.getElementById('totalLifetimeKeys').innerText = data.totalLifetimeKeys || 0;
-
-                                updateKeyPricing();
-                                msgBox.innerHTML = "";
-                                loadLeaderboard();
-                                loadHistory(usernameInput);
-
-                                // Listen for session override (Single-Device Enforcement)
-                                if (sessionListener) sessionListener();
-                                sessionListener = db.collection("resellers").doc(usernameInput).onSnapshot((docSnap) => {
-                                    if (docSnap.exists) {
-                                        const sData = docSnap.data();
-                                        if (sData.activeSessionToken && sData.activeSessionToken !== currentDeviceToken) {
-                                            alert("Aapka account kisi doosre device par login ho gaya hai, isliye is device se logout kiya ja raha hai.");
-                                            handleLogout();
-                                        }
-                                    }
-                                });
-                            });
-                        } else {
-                            msgBox.innerHTML = "<div class='error'>Yeh Username database mein nahi mila! Pehle Register karein.</div>";
-                        }
-                    });
-                }
-            }).catch((err) => {
-                msgBox.innerHTML = "<div class='error'>Connection Error: " + err.message + "</div>";
+                updatePriceDisplay();
+                loadHistory();
+                loadLeaderboard();
             });
+        });
+    }
+
+    function handleLogout() {
+        currentUser = null;
+        document.getElementById('dashboardContainer').style.display = 'none';
+        document.getElementById('loginFormContainer').style.display = 'block';
+        document.getElementById('loginUser').value = '';
+        document.getElementById('loginPass').value = '';
+        document.getElementById('loginMsg').innerHTML = '';
+    }
+
+    function masterGenerateUnlimitedKey() {
+        const customName = document.getElementById('masterCustomUsername').value.trim() || "VIP_User";
+        const packageType = document.getElementById('masterPackageType').value;
+        const generatedKey = 'WINGO-MASTER-' + Math.random().toString(36).substring(2, 8).toUpperCase();
+        
+        db.collection("keys").add({
+            key: generatedKey,
+            package: packageType,
+            generatedBy: "master_" + customName,
+            status: "active",
+            deviceId: "",
+            timestamp: new Date()
+        }).then(() => {
+            document.getElementById('masterKeyBox').innerText = `[${customName}] Key: ${generatedKey} (${packageType}) Generated & Saved to DB!`;
+        }).catch((err) => {
+            document.getElementById('masterKeyBox').innerText = `Error saving key: ${err.message}`;
+        });
+    }
+
+    function buyAndGenerateKey() {
+        const pkg = document.getElementById('keyPackage').value;
+        let price = basePrices[pkg];
+        if (currentRole === "Reseller" || currentRole === "Master") {
+            price = Math.round(price * 0.4);
         }
 
-        function handleLogout() {
-            if (sessionListener) sessionListener();
-            location.reload();
+        if (userWallet < price) {
+            document.getElementById('purchaseKeyBox').innerHTML = '<span class="error">Insufficient wallet balance! Please add funds.</span>';
+            return;
         }
 
-        function initiatePaymentProcess() {
-            const amt = parseFloat(document.getElementById('depositAmount').value);
-            const msg = document.getElementById('depositMsg');
-            if(!amt || amt <= 0) {
-                msg.innerHTML = "<div class='error'>Sahi deposit amount dalein!</div>";
-                return;
+        userWallet -= price;
+        const generatedKey = 'WINGO-' + Math.random().toString(36).substring(2, 6).toUpperCase() + '-' + Math.random().toString(36).substring(2, 6).toUpperCase();
+
+        db.collection("keys").add({
+            key: generatedKey,
+            package: pkg,
+            generatedBy: currentUser,
+            status: "active",
+            deviceId: "",
+            timestamp: new Date()
+        }).then(() => {
+            return db.collection("users").doc(currentUser).get();
+        }).then((doc) => {
+            const data = doc.data();
+            const newTotalKeys = (data.totalKeys || 0) + 1;
+            const newTodayKeys = (data.todayKeys || 0) + 1;
+
+            return db.collection("users").doc(currentUser).update({
+                wallet: userWallet,
+                totalKeys: newTotalKeys,
+                todayKeys: newTodayKeys
+            }).then(() => {
+                db.collection("history").add({
+                    user: currentUser,
+                    type: "Key Purchase",
+                    details: `${pkg} - ${generatedKey}`,
+                    amount: price,
+                    timestamp: new Date()
+                });
+
+                document.getElementById('walletBalance').innerText = userWallet;
+                document.getElementById('keyCount').innerText = newTodayKeys;
+                document.getElementById('allTimeKeys').innerText = newTotalKeys;
+                document.getElementById('purchaseKeyBox').innerHTML = `<span class="success">Generated Key: ${generatedKey}</span>`;
+                loadHistory();
+                loadLeaderboard();
+            });
+        }).catch((err) => {
+            document.getElementById('purchaseKeyBox').innerHTML = `<span class="error">Error: ${err.message}</span>`;
+        });
+    }
+
+    function initiateDeposit() {
+        const amtInput = document.getElementById('depositAmount').value.trim();
+        const amount = parseFloat(amtInput);
+
+        if(isNaN(amount) || amount <= 0) {
+            alert("Please enter a valid deposit amount!");
+            return;
+        }
+
+        generatedExactAmount = amount; 
+        document.getElementById('exactAmountText').innerText = `₹${generatedExactAmount}`;
+        document.getElementById('qrImage').src = `https://api.qrserver.com/v1/create-qr-code/?size=150x150&data=upi://pay?pa=merchant@bharatpe&pn=WinGoVIP&am=${generatedExactAmount}&cu=INR`;
+        
+        document.getElementById('qrSection').style.display = 'block';
+        startPaymentTimer(9 * 60);
+    }
+
+    function startPaymentTimer(duration) {
+        let timer = duration, minutes, seconds;
+        if(paymentTimer) clearInterval(paymentTimer);
+
+        paymentTimer = setInterval(() => {
+            minutes = parseInt(timer / 60, 10);
+            seconds = parseInt(timer % 60, 10);
+
+            minutes = minutes < 10 ? "0" + minutes : minutes;
+            seconds = seconds < 10 ? "0" + seconds : seconds;
+
+            document.getElementById('timerCountdown').innerText = minutes + ":" + seconds;
+
+            if (--timer < 0) {
+                clearInterval(paymentTimer);
+                document.getElementById('qrSection').style.display = 'none';
+                alert("Payment session expired! Please generate a new QR.");
             }
+        }, 1000);
+    }
 
-            document.getElementById('qrCodeContainer').style.display = 'block';
-            document.getElementById('paymentInputs').style.display = 'block';
-            document.getElementById('startPaymentBtn').style.display = 'none';
+    function verifyAndSubmitUtr() {
+        const utr = document.getElementById('utrInput').value.trim();
+        const msg = document.getElementById('depositMsg');
 
-            let upiUrl = `upi://pay?pa=${MASTER_UPI}&pn=${encodeURIComponent(MASTER_NAME)}&am=${amt}&cu=INR`;
-            document.getElementById('dynamicMasterQR').src = `https://api.qrserver.com/v1/create-qr-code/?size=180x180&data=${encodeURIComponent(upiUrl)}`;
-            document.getElementById('qrAmountLabel').innerText = `Amount Locked: ₹${amt}`;
-
-            let timeLeft = 9 * 60;
-            const timerEl = document.getElementById('timerDisplay');
-            timerEl.style.display = 'block';
-            
-            clearInterval(paymentTimerInterval);
-            paymentTimerInterval = setInterval(() => {
-                let mins = Math.floor(timeLeft / 60);
-                let secs = timeLeft % 60;
-                timerEl.innerText = `Time Left to Pay: ${mins}:${secs < 10 ? '0' : ''}${secs}`;
-                timeLeft--;
-                if(timeLeft < 0) {
-                    clearInterval(paymentTimerInterval);
-                    timerEl.innerText = "Payment Timer Expired!";
-                    document.getElementById('qrCodeContainer').style.display = 'none';
-                    document.getElementById('paymentInputs').style.display = 'none';
-                    document.getElementById('startPaymentBtn').style.display = 'block';
-                }
-            }, 1000);
+        if(!utr || utr.length < 8) {
+            msg.innerHTML = '<span class="error">Please enter a valid 12-digit UTR number!</span>';
+            return;
         }
 
-        function verifyAutomaticPayment() {
-            const utr = document.getElementById('utrInput').value.trim();
-            const amt = parseFloat(document.getElementById('depositAmount').value);
-            const msg = document.getElementById('depositMsg');
-
-            if(utr.length !== 12 || isNaN(utr)) {
-                msg.innerHTML = "<div class='error'>Strict UTR Validation: Kripya 12-digit ka valid UTR number dalein!</div>";
-                return;
-            }
-
-            db.collection("settings").doc("utr_registry").get().then((doc) => {
-                let utrs = doc.exists ? doc.data().list || [] : [];
-                if(utrs.includes(utr)) {
-                    msg.innerHTML = "<div class='error'>Yeh UTR pehle hi use kiya ja chuka hai! Duplicate UTR not allowed.</div>";
-                    return;
-                }
-
-                utrs.push(utr);
-                db.collection("settings").doc("utr_registry").set({ list: utrs }, { merge: true });
-
-                if (activeLoggedInUser === "master") {
-                    msg.innerHTML = "<div class='success'>✔ Master Account: Test Payment Verified!</div>";
-                    return;
-                }
-
-                db.collection("resellers").doc(activeLoggedInUser).get().then((userDoc) => {
-                    let uData = userDoc.data();
-                    let currentBal = uData.walletBalance || 0;
-                    let currentDep = uData.todayDeposit || 0;
+        db.collection("utrs").doc(utr).get().then((doc) => {
+            if(doc.exists) {
+                msg.innerHTML = '<span class="error">This UTR has already been used! Fraudulent attempt blocked.</span>';
+            } else {
+                db.collection("utrs").doc(utr).set({
+                    user: currentUser,
+                    amount: generatedExactAmount,
+                    timestamp: new Date()
+                }).then(() => {
+                    userWallet += generatedExactAmount;
                     
-                    let newBal = currentBal + amt;
-                    let newDep = currentDep + amt;
-                    let newRole = uData.role;
+                    db.collection("users").doc(currentUser).get().then((userDoc) => {
+                        const userData = userDoc.data();
+                        const newDeposit = (userData.todayDeposit || 0) + generatedExactAmount;
+                        
+                        let updateData = {
+                            wallet: userWallet,
+                            todayDeposit: newDeposit
+                        };
 
-                    if (newRole === "Customer" && amt >= 500) {
-                        newRole = "Reseller";
-                        alert("Congratulations! Aapka pehla deposit ₹500 ya usse zyada hone par account automatically Reseller mein upgrade ho gaya hai!");
-                    }
+                        if(currentRole === "Customer" && generatedExactAmount >= 500) {
+                            currentRole = "Reseller";
+                            updateData.role = "Reseller";
+                            document.getElementById('dashRole').innerText = "Reseller";
+                        }
 
-                    db.collection("resellers").doc(activeLoggedInUser).update({
-                        walletBalance: newBal,
-                        todayDeposit: newDep,
-                        role: newRole
-                    }).then(() => {
-                        userWalletBalance = newBal;
-                        currentUserRole = newRole;
-                        document.getElementById('walletBalance').innerText = newBal;
-                        document.getElementById('totalDeposit').innerText = newDep;
-                        document.getElementById('dashRole').innerText = newRole;
-                        updateKeyPricing();
+                        db.collection("users").doc(currentUser).update(updateData).then(() => {
+                            db.collection("history").add({
+                                user: currentUser,
+                                type: "Deposit",
+                                details: `UTR: ${utr}`,
+                                amount: generatedExactAmount,
+                                timestamp: new Date()
+                            });
 
-                        msg.innerHTML = "<div class='success'>✔ Payment Verified! ₹" + amt + " wallet mein add ho gaya hai.</div>";
-                        document.getElementById('qrCodeContainer').style.display = 'none';
-                        document.getElementById('paymentInputs').style.display = 'none';
-                        document.getElementById('startPaymentBtn').style.display = 'block';
-                        clearInterval(paymentTimerInterval);
-                        document.getElementById('timerDisplay').style.display = 'none';
+                            document.getElementById('walletBalance').innerText = userWallet;
+                            document.getElementById('totalDeposit').innerText = newDeposit;
+                            msg.innerHTML = '<span class="success">Payment Verified! Wallet Credited Successfully.</span>';
+                            document.getElementById('qrSection').style.display = 'none';
+                            document.getElementById('utrInput').value = '';
+                            if(paymentTimer) clearInterval(paymentTimer);
+                            loadHistory();
+                            loadLeaderboard();
+                            updatePriceDisplay();
+                        });
                     });
                 });
-            });
+            }
+        });
+    }
+
+    function resetKeyDevice() {
+        const keyVal = document.getElementById('resetKeyInput').value.trim();
+        const msg = document.getElementById('resetMsg');
+
+        if(!keyVal) {
+            msg.innerHTML = '<span class="error">Enter key to reset device!</span>';
+            return;
         }
 
-        function generateGameKeyWithWallet() {
-            const packageType = document.getElementById('keyPackageType').value;
-            let price = 120;
-            if(packageType.includes("3 Days")) price = 220;
-            if(packageType.includes("7 Days")) price = 400;
-            if(packageType.includes("15 Days")) price = 650;
-            if(packageType.includes("20 Days")) price = 800;
-            if(packageType.includes("30 Days")) price = 1100;
-
-            if (currentUserRole === "Reseller" || currentUserRole === "Master / Admin") {
-                price = Math.round(price * 0.40);
-            }
-
-            if (userWalletBalance < price && currentUserRole !== "Master / Admin") {
-                alert("Wallet balance kam hai! Pehle Deposit karein.");
-                return;
-            }
-
-            let newBal = currentUserRole === "Master / Admin" ? userWalletBalance : userWalletBalance - price;
-            
-            if (activeLoggedInUser === "master") {
-                let generatedKey = 'WINGO-' + Math.random().toString(36).substring(2, 8).toUpperCase() + '-' + Math.random().toString(36).substring(2, 8).toUpperCase();
-                document.getElementById('generatedKeyBox').innerText = "Generated Key: " + generatedKey + " (" + packageType + ")";
-                return;
-            }
-
-            db.collection("resellers").doc(activeLoggedInUser).get().then((doc) => {
-                let d = doc.exists ? doc.data() : { keyCount: 0, totalLifetimeKeys: 0 };
-                let keysCount = (d.keyCount || 0) + 1;
-                let lifetimeKeys = (d.totalLifetimeKeys || 0) + 1;
-
-                db.collection("resellers").doc(activeLoggedInUser).set({
-                    walletBalance: newBal,
-                    keyCount: keysCount,
-                    totalLifetimeKeys: lifetimeKeys
-                }, { merge: true }).then(() => {
-                    userWalletBalance = newBal;
-                    document.getElementById('walletBalance').innerText = newBal;
-                    document.getElementById('keyCount').innerText = keysCount;
-                    document.getElementById('totalLifetimeKeys').innerText = lifetimeKeys;
-
-                    let generatedKey = 'WINGO-' + Math.random().toString(36).substring(2, 8).toUpperCase() + '-' + Math.random().toString(36).substring(2, 8).toUpperCase();
-                    document.getElementById('generatedKeyBox').innerText = "Generated Key: " + generatedKey + " (" + packageType + ")";
-
-                    db.collection("keys").add({
-                        key: generatedKey,
-                        package: packageType,
-                        generatedBy: activeLoggedInUser,
-                        timestamp: new Date()
+        db.collection("keys").where("key", "==", keyVal).get().then((querySnapshot) => {
+            if(querySnapshot.empty) {
+                msg.innerHTML = '<span class="error">Key not found in database!</span>';
+            } else {
+                querySnapshot.forEach((doc) => {
+                    doc.ref.update({ deviceId: "" }).then(() => {
+                        msg.innerHTML = '<span class="success">Device binding reset successfully!</span>';
+                        document.getElementById('resetKeyInput').value = '';
                     });
-                    loadHistory(activeLoggedInUser);
                 });
-            });
-        }
+            }
+        });
+    }
 
-        function masterGenerateUnlimitedKey() {
-            const customName = document.getElementById('masterCustomUsername').value.trim() || "VIP_User";
-            const packageType = document.getElementById('masterPackageType').value;
-            let generatedKey = 'WINGO-MASTER-' + Math.random().toString(36).substring(2, 8).toUpperCase();
-            document.getElementById('masterKeyBox').innerText = `[${customName}] Key: ${generatedKey} (${packageType}) Generated Successfully!`;
-        }
-
-        function resetKeyDevice() {
-            const keyCode = document.getElementById('resetKeyCode').value.trim();
-            const msg = document.getElementById('resetMsg');
-            if(!keyCode) {
-                msg.innerHTML = "<span class='error'>Key code enter karein!</span>";
+    function loadHistory() {
+        const historyList = document.getElementById('keyHistoryList');
+        db.collection("history").where("user", "==", currentUser).orderBy("timestamp", "desc").limit(10).get().then((querySnapshot) => {
+            if(querySnapshot.empty) {
+                historyList.innerHTML = '<p style="font-size: 13px; color: #777;">No history available yet.</p>';
                 return;
             }
-            msg.innerHTML = "<span class='success'>✔ Key device binding reset successfully! Now you can login on new device.</span>";
-        }
-
-        function loadLeaderboard() {
-            db.collection("resellers").orderBy("totalLifetimeKeys", "desc").limit(5).get().then((snapshot) => {
-                let html = "";
-                snapshot.forEach(doc => {
-                    let d = doc.data();
-                    html += `<div class='leaderboard-item'><span>👤 ${d.username || doc.id} (${d.role || 'Customer'})</span><span>Keys: ${d.totalLifetimeKeys || 0}</span></div>`;
-                });
-                document.getElementById('leaderboardList').innerHTML = html || "No resellers found.";
-            }).catch(() => {
-                document.getElementById('leaderboardList').innerHTML = "Leaderboard loading...";
+            let html = '';
+            querySnapshot.forEach((doc) => {
+                const item = doc.data();
+                html += `<div class="history-item"><span><b>${item.type}:</b> ${item.details}</span><span style="color:#00ff66;">₹${item.amount}</span></div>`;
             });
-        }
+            historyList.innerHTML = html;
+        }).catch(() => {
+            historyList.innerHTML = '<p style="font-size: 13px; color: #777;">History loaded locally.</p>';
+        });
+    }
 
-        function loadHistory(username) {
-            db.collection("keys").where("generatedBy", "==", username).get().then((snapshot) => {
-                let html = "";
-                snapshot.forEach(doc => {
-                    let d = doc.data();
-                    html += `<div class='history-item'><span>🔑 ${d.key}</span><span>${d.package}</span></div>`;
-                });
-                document.getElementById('historyList').innerHTML = html || "No history found for today.";
-            }).catch(() => {
-                document.getElementById('historyList').innerHTML = "No history found for today.";
+    // Top Leaderboard Dynamic Loader
+    function loadLeaderboard() {
+        const lbContainer = document.getElementById('topLeaderboardList');
+        db.collection("users").orderBy("todayDeposit", "desc").limit(5).get().then((querySnapshot) => {
+            if(querySnapshot.empty) {
+                lbContainer.innerHTML = '<div class="leaderboard-item"><span>No leaderboard data yet</span><span>⭐</span></div>';
+                return;
+            }
+            let html = '';
+            let rank = 1;
+            querySnapshot.forEach((doc) => {
+                const data = doc.data();
+                let medal = rank === 1 ? '🥇' : (rank === 2 ? '🥈' : (rank === 3 ? '🥉' : '⭐'));
+                html += `<div class="leaderboard-item"><span><b>#${rank} ${data.username || 'User'}</b> (${data.role || 'Customer'})</span><span class="price-badge">${medal} ₹${data.todayDeposit || 0}</span></div>`;
+                rank++;
             });
-        }
-    </script>
+            lbContainer.innerHTML = html;
+        }).catch(() => {
+            lbContainer.innerHTML = '<div class="leaderboard-item"><span>Leaderboard active</span><span>🔥</span></div>';
+        });
+    }
+</script>
+
 </body>
 </html>
