@@ -9,8 +9,10 @@ app.use(bodyParser.json());
 
 const PORT = process.env.PORT || 3000;
 
-// MiniMoth Live API Credentials
+// MiniMoth Live API Credentials (सुरक्षित रूप से बैकएंड में)
 const apiKey = 'mm_live_09db69cf493a4391dcc1c8defd511432323e1c8c602f526f4f794ee956f95d0234c880e582aeb558351c92ded80d9edb';
+
+const otpStore = {};
 
 // 1. Send OTP Endpoint
 app.post('/api/send-otp', async (req, res) => {
@@ -21,10 +23,13 @@ app.post('/api/send-otp', async (req, res) => {
         }
 
         const fullNumber = countryCode + phone;
-        const targetUrl = 'https://api.minimoth.dev/v1/otp/send';
+        const generatedOtp = Math.floor(100000 + Math.random() * 900000).toString();
+        otpStore[fullNumber] = generatedOtp;
 
+        const targetUrl = 'https://api.minimoth.dev/v1/otp/send';
         const response = await axios.post(targetUrl, {
-            phone: fullNumber
+            phone: fullNumber,
+            otp: generatedOtp
         }, {
             headers: {
                 'X-Api-Key': apiKey,
@@ -33,7 +38,7 @@ app.post('/api/send-otp', async (req, res) => {
             }
         });
 
-        return res.status(200).json({ success: true, message: 'WhatsApp OTP sent successfully!', data: response.data });
+        return res.status(200).json({ success: true, message: 'WhatsApp OTP sent successfully via MiniMoth!', data: response.data });
     } catch (error) {
         console.error('MiniMoth Send Error:', error.response?.data || error.message);
         return res.status(500).json({ success: false, message: `Failed to send OTP: ${error.response?.data?.message || error.message}` });
@@ -49,8 +54,13 @@ app.post('/api/verify-otp', async (req, res) => {
         }
 
         const fullNumber = countryCode + phone;
-        const targetUrl = 'https://api.minimoth.dev/v1/otp/verify';
 
+        if (otpStore[fullNumber] && otpStore[fullNumber] === otp) {
+            delete otpStore[fullNumber];
+            return res.status(200).json({ success: true, message: 'OTP verified successfully!' });
+        }
+
+        const targetUrl = 'https://api.minimoth.dev/v1/otp/verify';
         const response = await axios.post(targetUrl, {
             phone: fullNumber,
             otp: otp
