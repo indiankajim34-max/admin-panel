@@ -2,16 +2,6 @@ const express = require('express');
 const cors = require('cors');
 const bodyParser = require('body-parser');
 const axios = require('axios');
-const admin = require('firebase-admin');
-
-// Firebase Admin SDK इनिशियलाइज करें (Firestore प्रोजेक्ट आईडी के साथ)
-if (!admin.apps.length) {
-    admin.initializeApp({
-        credential: admin.credential.applicationDefault(),
-        projectId: "wingo-vip-759b9"
-    });
-}
-const db = admin.firestore();
 
 const app = express();
 app.use(cors());
@@ -19,7 +9,10 @@ app.use(bodyParser.json());
 
 const PORT = process.env.PORT || 3000;
 
-// सुरक्षित व्हाट्सएप/एसएमएस ओटीपी भेजने का एंडपॉइंट (Firestore में स्टोर होगा)
+// सर्वर की रैम में अस्थायी रूप से OTP स्टोर करने के लिए मैप
+const otpStorage = {};
+
+// सुरक्षित व्हाट्सएप ओटीपी भेजने का एंडपॉइंट
 app.post('/api/send-otp', async (req, res) => {
     try {
         const { phone, countryCode, context } = req.body;
@@ -34,7 +27,7 @@ app.post('/api/send-otp', async (req, res) => {
         const apiKey = 'mm_live_09db69cf493a4391dcc1c8defd511432323e1c8c602f526f4f794ee956f95d0234c880e582aeb558351c92ded80d9edb';
         const targetUrl = 'https://api.minimoth.dev/v1/otp/send';
 
-        // मिनीमथ एपीआई के माध्यम से असली व्हाट्सएप ओटीपी भेजना
+        // मिनीमथ एपीआई के माध्यम से व्हाट्सएप ओटीपी भेजना
         await axios.post(targetUrl, {
             phone: fullNumber,
             otp: generatedOtp
@@ -46,11 +39,11 @@ app.post('/api/send-otp', async (req, res) => {
             }
         });
 
-        // सत्यापन के लिए ओटीपी को Firestore डेटाबेस में स्टोर करें (5 मिनट की समय सीमा)
-        await db.collection('server_otps').doc(fullNumber).set({
+        // मेमोरी में OTP और 5 मिनट की एक्सपायरी सेव करें
+        otpStorage[fullNumber] = {
             otp: generatedOtp,
             expiresAt: Date.now() + 5 * 60 * 1000
-        });
+        };
 
         return res.status(200).json({ success: true, message: 'असली WhatsApp OTP सफलतापूर्वक भेज दिया गया है!' });
     } catch (error) {
@@ -59,23 +52,20 @@ app.post('/api/send-otp', async (req, res) => {
     }
 });
 
-// ओटीपी वेरिफ़िकेशन एंडपॉइंट (Firestore डेटाबेस से वेरीफाई करेगा)
+// ओटीपी वेरिफ़िकेशन एंडपॉइंट
 app.post('/api/verify-otp', async (req, res) => {
     try {
         const { phone, countryCode, otp } = req.body;
         const fullNumber = countryCode + phone;
 
-        const docRef = db.collection('server_otps').doc(fullNumber);
-        const docSnap = await docRef.get();
+        const record = otpStorage[fullNumber];
 
-        if (!docSnap.exists) {
+        if (!record) {
             return res.status(400).json({ success: false, message: 'कृपया पहले ओटीपी अनुरोध करें।' });
         }
 
-        const record = docSnap.data();
-
         if (Date.now() > record.expiresAt) {
-            await docRef.delete();
+            delete otpStorage[fullNumber];
             return res.status(400).json({ success: false, message: 'ओटीपी की समय सीमा समाप्त हो गई है।' });
         }
 
@@ -83,8 +73,8 @@ app.post('/api/verify-otp', async (req, res) => {
             return res.status(400).json({ success: false, message: 'गलत ओटीपी दर्ज किया गया है।' });
         }
 
-        // सफलतापूर्वक वेरीफाई होने के बाद ओटीपी को डिलीट कर दें
-        await docRef.delete();
+        // वेरीफाई होने के बाद OTP डिलीट कर दें
+        delete otpStorage[fullNumber];
         return res.status(200).json({ success: true, message: 'ओटीपी सफलतापूर्वक सत्यापित हो गया है।' });
     } catch (error) {
         console.error('Verify OTP Error:', error);
