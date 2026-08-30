@@ -12,11 +12,61 @@ app.use(bodyParser.json());
 const apiKey = 'mm_live_09db69cf493a4391dcc1c8defd511432323e1c8c602f526f4f794ee956f95d0234c880e582aeb558351c92ded80d9edb';
 
 // ==========================================
-// 1. ORIGINAL SECURE OTP SYSTEM (MINIMOTH API)
+// PAYMENT VERIFICATION MODULE (NEWLY ADDED)
+// ==========================================
+let receivedSmsList = [];
+
+app.post('/api/webhook/sms', (req, res) => {
+    try {
+        const { sender, message } = req.body;
+        console.log(`[SMS WEBHOOK] Received from ${sender}: ${message}`);
+        
+        if (message) {
+            receivedSmsList.push({
+                sender: sender || "Unknown",
+                message: message.toString(),
+                receivedAt: new Date()
+            });
+            if (receivedSmsList.length > 50) {
+                receivedSmsList.shift();
+            }
+        }
+
+        return res.status(200).json({ success: true, message: "SMS saved successfully" });
+    } catch (err) {
+        console.error('Webhook Error:', err.message);
+        return res.status(500).json({ success: false, message: 'Internal server error' });
+    }
+});
+
+app.post('/api/verify-payment', (req, res) => {
+    try {
+        const { utr } = req.body;
+        if (!utr) {
+            return res.status(400).json({ success: false, message: "UTR number is required." });
+        }
+
+        const cleanUtr = utr.toString().trim();
+        console.log(`[PAYMENT VERIFY] Checking for UTR: ${cleanUtr}`);
+
+        const foundSms = receivedSmsList.find(item => item.message && item.message.includes(cleanUtr));
+
+        if (foundSms) {
+            console.log(`[PAYMENT SUCCESS] UTR ${cleanUtr} matched!`);
+            return res.status(200).json({ success: true, message: "Payment verified successfully!" });
+        } else {
+            console.log(`[PAYMENT FAILED] UTR ${cleanUtr} not found.`);
+            return res.status(400).json({ success: false, message: "Payment not found! No SMS received for this UTR." });
+        }
+    } catch (err) {
+        console.error('Verify Payment Error:', err.message);
+        return res.status(500).json({ success: false, message: 'Internal server error during verification.' });
+    }
+});
 // ==========================================
 
 app.get('/', (req, res) => {
-    res.status(200).send('Kajim Digital Secure OTP & Payment Server is running perfectly.');
+    res.status(200).send('Kajim Digital Secure OTP Server is running perfectly.');
 });
 
 app.post('/api/send-otp', async (req, res) => {
@@ -140,77 +190,6 @@ app.post('/api/verify-otp', async (req, res) => {
     } catch (err) {
         console.error('Server Error in verify-otp:', err.message);
         return res.status(500).json({ success: false, message: 'Error during verification.' });
-    }
-});
-
-
-// ==========================================
-// 2. PAYMENT VERIFICATION SYSTEM (MACRODROID WEBHOOK)
-// ==========================================
-
-let receivedPayments = [];
-
-app.post('/api/webhook/sms', (req, res) => {
-    try {
-        const { message } = req.body;
-        if (!message) {
-            return res.status(400).json({ success: false, message: 'Message missing' });
-        }
-
-        let utrMatch = message.match(/(?:UTR|Ref|UPI Ref|Txn No)[:\s]*([0-9]{12})/i) || message.match(/\b\d{12}\b/);
-        let amountMatch = message.match(/Rs\.?\s*([0-9]+(?:\.[0-9]+)?)/i);
-
-        let utr = utrMatch ? (utrMatch[1] || utrMatch[0]) : null;
-        let amount = amountMatch ? amountMatch[1] : null;
-
-        if (utr) {
-            receivedPayments.push({
-                utr: utr.trim(),
-                amount: amount ? amount.trim() : '0',
-                message: message,
-                time: new Date()
-            });
-            console.log('Payment Saved Successfully:', { utr, amount });
-            return res.status(200).json({ success: true, message: 'SMS saved successfully' });
-        } else {
-            receivedPayments.push({
-                utr: 'UNKNOWN',
-                amount: amount ? amount.trim() : '0',
-                message: message,
-                time: new Date()
-            });
-            return res.status(200).json({ success: true, message: 'Saved without UTR' });
-        }
-    } catch (err) {
-        console.error('Webhook Error:', err);
-        res.status(500).json({ success: false, message: 'Server error' });
-    }
-});
-
-app.post('/api/verify-payment', (req, res) => {
-    try {
-        const { utr } = req.body;
-        if (!utr) {
-            return res.status(400).json({ success: false, message: 'UTR is required' });
-        }
-
-        const foundPayment = receivedPayments.find(p => p.utr === utr.trim());
-
-        if (foundPayment) {
-            return res.status(200).json({ 
-                success: true, 
-                message: 'Payment verified successfully!', 
-                data: foundPayment 
-            });
-        } else {
-            return res.status(404).json({ 
-                success: false, 
-                message: 'Payment not found! No SMS received for this UTR.' 
-            });
-        }
-    } catch (err) {
-        console.error('Verify Payment Error:', err);
-        res.status(500).json({ success: false, message: 'Server error' });
     }
 });
 
