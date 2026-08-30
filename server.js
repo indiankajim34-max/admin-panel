@@ -19,21 +19,24 @@ app.get('/', (req, res) => {
 app.post('/api/send-otp', async (req, res) => {
     try {
         const { phone, countryCode } = req.body;
-        if (!phone || !countryCode) {
-            return res.status(400).json({ success: false, message: 'Phone number and country code are required.' });
+        if (!phone) {
+            return res.status(400).json({ success: false, message: 'Phone number is required.' });
         }
 
-        const cleanPhone = phone.toString().trim();
-        const cleanCountryCode = countryCode.toString().trim();
+        const cleanPhone = phone.toString().replace(/\D/g, '').trim();
+        const cleanCountryCode = countryCode ? countryCode.toString().trim() : '+91';
         const fullNumber = cleanCountryCode + cleanPhone;
+        const rawPhoneOnly = cleanPhone;
         
         const generatedOtp = Math.floor(100000 + Math.random() * 900000).toString();
         
-        // 5 Minutes validity storage setup
-        otpStore[fullNumber] = {
+        const otpData = {
             otp: generatedOtp,
             expiresAt: Date.now() + 5 * 60 * 1000
         };
+
+        otpStore[fullNumber] = otpData;
+        otpStore[rawPhoneOnly] = otpData;
 
         let isSent = false;
         let responseDetails = null;
@@ -87,16 +90,17 @@ app.post('/api/send-otp', async (req, res) => {
 app.post('/api/verify-otp', (req, res) => {
     try {
         const { phone, countryCode, otp } = req.body;
-        if (!phone || !countryCode || !otp) {
-            return res.status(400).json({ success: false, message: 'All fields are required.' });
+        if (!phone || !otp) {
+            return res.status(400).json({ success: false, message: 'Phone and OTP are required.' });
         }
 
-        const cleanPhone = phone.toString().trim();
-        const cleanCountryCode = countryCode.toString().trim();
+        const cleanPhone = phone.toString().replace(/\D/g, '').trim();
+        const cleanCountryCode = countryCode ? countryCode.toString().trim() : '+91';
         const fullNumber = cleanCountryCode + cleanPhone;
+        const rawPhoneOnly = cleanPhone;
         const enteredOtp = otp.toString().trim();
 
-        const record = otpStore[fullNumber];
+        let record = otpStore[fullNumber] || otpStore[rawPhoneOnly];
 
         if (!record) {
             return res.status(400).json({ success: false, message: 'No active OTP found. Please request a new OTP.' });
@@ -104,11 +108,13 @@ app.post('/api/verify-otp', (req, res) => {
 
         if (Date.now() > record.expiresAt) {
             delete otpStore[fullNumber];
+            delete otpStore[rawPhoneOnly];
             return res.status(400).json({ success: false, message: 'OTP has expired! Please request a new one.' });
         }
 
         if (record.otp === enteredOtp) {
             delete otpStore[fullNumber];
+            delete otpStore[rawPhoneOnly];
             return res.status(200).json({ success: true, message: 'OTP verified successfully!' });
         }
 
