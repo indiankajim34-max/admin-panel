@@ -12,7 +12,7 @@ const PORT = process.env.PORT || 3000;
 // मिनीमथ (MiniMoth) लाइव एपीआई क्रेडेंशियल्स
 const apiKey = 'mm_live_09db69cf493a4391dcc1c8defd511432323e1c8c602f526f4f794ee956f95d0234c880e582aeb558351c92ded80d9edb';
 
-// 1. सुरक्षित व्हाट्सएप ओटीपी भेजने का एंडपॉइंट
+// 1. WhatsApp OTP भेजने का एंडपॉइंट
 app.post('/api/send-otp', async (req, res) => {
     try {
         const { phone, countryCode } = req.body;
@@ -24,7 +24,7 @@ app.post('/api/send-otp', async (req, res) => {
         const generatedOtp = Math.floor(100000 + Math.random() * 900000).toString();
         const targetUrl = 'https://api.minimoth.dev/v1/otp/send';
 
-        // मिनीमथ एपीआई के माध्यम से व्हाट्सएप पर असली ओटीपी भेजना
+        // मिनीमथ एपीआई के माध्यम से व्हाट्सएप पर ओटीपी भेजना
         await axios.post(targetUrl, {
             phone: fullNumber,
             otp: generatedOtp
@@ -36,11 +36,11 @@ app.post('/api/send-otp', async (req, res) => {
             }
         });
 
-        // हम इसे अस्थायी रूप से सर्वर में भी रख लेते हैं ताकि बैकअप रहे
+        // सुरक्षित बैकअप के लिए लोकल स्टोरेज में रखना
         global.tempOtps = global.tempOtps || {};
         global.tempOtps[fullNumber] = {
             otp: generatedOtp,
-            expiresAt: Date.now() + 5 * 60 * 1000 // 5 मिनट का पूरा समय
+            expiresAt: Date.now() + 5 * 60 * 1000 // 5 मिनट की समय सीमा
         };
 
         return res.status(200).json({ success: true, message: 'असली WhatsApp OTP सफलतापूर्वक भेज दिया गया है!' });
@@ -50,7 +50,7 @@ app.post('/api/send-otp', async (req, res) => {
     }
 });
 
-// 2. ओटीपी वेरिफ़िकेशन एंडपॉइंट
+// 2. OTP वेरीफाय करने का एंडपॉइंट
 app.post('/api/verify-otp', async (req, res) => {
     try {
         const { phone, countryCode, otp } = req.body;
@@ -72,7 +72,7 @@ app.post('/api/verify-otp', async (req, res) => {
             return res.status(400).json({ success: false, message: 'गलत ओटीपी दर्ज किया गया है।' });
         }
 
-        // सफल सत्यापन के बाद इसे हटा दें
+        // सफल सत्यापन के बाद डेटा हटा दें
         delete global.tempOtps[fullNumber];
         return res.status(200).json({ success: true, message: 'ओटीपी सफलतापूर्वक सत्यापित हो गया है।' });
     } catch (error) {
