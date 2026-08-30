@@ -2,11 +2,6 @@ const express = require('express');
 const cors = require('cors');
 const bodyParser = require('body-parser');
 const axios = require('axios');
-const admin = require('firebase-admin');
-
-// Firebase initialization (if firebase-admin is configured)
-// admin.initializeApp({...});
-const db = admin.firestore();
 
 const app = express();
 const PORT = process.env.PORT || 10000;
@@ -15,6 +10,9 @@ app.use(cors({ origin: '*' }));
 app.use(bodyParser.json());
 
 const apiKey = 'mm_live_09db69cf493a4391dcc1c8defd511432323e1c8c602f526f4f794ee956f95d0234c880e582aeb558351c92ded80d9edb';
+
+// In-memory storage for payments (Safe, fast, and no crash on Render)
+const paymentsDb = new Map();
 
 app.get('/', (req, res) => {
     res.status(200).send('Kajim Digital Secure OTP Server is running perfectly.');
@@ -145,7 +143,7 @@ app.post('/api/verify-otp', async (req, res) => {
 });
 
 // ==========================================
-// TELEGRAM WEBHOOK & AUTO-CLEANUP
+// TELEGRAM WEBHOOK & PAYMENT VERIFY SYSTEM
 // ==========================================
 
 app.post('/api/telegram-webhook', async (req, res) => {
@@ -161,12 +159,13 @@ app.post('/api/telegram-webhook', async (req, res) => {
                 const utr = utrMatch[0];
                 const amount = amountMatch ? amountMatch[1] : '0';
 
-                await db.collection('payments').doc(utr).set({
+                paymentsDb.set(utr, {
                     utr: utr,
                     amount: amount,
                     rawText: text,
-                    createdAt: admin.firestore.FieldValue.serverTimestamp()
+                    createdAt: Date.now()
                 });
+                console.log(`Payment saved for UTR: ${utr}`);
             }
         }
         res.status(200).send('OK');
@@ -176,19 +175,23 @@ app.post('/api/telegram-webhook', async (req, res) => {
     }
 });
 
-setInterval(async () => {
+app.get('/api/verify-payment/:utr', (req, res) => {
+    const utr = req.params.utr;
+    if (paymentsDb.has(utr)) {
+        return res.status(200).json({ success: true, data: paymentsDb.get(utr) });
+    }
+    return res.status(404).json({ success: false, message: 'Payment not found' });
+});
+
+// Auto-cleanup records older than 24 hours every 1 hour
+setInterval(() => {
     try {
-        const twentyFourHoursAgo = new Date(Date.now() - 24 * 60 * 60 * 1000);
-        const oldPaymentsSnapshot = await db.collection('payments')
-            .where('createdAt', '<', twentyFourHoursAgo)
-            .get();
-
-        const batch = db.batch();
-        oldPaymentsSnapshot.forEach((doc) => {
-            batch.delete(doc.ref);
-        });
-
-        await batch.commit();
+        const twentyFourHoursAgo = Date.now() - (24 * 60 * 60 * 1000);
+        for (let [utr, record] of paymentsDb.entries()) {
+            if (record.createdAt < twentyFourHoursAgo) {
+                paymentsDb.delete(utr);
+            }
+        }
     } catch (error) {
         console.error('Cleanup Error:', error);
     }
