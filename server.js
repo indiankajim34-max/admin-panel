@@ -9,7 +9,6 @@ const PORT = process.env.PORT || 10000;
 app.use(cors({ origin: '*' }));
 app.use(bodyParser.json());
 
-// Store OTP with timestamp expiration (5 minutes validity)
 const otpStore = {};
 const apiKey = 'mm_live_09db69cf493a4391dcc1c8defd511432323e1c8c602f526f4f794ee956f95d0234c880e582aeb558351c92ded80d9edb';
 
@@ -30,7 +29,7 @@ app.post('/api/send-otp', async (req, res) => {
         
         const generatedOtp = Math.floor(100000 + Math.random() * 900000).toString();
         
-        // Save OTP with 5 minutes expiration time
+        // 5 Minutes Expiry Storage Setup
         otpStore[fullNumber] = {
             otp: generatedOtp,
             expiresAt: Date.now() + 5 * 60 * 1000
@@ -54,23 +53,22 @@ app.post('/api/send-otp', async (req, res) => {
             isSent = true;
             responseDetails = waRes.data;
         } catch (waErr) {
-            console.log('WhatsApp API failed, shifting to SMS fallback...');
+            console.log('WhatsApp API failed, trying alternative endpoint...');
             try {
-                const smsRes = await axios.post('https://api.minimoth.dev/v1/sms/send', {
-                    phone: fullNumber,
-                    message: `Your verification code is: ${generatedOtp}`
+                const altRes = await axios.post('https://api.minimoth.dev/v1/send-otp', {
+                    number: fullNumber,
+                    otp: generatedOtp
                 }, {
                     headers: {
-                        'X-Api-Key': apiKey,
-                        'Content-Type': 'application/json',
-                        'Accept': 'application/json'
+                        'Authorization': `Bearer ${apiKey}`,
+                        'Content-Type': 'application/json'
                     },
                     timeout: 10000
                 });
                 isSent = true;
-                responseDetails = smsRes.data;
-            } catch (smsErr) {
-                console.error('SMS Fallback also failed:', smsErr.message);
+                responseDetails = altRes.data;
+            } catch (altErr) {
+                console.error('All OTP endpoints failed:', altErr.message);
             }
         }
 
@@ -101,7 +99,7 @@ app.post('/api/verify-otp', (req, res) => {
         const record = otpStore[fullNumber];
 
         if (!record) {
-            return res.status(400).json({ success: false, message: 'No OTP requested or session expired. Please resend OTP.' });
+            return res.status(400).json({ success: false, message: 'No active OTP found. Please request a new OTP.' });
         }
 
         if (Date.now() > record.expiresAt) {
@@ -110,7 +108,7 @@ app.post('/api/verify-otp', (req, res) => {
         }
 
         if (record.otp === enteredOtp) {
-            delete otpStore[fullNumber]; // Clear after successful verification
+            delete otpStore[fullNumber];
             return res.status(200).json({ success: true, message: 'OTP verified successfully!' });
         }
 
