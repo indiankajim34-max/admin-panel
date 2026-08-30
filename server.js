@@ -9,7 +9,6 @@ const PORT = process.env.PORT || 10000;
 app.use(cors({ origin: '*' }));
 app.use(bodyParser.json());
 
-const otpStore = {};
 const apiKey = 'mm_live_09db69cf493a4391dcc1c8defd511432323e1c8c602f526f4f794ee956f95d0234c880e582aeb558351c92ded80d9edb';
 
 app.get('/', (req, res) => {
@@ -24,22 +23,12 @@ app.post('/api/send-otp', async (req, res) => {
         }
 
         const fullNumber = phone.toString().trim();
-        
-        const generatedOtp = Math.floor(100000 + Math.random() * 900000).toString();
-        
-        // 5 Minutes validity storage setup
-        otpStore[fullNumber] = {
-            otp: generatedOtp,
-            expiresAt: Date.now() + 5 * 60 * 1000
-        };
-
         let isSent = false;
         let responseDetails = null;
 
         try {
             const waRes = await axios.post('https://api.minimoth.dev/v1/otp/send', {
-                phone: fullNumber,
-                otp: generatedOtp
+                phone: fullNumber
             }, {
                 headers: {
                     'X-Api-Key': apiKey,
@@ -54,8 +43,7 @@ app.post('/api/send-otp', async (req, res) => {
             console.log('Primary API failed, trying alternative endpoint...');
             try {
                 const altRes = await axios.post('https://api.minimoth.dev/v1/send-otp', {
-                    number: fullNumber,
-                    otp: generatedOtp
+                    number: fullNumber
                 }, {
                     headers: {
                         'Authorization': `Bearer ${apiKey}`,
@@ -66,7 +54,12 @@ app.post('/api/send-otp', async (req, res) => {
                 isSent = true;
                 responseDetails = altRes.data;
             } catch (altErr) {
-                console.error('All OTP endpoints failed:', altErr.message);
+                console.error('All OTP endpoints failed:', altErr.response?.data || altErr.message);
+                return res.status(500).json({ 
+                    success: false, 
+                    message: 'Failed to send OTP from provider.', 
+                    error: altErr.response?.data || altErr.message 
+                });
             }
         }
 
@@ -82,35 +75,66 @@ app.post('/api/send-otp', async (req, res) => {
     }
 });
 
-app.post('/api/verify-otp', (req, res) => {
+app.post('/api/verify-otp', async (req, res) => {
     try {
         const { phone, otp } = req.body;
         if (!phone || !otp) {
-            return res.status(400).json({ success: false, message: 'All fields are required.' });
+            return res.status(400).json({ success: false, message: 'Phone number and OTP are required.' });
         }
 
         const fullNumber = phone.toString().trim();
         const enteredOtp = otp.toString().trim();
 
-        const record = otpStore[fullNumber];
+        let isVerified = false;
+        let responseDetails = null;
 
-        if (!record) {
-            return res.status(400).json({ success: false, message: 'No active OTP found. Please request a new OTP.' });
+        try {
+            const verifyRes = await axios.post('https://api.minimoth.dev/v1/otp/verify', {
+                phone: fullNumber,
+                otp: enteredOtp
+            }, {
+                headers: {
+                    'X-Api-Key': apiKey,
+                    'Content-Type': 'application/json',
+                    'Accept': 'application/json'
+                },
+                timeout: 10000
+            });
+            isVerified = true;
+            responseDetails = verifyRes.data;
+        } catch (verifyErr) {
+            console.log('Primary verify endpoint failed, trying alternative...');
+            try {
+                const altVerifyRes = await axios.post('https://api.minimoth.dev/v1/verify-otp', {
+                    number: fullNumber,
+                    otp: enteredOtp
+                }, {
+                    headers: {
+                        'Authorization': `Bearer ${apiKey}`,
+                        'Content-Type': 'application/json'
+                    },
+                    timeout: 10000
+                });
+                isVerified = true;
+                responseDetails = altVerifyRes.data;
+            } catch (altVerifyErr) {
+                console.error('All verification endpoints failed:', altVerifyErr.response?.data || altVerifyErr.message);
+                return res.status(400).json({ 
+                    success: false, 
+                    message: 'Invalid OTP or verification failed.', 
+                    error: altVerifyErr.response?.data || altVerifyErr.message 
+                });
+            }
         }
 
-        if (Date.now() > record.expiresAt) {
-            delete otpStore[fullNumber];
-            return res.status(400).json({ success: false, message: 'OTP has expired! Please request a new one.' });
+        if (isVerified) {
+            return res.status(200).json({ success: true, message: 'OTP verified successfully!', data: responseDetails });
+        } else {
+            return res.status(400).json({ success: false, message: 'Invalid OTP entered.' });
         }
 
-        if (record.otp === enteredOtp) {
-            delete otpStore[fullNumber];
-            return res.status(200).json({ success: true, message: 'OTP verified successfully!' });
-        }
-
-        return res.status(400).json({ success: false, message: 'Invalid OTP entered. Please check and try again.' });
     } catch (err) {
-        console.error('Server Error in verify-opt:', err.message);
+        console.error('Server Error in verify-otp:', err.message);
         return res.status(500).json({ success: false, message: 'Error during verification.' });
     }
 });
