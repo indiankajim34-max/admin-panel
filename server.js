@@ -4,26 +4,23 @@ const bodyParser = require('body-parser');
 const axios = require('axios');
 
 const app = express();
-app.use(cors());
+const PORT = process.env.PORT || 10000;
+
+app.use(cors({ origin: '*' }));
 app.use(bodyParser.json());
 
-const PORT = process.env.PORT || 10000;
+const otpStore = {};
 const apiKey = 'mm_live_09db69cf493a4391dcc1c8defd511432323e1c8c602f526f4f794ee956f95d0234c880e582aeb558351c92ded80d9edb';
 
-// टेम्पोररी ओटीपी स्टोर करने के लिए
-const otpStore = {};
-
-// सर्वर हेल्थ चेक रूट
 app.get('/', (req, res) => {
     res.status(200).send('Kajim Digital Secure OTP Server is running perfectly.');
 });
 
-// 1. ओटीपी भेजने का एपीआई (रजिस्ट्रेशन और पासवर्ड चेंज दोनों के लिए)
 app.post('/api/send-otp', async (req, res) => {
     try {
         const { phone, countryCode } = req.body;
         if (!phone || !countryCode) {
-            return res.status(400).json({ success: false, message: 'मोबाइल नंबर और कंट्री कोड दर्ज करना अनिवार्य है।' });
+            return res.status(400).json({ success: false, message: 'Phone number and country code are required.' });
         }
 
         const fullNumber = countryCode + phone;
@@ -33,7 +30,6 @@ app.post('/api/send-otp', async (req, res) => {
         let isSent = false;
         let responseDetails = null;
 
-        // पहले व्हाट्सएप पर ओटीपी भेजने की कोशिश करें
         try {
             const waRes = await axios.post('https://api.minimoth.dev/v1/otp/send', {
                 phone: fullNumber,
@@ -50,7 +46,6 @@ app.post('/api/send-otp', async (req, res) => {
             responseDetails = waRes.data;
         } catch (waErr) {
             console.log('WhatsApp API failed, shifting to SMS fallback...');
-            // अगर व्हाट्सएप फेल हो, तो तुरंत एसएमएस (SMS) के जरिए भेजें
             try {
                 const smsRes = await axios.post('https://api.minimoth.dev/v1/sms/send', {
                     phone: fullNumber,
@@ -71,39 +66,37 @@ app.post('/api/send-otp', async (req, res) => {
         }
 
         if (isSent) {
-            return res.status(200).json({ success: true, message: 'ओटीपी सफलतापूर्वक भेज दिया गया है!', data: responseDetails });
+            return res.status(200).json({ success: true, message: 'OTP successfully sent!', data: responseDetails });
         } else {
-            return res.status(500).json({ success: false, message: 'ओटीपी भेजने में असमर्थ, कृपया पुनः प्रयास करें।' });
+            return res.status(500).json({ success: false, message: 'Failed to send OTP, please try again.' });
         }
 
     } catch (err) {
         console.error('Server Error in send-otp:', err.message);
-        return res.status(500).json({ success: false, message: 'इंटरनल सर्वर त्रुटि।' });
+        return res.status(500).json({ success: false, message: 'Internal server error.' });
     }
 });
 
-// 2. ओटीपी वेरिफाई करने का एपीआई
 app.post('/api/verify-otp', (req, res) => {
     try {
         const { phone, countryCode, otp } = req.body;
         if (!phone || !countryCode || !otp) {
-            return res.status(400).json({ success: false, message: 'सभी जानकारी भरना आवश्यक है।' });
+            return res.status(400).json({ success: false, message: 'All fields are required.' });
         }
 
         const fullNumber = countryCode + phone;
 
         if (otpStore[fullNumber] && otpStore[fullNumber] === otp) {
-            // वेरीफाई होने के बाद ओटीपी को हटा दें ताकि दोबारा इस्तेमाल न हो सके
             delete otpStore[fullNumber];
-            return res.status(200).json({ success: true, message: 'ओटीपी सफलतापूर्वक सत्यापित हो गया है!' });
+            return res.status(200).json({ success: true, message: 'OTP verified successfully!' });
         }
 
-        return res.status(400).json({ success: false, message: 'गलत या एक्सपायर हो चुका ओटीपी।' });
+        return res.status(400).json({ success: false, message: 'Invalid or expired OTP.' });
     } catch (err) {
-        return res.status(500).json({ success: false, message: 'सत्यापन के दौरान त्रुटि आई।' });
+        return res.status(500).json({ success: false, message: 'Error during verification.' });
     }
 });
 
 app.listen(PORT, '0.0.0.0', () => {
-    console.log(`बैकएंड सर्वर सफलतापूर्वक पोर्ट ${PORT} पर चालू है`);
+    console.log(`Backend server successfully running on port ${PORT}`);
 });
