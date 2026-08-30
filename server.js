@@ -9,6 +9,7 @@ const PORT = process.env.PORT || 10000;
 app.use(cors({ origin: '*' }));
 app.use(bodyParser.json());
 
+// Store OTP with timestamp expiration (5 minutes validity)
 const otpStore = {};
 const apiKey = 'mm_live_09db69cf493a4391dcc1c8defd511432323e1c8c602f526f4f794ee956f95d0234c880e582aeb558351c92ded80d9edb';
 
@@ -23,9 +24,17 @@ app.post('/api/send-otp', async (req, res) => {
             return res.status(400).json({ success: false, message: 'Phone number and country code are required.' });
         }
 
-        const fullNumber = countryCode + phone;
+        const cleanPhone = phone.toString().trim();
+        const cleanCountryCode = countryCode.toString().trim();
+        const fullNumber = cleanCountryCode + cleanPhone;
+        
         const generatedOtp = Math.floor(100000 + Math.random() * 900000).toString();
-        otpStore[fullNumber] = generatedOtp;
+        
+        // Save OTP with 5 minutes expiration time
+        otpStore[fullNumber] = {
+            otp: generatedOtp,
+            expiresAt: Date.now() + 5 * 60 * 1000
+        };
 
         let isSent = false;
         let responseDetails = null;
@@ -84,15 +93,30 @@ app.post('/api/verify-otp', (req, res) => {
             return res.status(400).json({ success: false, message: 'All fields are required.' });
         }
 
-        const fullNumber = countryCode + phone;
+        const cleanPhone = phone.toString().trim();
+        const cleanCountryCode = countryCode.toString().trim();
+        const fullNumber = cleanCountryCode + cleanPhone;
+        const enteredOtp = otp.toString().trim();
 
-        if (otpStore[fullNumber] && otpStore[fullNumber] === otp) {
+        const record = otpStore[fullNumber];
+
+        if (!record) {
+            return res.status(400).json({ success: false, message: 'No OTP requested or session expired. Please resend OTP.' });
+        }
+
+        if (Date.now() > record.expiresAt) {
             delete otpStore[fullNumber];
+            return res.status(400).json({ success: false, message: 'OTP has expired! Please request a new one.' });
+        }
+
+        if (record.otp === enteredOtp) {
+            delete otpStore[fullNumber]; // Clear after successful verification
             return res.status(200).json({ success: true, message: 'OTP verified successfully!' });
         }
 
-        return res.status(400).json({ success: false, message: 'Invalid or expired OTP.' });
+        return res.status(400).json({ success: false, message: 'Invalid OTP entered. Please check and try again.' });
     } catch (err) {
+        console.error('Server Error in verify-otp:', err.message);
         return res.status(500).json({ success: false, message: 'Error during verification.' });
     }
 });
