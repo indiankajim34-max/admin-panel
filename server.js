@@ -1,52 +1,80 @@
 const express = require('express');
-const path = require('path');
+const cors = require('cors');
+const bodyParser = require('body-parser');
+const axios = require('axios');
+
 const app = express();
+app.use(cors());
+app.use(bodyParser.json());
+
 const PORT = process.env.PORT || 3000;
 
-app.use(express.json());
-app.use(express.static(path.join(__dirname, '../')));
+// अस्थायी ओटीपी स्टोरेज (उत्पादन के लिए Redis या डेटाबेस का उपयोग करें)
+const otpStorage = {};
 
-// MiniMoth API Key loaded securely from environment variables
-const MINIMOTH_API_KEY = process.env.MINIMOTH_API_KEY;
-
-// Secure OTP Send route communicating with MiniMoth backend API
+// सुरक्षित व्हाट्सएप/एसएमएस ओटीपी भेजने का एंडपॉइंट
 app.post('/api/send-otp', async (req, res) => {
-    const { phone, otp } = req.body;
-    
-    if (!phone || !otp) {
-        return res.status(400).json({ success: false, error: "Phone number and OTP are required" });
-    }
-
-    if (!MINIMOTH_API_KEY) {
-        return res.status(500).json({ success: false, error: "Server configuration error: API key missing on backend" });
-    }
-
     try {
-        const response = await fetch('https://api.minimoth.dev/v1/otp/send', {
-            method: 'POST',
-            headers: {
-                'X-Api-Key': MINIMOTH_API_KEY,
-                'Content-Type': 'application/json',
-                'Accept': 'application/json'
-            },
-            body: JSON.stringify({
-                phone: phone,
-                otp: otp
-            })
-        });
-
-        const data = await response.json();
-
-        if (!response.ok) {
-            throw new Error(data.error || data.message || `API Error: ${response.status}`);
+        const { phone, countryCode, context } = req.body;
+        if (!phone || !countryCode) {
+            return res.status(400).json({ success: false, message: 'फ़ोन नंबर और देश कोड आवश्यक हैं।' });
         }
 
-        res.status(200).json({ success: true, message: "OTP sent successfully via WhatsApp!" });
+        const fullNumber = countryCode + phone;
+        const generatedOtp = Math.floor(100000 + Math.random() * 900000).toString();
+        
+        // मिनीमथ (MiniMoth) लाइव एपीआई क्रेडेंशियल्स
+        const apiKey = 'mm_live_09db69cf493a4391dcc1c8defd511432323e1c8c602f526f4f794ee956f95d0234c880e582aeb558351c92ded80d9edb';
+        const targetUrl = 'https://api.minimoth.dev/v1/otp/send';
+
+        // मिनीमथ एपीआई के माध्यम से असली व्हाट्सएप ओटीपी भेजना
+        await axios.post(targetUrl, {
+            phone: fullNumber,
+            otp: generatedOtp
+        }, {
+            headers: {
+                'X-Api-Key': apiKey,
+                'Content-Type': 'application/json',
+                'Accept': 'application/json'
+            }
+        });
+
+        // सत्यापन के लिए ओटीपी को सुरक्षित रूप से स्टोर करें (5 मिनट की समय सीमा)
+        otpStorage[fullNumber] = {
+            otp: generatedOtp,
+            expiresAt: Date.now() + 5 * 60 * 1000
+        };
+
+        return res.status(200).json({ success: true, message: 'असली WhatsApp OTP सफलतापूर्वक भेज दिया गया है!' });
     } catch (error) {
-        res.status(500).json({ success: false, error: error.message });
+        console.error('MiniMoth API Error:', error.response?.data || error.message);
+        return res.status(500).json({ success: false, message: `OTP भेजने में विफल: ${error.message}` });
     }
 });
 
+// ओटीपी वेरिफ़िकेशन एंडपॉइंट
+app.post('/api/verify-otp', (req, res) => {
+    const { phone, countryCode, otp } = req.body;
+    const fullNumber = countryCode + phone;
+
+    const record = otpStorage[fullNumber];
+    if (!record) {
+        return res.status(400).json({ success: false, message: 'कृपया पहले ओटीपी अनुरोध करें।' });
+    }
+
+    if (Date.now() > record.expiresAt) {
+        delete otpStorage[fullNumber];
+        return res.status(400).json({ success: false, message: 'ओटीपी की समय सीमा समाप्त हो गई है।' });
+    }
+
+    if (record.otp !== otp) {
+        return res.status(400).json({ success: false, message: 'गलत ओटीपी दर्ज किया गया है।' });
+    }
+
+    delete otpStorage[fullNumber];
+    return res.status(200).json({ success: true, message: 'ओटीपी सफलतापूर्वक सत्यापित हो गया है।' });
+});
+
 app.listen(PORT, () => {
-    console.log(`Server is running on port ${PORT}`);
+    console.log(`सुरक्षित बैकएंड सर्वर पोर्ट ${PORT} पर चल रहा है।`);
 });
