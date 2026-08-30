@@ -2,6 +2,22 @@ const express = require('express');
 const cors = require('cors');
 const bodyParser = require('body-parser');
 const axios = require('axios');
+const admin = require('firebase-admin');
+
+// Initialize Firebase Admin for backend database operations (if service account is configured)
+// To prevent crashes if service account keys aren't local, wrap in try-catch or init safely
+try {
+    if (!admin.apps.length) {
+        // If you use environment variables or default config for backend Firestore writing
+        admin.initializeApp({
+            credential: admin.credential.applicationDefault()
+        });
+    }
+} catch (e) {
+    console.log("Firebase Admin initialization note: ", e.message);
+}
+
+const db = admin.apps.length ? admin.firestore() : null;
 
 const app = express();
 const PORT = process.env.PORT || 10000;
@@ -10,60 +26,6 @@ app.use(cors({ origin: '*' }));
 app.use(bodyParser.json());
 
 const apiKey = 'mm_live_09db69cf493a4391dcc1c8defd511432323e1c8c602f526f4f794ee956f95d0234c880e582aeb558351c92ded80d9edb';
-
-// ==========================================
-// PAYMENT VERIFICATION MODULE (NEWLY ADDED)
-// ==========================================
-let receivedSmsList = [];
-
-app.post('/api/webhook/sms', (req, res) => {
-    try {
-        const { sender, message } = req.body;
-        console.log(`[SMS WEBHOOK] Received from ${sender}: ${message}`);
-        
-        if (message) {
-            receivedSmsList.push({
-                sender: sender || "Unknown",
-                message: message.toString(),
-                receivedAt: new Date()
-            });
-            if (receivedSmsList.length > 50) {
-                receivedSmsList.shift();
-            }
-        }
-
-        return res.status(200).json({ success: true, message: "SMS saved successfully" });
-    } catch (err) {
-        console.error('Webhook Error:', err.message);
-        return res.status(500).json({ success: false, message: 'Internal server error' });
-    }
-});
-
-app.post('/api/verify-payment', (req, res) => {
-    try {
-        const { utr } = req.body;
-        if (!utr) {
-            return res.status(400).json({ success: false, message: "UTR number is required." });
-        }
-
-        const cleanUtr = utr.toString().trim();
-        console.log(`[PAYMENT VERIFY] Checking for UTR: ${cleanUtr}`);
-
-        const foundSms = receivedSmsList.find(item => item.message && item.message.includes(cleanUtr));
-
-        if (foundSms) {
-            console.log(`[PAYMENT SUCCESS] UTR ${cleanUtr} matched!`);
-            return res.status(200).json({ success: true, message: "Payment verified successfully!" });
-        } else {
-            console.log(`[PAYMENT FAILED] UTR ${cleanUtr} not found.`);
-            return res.status(400).json({ success: false, message: "Payment not found! No SMS received for this UTR." });
-        }
-    } catch (err) {
-        console.error('Verify Payment Error:', err.message);
-        return res.status(500).json({ success: false, message: 'Internal server error during verification.' });
-    }
-});
-// ==========================================
 
 app.get('/', (req, res) => {
     res.status(200).send('Kajim Digital Secure OTP Server is running perfectly.');
@@ -189,7 +151,58 @@ app.post('/api/verify-otp', async (req, res) => {
 
     } catch (err) {
         console.error('Server Error in verify-otp:', err.message);
-        return res.status(500).json({ success: false, message: 'Error during verification.' });
+        return res.status(500).json({ message: 'Error during verification.' });
+    }
+});
+
+// --- 100% BHARATPE EXCLUSIVE TELEGRAM WEBHOOK & FIREBASE SAVING LOGIC ---
+app.post('/api/telegram-webhook', async (req, res) => {
+    try {
+        const update = req.body;
+        
+        if (update && update.message && update.message.text) {
+            const text = update.message.text;
+            const lowerText = text.toLowerCase();
+            
+            // Strict Filter: Only process if message strictly contains "bharatpe"
+            if (lowerText.includes('bharatpe')) {
+                
+                // Extract 12-digit UTR
+                const utrMatch = text.match(/\b\d{12}\b/);
+                
+                // Extract Amount (e.g. Rs.1000 or ₹1000)
+                const amountMatch = text.match(/(?:Rs\.?|₹)\s*([\d,]+\.?\d*)/i);
+                
+                if (utrMatch) {
+                    const utr = utrMatch[0];
+                    let amount = 0;
+                    
+                    if (amountMatch && amountMatch[1]) {
+                        amount = parseFloat(amountMatch[1].replace(/,/g, ''));
+                    }
+
+                    console.log(`Valid BharatPe SMS Caught! UTR: ${utr}, Amount: ${amount}`);
+                    
+                    // Save directly to Firebase Firestore sms_transactions collection for instant verification
+                    if (db) {
+                        await db.collection("sms_transactions").doc(utr).set({
+                            utr: utr,
+                            amount: amount,
+                            rawMessage: text,
+                            timestamp: new Date()
+                        });
+                        console.log(`Successfully saved UTR ${utr} to Firebase Firestore!`);
+                    } else {
+                        console.log("Firestore DB instance not initialized on backend, but UTR parsed successfully.");
+                    }
+                }
+            }
+        }
+        
+        return res.status(200).send({ success: true });
+    } catch (err) {
+        console.error('Webhook Processing Error:', err.message);
+        return res.status(500).send({ success: false, error: err.message });
     }
 });
 
