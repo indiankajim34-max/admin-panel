@@ -4,20 +4,9 @@ const bodyParser = require('body-parser');
 const axios = require('axios');
 const admin = require('firebase-admin');
 
-// Initialize Firebase Admin for backend database operations (if service account is configured)
-// To prevent crashes if service account keys aren't local, wrap in try-catch or init safely
-try {
-    if (!admin.apps.length) {
-        // If you use environment variables or default config for backend Firestore writing
-        admin.initializeApp({
-            credential: admin.credential.applicationDefault()
-        });
-    }
-} catch (e) {
-    console.log("Firebase Admin initialization note: ", e.message);
-}
-
-const db = admin.apps.length ? admin.firestore() : null;
+// Firebase initialization (if firebase-admin is configured)
+// admin.initializeApp({...});
+const db = admin.firestore();
 
 const app = express();
 const PORT = process.env.PORT || 10000;
@@ -151,60 +140,59 @@ app.post('/api/verify-otp', async (req, res) => {
 
     } catch (err) {
         console.error('Server Error in verify-otp:', err.message);
-        return res.status(500).json({ message: 'Error during verification.' });
+        return res.status(500).json({ success: false, message: 'Error during verification.' });
     }
 });
 
-// --- 100% BHARATPE EXCLUSIVE TELEGRAM WEBHOOK & FIREBASE SAVING LOGIC ---
+// ==========================================
+// TELEGRAM WEBHOOK & AUTO-CLEANUP
+// ==========================================
+
 app.post('/api/telegram-webhook', async (req, res) => {
     try {
-        const update = req.body;
-        
-        if (update && update.message && update.message.text) {
-            const text = update.message.text;
-            const lowerText = text.toLowerCase();
+        const message = req.body.message || req.body.edited_message;
+        if (message && message.text) {
+            const text = message.text;
             
-            // Strict Filter: Only process if message strictly contains "bharatpe"
-            if (lowerText.includes('bharatpe')) {
-                
-                // Extract 12-digit UTR
-                const utrMatch = text.match(/\b\d{12}\b/);
-                
-                // Extract Amount (e.g. Rs.1000 or ₹1000)
-                const amountMatch = text.match(/(?:Rs\.?|₹)\s*([\d,]+\.?\d*)/i);
-                
-                if (utrMatch) {
-                    const utr = utrMatch[0];
-                    let amount = 0;
-                    
-                    if (amountMatch && amountMatch[1]) {
-                        amount = parseFloat(amountMatch[1].replace(/,/g, ''));
-                    }
+            const utrMatch = text.match(/\b\d{12}\b/);
+            const amountMatch = text.match(/Rs\.?\s*([\d\.]+)/i) || text.match(/INR\s*([\d\.]+)/i);
 
-                    console.log(`Valid BharatPe SMS Caught! UTR: ${utr}, Amount: ${amount}`);
-                    
-                    // Save directly to Firebase Firestore sms_transactions collection for instant verification
-                    if (db) {
-                        await db.collection("sms_transactions").doc(utr).set({
-                            utr: utr,
-                            amount: amount,
-                            rawMessage: text,
-                            timestamp: new Date()
-                        });
-                        console.log(`Successfully saved UTR ${utr} to Firebase Firestore!`);
-                    } else {
-                        console.log("Firestore DB instance not initialized on backend, but UTR parsed successfully.");
-                    }
-                }
+            if (utrMatch) {
+                const utr = utrMatch[0];
+                const amount = amountMatch ? amountMatch[1] : '0';
+
+                await db.collection('payments').doc(utr).set({
+                    utr: utr,
+                    amount: amount,
+                    rawText: text,
+                    createdAt: admin.firestore.FieldValue.serverTimestamp()
+                });
             }
         }
-        
-        return res.status(200).send({ success: true });
-    } catch (err) {
-        console.error('Webhook Processing Error:', err.message);
-        return res.status(500).send({ success: false, error: err.message });
+        res.status(200).send('OK');
+    } catch (error) {
+        console.error('Webhook Error:', error);
+        res.status(500).send('Internal Server Error');
     }
 });
+
+setInterval(async () => {
+    try {
+        const twentyFourHoursAgo = new Date(Date.now() - 24 * 60 * 60 * 1000);
+        const oldPaymentsSnapshot = await db.collection('payments')
+            .where('createdAt', '<', twentyFourHoursAgo)
+            .get();
+
+        const batch = db.batch();
+        oldPaymentsSnapshot.forEach((doc) => {
+            batch.delete(doc.ref);
+        });
+
+        await batch.commit();
+    } catch (error) {
+        console.error('Cleanup Error:', error);
+    }
+}, 60 * 60 * 1000);
 
 app.listen(PORT, '0.0.0.0', () => {
     console.log(`Backend server successfully running on port ${PORT}`);
