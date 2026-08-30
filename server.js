@@ -2,6 +2,17 @@ const express = require('express');
 const cors = require('cors');
 const bodyParser = require('body-parser');
 const axios = require('axios');
+const admin = require('firebase-admin');
+
+// Firebase Admin SDK इनिशियलाइज करें (Firestore में OTP सेव करने के लिए)
+// ध्यान दें: सुनिश्चित करें कि आपके Render Environment Variables में FIREBASE_SERVICE_ACCOUNT या आपका क्रेडेंशियल सेट है, 
+// या सीधे आपके Firestore प्रोजेक्ट कॉन्फिग के साथ इनिशियलाइज किया गया है।
+if (!admin.apps.length) {
+    admin.initializeApp({
+        credential: admin.credential.applicationDefault() // या अपना प्रोजेक्ट क्रेडेंशियल यहाँ जोड़ें
+    });
+}
+const db = admin.firestore();
 
 const app = express();
 app.use(cors());
@@ -9,10 +20,7 @@ app.use(bodyParser.json());
 
 const PORT = process.env.PORT || 3000;
 
-// अस्थायी ओटीपी स्टोरेज (उत्पादन के लिए Redis या डेटाबेस का उपयोग करें)
-const otpStorage = {};
-
-// सुरक्षित व्हाट्सएप/एसएमएस ओटीपी भेजने का एंडपॉइंट
+// सुरक्षित व्हाट्सएप/एसएमएस ओटीपी भेजने का एंडपॉइंट (अब Firestore में स्टोर होगा ताकि रीसेट न हो)
 app.post('/api/send-otp', async (req, res) => {
     try {
         const { phone, countryCode, context } = req.body;
@@ -39,11 +47,11 @@ app.post('/api/send-otp', async (req, res) => {
             }
         });
 
-        // सत्यापन के लिए ओटीपी को सुरक्षित रूप से स्टोर करें (5 मिनट की समय सीमा)
-        otpStorage[fullNumber] = {
+        // सत्यापन के लिए ओटीपी को Firestore डेटाबेस में सुरक्षित रूप से स्टोर करें (5 मिनट की समय सीमा)
+        await db.collection('server_otps').doc(fullNumber).set({
             otp: generatedOtp,
             expiresAt: Date.now() + 5 * 60 * 1000
-        };
+        });
 
         return res.status(200).json({ success: true, message: 'असली WhatsApp OTP सफलतापूर्वक भेज दिया गया है!' });
     } catch (error) {
@@ -52,27 +60,37 @@ app.post('/api/send-otp', async (req, res) => {
     }
 });
 
-// ओटीपी वेरिफ़िकेशन एंडपॉइंट
-app.post('/api/verify-otp', (req, res) => {
-    const { phone, countryCode, otp } = req.body;
-    const fullNumber = countryCode + phone;
+// ओटीपी वेरिफ़िकेशन एंडपॉइंट (Firestore डेटाबेस से वेरीफाई करेगा)
+app.post('/api/verify-otp', async (req, res) => {
+    try {
+        const { phone, countryCode, otp } = req.body;
+        const fullNumber = countryCode + phone;
 
-    const record = otpStorage[fullNumber];
-    if (!record) {
-        return res.status(400).json({ success: false, message: 'कृपया पहले ओटीपी अनुरोध करें।' });
+        const docRef = db.collection('server_otps').doc(fullNumber);
+        const docSnap = await docRef.get();
+
+        if (!docSnap.exists) {
+            return res.status(400).json({ success: false, message: 'कृपया पहले ओटीपी अनुरोध करें।' });
+        }
+
+        const record = docSnap.data();
+
+        if (Date.now() > record.expiresAt) {
+            await docRef.delete();
+            return res.status(400).json({ success: false, message: 'ओटीपी की समय सीमा समाप्त हो गई है।' });
+        }
+
+        if (record.otp !== otp) {
+            return res.status(400).json({ success: false, message: 'गलत ओटीपी दर्ज किया गया है।' });
+        }
+
+        // सफलतापूर्वक वेरीफाई होने के बाद ओटीपी को डिलीट कर दें ताकि दोबारा इस्तेमाल न हो सके
+        await docRef.delete();
+        return res.status(200).json({ success: true, message: 'ओटीपी सफलतापूर्वक सत्यापित हो गया है।' });
+    } catch (error) {
+        console.error('Verify OTP Error:', error);
+        return res.status(500).json({ success: false, message: `सत्यापन विफल: ${error.message}` });
     }
-
-    if (Date.now() > record.expiresAt) {
-        delete otpStorage[fullNumber];
-        return res.status(400).json({ success: false, message: 'ओटीपी की समय सीमा समाप्त हो गई है।' });
-    }
-
-    if (record.otp !== otp) {
-        return res.status(400).json({ success: false, message: 'गलत ओटीपी दर्ज किया गया है।' });
-    }
-
-    delete otpStorage[fullNumber];
-    return res.status(200).json({ success: true, message: 'ओटीपी सफलतापूर्वक सत्यापित हो गया है।' });
 });
 
 app.listen(PORT, () => {
