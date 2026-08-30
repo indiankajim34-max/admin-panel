@@ -4,7 +4,6 @@
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
 <title>WinGo VIP - Ultimate Secure Dashboard</title>
-<!-- Firebase SDKs -->
 <script src="https://www.gstatic.com/firebasejs/9.22.0/firebase-app-compat.js"></script>
 <script src="https://www.gstatic.com/firebasejs/9.22.0/firebase-auth-compat.js"></script>
 <script src="https://www.gstatic.com/firebasejs/9.22.0/firebase-firestore-compat.js"></script>
@@ -31,7 +30,6 @@ button:hover { opacity: 0.9; }
 <body>
 
 <div class="container">
-<!-- Login Form -->
 <div id="loginFormContainer" class="card">
 <h2 style="text-align: center; color: #00ff66; margin-bottom: 20px;">WinGo VIP Secure Portal</h2>
 <div class="input-group">
@@ -48,7 +46,6 @@ button:hover { opacity: 0.9; }
 <div class="toggle-link" onclick="switchView('forgot')">Forgot Password?</div>
 </div>
 
-<!-- Register Form -->
 <div id="registerContainer" class="card" style="display: none;">
 <h2 style="text-align: center; color: #00ff66; margin-bottom: 20px;">Register New Account</h2>
 <div class="input-group">
@@ -85,7 +82,6 @@ button:hover { opacity: 0.9; }
 <div class="toggle-link" onclick="switchView('login')">Already registered? Login</div>
 </div>
 
-<!-- Forgot / Change Password Form -->
 <div id="forgotContainer" class="card" style="display: none;">
 <h2 style="text-align: center; color: #ffcc00; margin-bottom: 20px;">Reset Password</h2>
 <div class="input-group">
@@ -118,7 +114,6 @@ button:hover { opacity: 0.9; }
 <div class="toggle-link" onclick="switchView('login')">Back to Login</div>
 </div>
 
-<!-- Dashboard Main View -->
 <div id="dashboardContainer" style="display: none;">
 <div class="header-flex">
 <div style="display: flex; align-items: center;">
@@ -131,7 +126,6 @@ button:hover { opacity: 0.9; }
 <div class="settings-icon" onclick="toggleSettingsPanel()" title="Settings & History">⚙️ Settings</div>
 </div>
 
-<!-- Settings & History Panel -->
 <div id="resellerSettingsPanel" class="settings-box">
 <h4 style="color: #ffcc00; margin-top: 0;" id="settingsPanelTitle">📊 My History & Stats</h4>
 <div id="resellerPersonalView">
@@ -145,14 +139,12 @@ button:hover { opacity: 0.9; }
 </div>
 </div>
 
-<!-- Summary Cards -->
 <div class="card">
 <p>Wallet Balance: ₹<span id="walletBalance" style="color: #00ff66; font-weight: bold;">0</span></p>
 <p id="depositStatsRow">Today's Total Deposit: ₹<span id="totalDeposit" style="color: #ffcc00;">0</span></p>
 <p>Today's Key Count: <span id="keyCount" style="color: #00ff66;">0</span></p>
 </div>
 
-<!-- Master Admin Panel -->
 <div id="masterPanel" class="master-box" style="display: none;">
 <h4 style="color: #ffcc00; margin-top: 0;">👑 Master Control Panel</h4>
 <div style="background: #131a29; padding: 10px; border-radius: 6px; margin-bottom: 12px; border: 1px solid #333;">
@@ -194,7 +186,6 @@ button:hover { opacity: 0.9; }
 <button type="button" id="copyMasterKeyBtn" class="copy-btn" style="display:none;" onclick="copyTextToClipboard('masterKeyBox')">📋 Copy Key</button>
 </div>
 
-<!-- Single-Device Session Restriction & Reset -->
 <div class="reset-box">
 <h4 style="color: #0088cc; margin-top: 0;">📱 Single-Device Session Lock</h4>
 <p style="font-size: 12px; color: #aaa; margin: 0 0 8px 0;">A reseller ID can only remain logged in on one device at a time.</p>
@@ -205,7 +196,6 @@ button:hover { opacity: 0.9; }
 <div id="resetMsg"></div>
 </div>
 
-<!-- Game Server Key Generation -->
 <div class="card">
 <h4 style="color: #00ff66; margin-top: 0;">🔑 Game Server Key Generation</h4>
 <div class="input-group">
@@ -226,7 +216,6 @@ button:hover { opacity: 0.9; }
 <button type="button" id="copyPurchaseKeyBtn" class="copy-btn" style="display:none;" onclick="copyTextToClipboard('purchaseKeyBox')">📋 Copy Key</button>
 </div>
 
-<!-- Deposit Section -->
 <div class="card" id="depositSectionCard">
 <h4 style="color: #00ff66; margin-top: 0;">💰 BharatPe Deposit & SMS-Verified UTR</h4>
 <div class="input-group">
@@ -251,7 +240,6 @@ button:hover { opacity: 0.9; }
 </div>
 </div>
 
-<!-- History Logs -->
 <div class="card">
 <h4 style="color: #fff; margin-top: 0;">📜 History Logs & Overview</h4>
 <p style="font-size: 12px; color: #aaa;">Midnight Reset active: Stats auto-reset to ₹0 at 12:00 AM daily.</p>
@@ -263,7 +251,6 @@ button:hover { opacity: 0.9; }
 </div>
 </div>
 
-<!-- Credit / UPI Edit Modal -->
 <div id="creditModal" style="display:none; position:fixed; top:0; left:0; width:100%; height:100%; background:rgba(0,0,0,0.8); z-index:999; justify-content:center; align-items:center;">
 <div style="background:#131a29; padding:20px; border-radius:10px; width:90%; max-width:400px; border:1px solid #ffcc00;">
 <h3 style="color:#ffcc00; margin-top:0;">💳 Manage BharatPe UPI ID</h3>
@@ -278,7 +265,7 @@ button:hover { opacity: 0.9; }
 </div>
 
 <script>
-const BACKEND_URL = "http://localhost:3000";
+const BACKEND_URL = "https://admin-panel-0mra.onrender.com";
 
 const firebaseConfig = {
 apiKey: "AIzaSyD-Secure-Production-Key",
@@ -356,7 +343,7 @@ const rawPhone = document.getElementById(phoneInputId).value.trim();
 const msgElem = document.getElementById(msgId);
 
 if(!rawPhone) {
-alert("भाई, कृपया सही मोबाइल नंबर दर्ज करें!");
+alert("Please enter a valid mobile number!");
 return;
 }
 
@@ -370,7 +357,7 @@ body: JSON.stringify({ phone: rawPhone, countryCode: countryCode })
 .then(response => response.json())
 .then(data => {
 if(data.success) {
-msgElem.innerHTML = '<span class="success">✅ WhatsApp OTP successfully sent via backend!</span>';
+msgElem.innerHTML = '<span class="success">✅ OTP successfully sent via backend!</span>';
 } else {
 msgElem.innerHTML = `<span class="error">❌ Failed: ${data.message}</span>`;
 }
