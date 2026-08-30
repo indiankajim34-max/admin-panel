@@ -4,12 +4,11 @@ const bodyParser = require('body-parser');
 const axios = require('axios');
 const admin = require('firebase-admin');
 
-// Firebase Admin SDK इनिशियलाइज करें (Firestore में OTP सेव करने के लिए)
-// ध्यान दें: सुनिश्चित करें कि आपके Render Environment Variables में FIREBASE_SERVICE_ACCOUNT या आपका क्रेडेंशियल सेट है, 
-// या सीधे आपके Firestore प्रोजेक्ट कॉन्फिग के साथ इनिशियलाइज किया गया है।
+// Firebase Admin SDK इनिशियलाइज करें (Firestore प्रोजेक्ट आईडी के साथ)
 if (!admin.apps.length) {
     admin.initializeApp({
-        credential: admin.credential.applicationDefault() // या अपना प्रोजेक्ट क्रेडेंशियल यहाँ जोड़ें
+        credential: admin.credential.applicationDefault(),
+        projectId: "wingo-vip-759b9"
     });
 }
 const db = admin.firestore();
@@ -20,7 +19,7 @@ app.use(bodyParser.json());
 
 const PORT = process.env.PORT || 3000;
 
-// सुरक्षित व्हाट्सएप/एसएमएस ओटीपी भेजने का एंडपॉइंट (अब Firestore में स्टोर होगा ताकि रीसेट न हो)
+// सुरक्षित व्हाट्सएप/एसएमएस ओटीपी भेजने का एंडपॉइंट (Firestore में स्टोर होगा)
 app.post('/api/send-otp', async (req, res) => {
     try {
         const { phone, countryCode, context } = req.body;
@@ -47,7 +46,7 @@ app.post('/api/send-otp', async (req, res) => {
             }
         });
 
-        // सत्यापन के लिए ओटीपी को Firestore डेटाबेस में सुरक्षित रूप से स्टोर करें (5 मिनट की समय सीमा)
+        // सत्यापन के लिए ओटीपी को Firestore डेटाबेस में स्टोर करें (5 मिनट की समय सीमा)
         await db.collection('server_otps').doc(fullNumber).set({
             otp: generatedOtp,
             expiresAt: Date.now() + 5 * 60 * 1000
@@ -84,7 +83,7 @@ app.post('/api/verify-otp', async (req, res) => {
             return res.status(400).json({ success: false, message: 'गलत ओटीपी दर्ज किया गया है।' });
         }
 
-        // सफलतापूर्वक वेरीफाई होने के बाद ओटीपी को डिलीट कर दें ताकि दोबारा इस्तेमाल न हो सके
+        // सफलतापूर्वक वेरीफाई होने के बाद ओटीपी को डिलीट कर दें
         await docRef.delete();
         return res.status(200).json({ success: true, message: 'ओटीपी सफलतापूर्वक सत्यापित हो गया है।' });
     } catch (error) {
