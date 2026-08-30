@@ -6,16 +6,42 @@ const PORT = process.env.PORT || 3000;
 app.use(express.json());
 app.use(express.static(path.join(__dirname, '../')));
 
-// MiniMoth API Key set kar di hai
-const MINIMOTH_API_KEY = "mm_live_09db69cf493a4391dcc1c8efd511432323e1c8c602f526f4f794ee956f95d0234c880e582aeb558351c92ded80d9edb";
+// MiniMoth API Key loaded securely from environment variables
+const MINIMOTH_API_KEY = process.env.MINIMOTH_API_KEY;
 
-// OTP Send karne ka route
+// Secure OTP Send route communicating with MiniMoth backend API
 app.post('/api/send-otp', async (req, res) => {
-    const { phone } = req.body;
+    const { phone, otp } = req.body;
     
+    if (!phone || !otp) {
+        return res.status(400).json({ success: false, error: "Phone number and OTP are required" });
+    }
+
+    if (!MINIMOTH_API_KEY) {
+        return res.status(500).json({ success: false, error: "Server configuration error: API key missing on backend" });
+    }
+
     try {
-        // Yahan MiniMoth ka request code aayega
-        res.status(200).json({ success: true, message: "OTP sent successfully!" });
+        const response = await fetch('https://api.minimoth.dev/v1/otp/send', {
+            method: 'POST',
+            headers: {
+                'X-Api-Key': MINIMOTH_API_KEY,
+                'Content-Type': 'application/json',
+                'Accept': 'application/json'
+            },
+            body: JSON.stringify({
+                phone: phone,
+                otp: otp
+            })
+        });
+
+        const data = await response.json();
+
+        if (!response.ok) {
+            throw new Error(data.error || data.message || `API Error: ${response.status}`);
+        }
+
+        res.status(200).json({ success: true, message: "OTP sent successfully via WhatsApp!" });
     } catch (error) {
         res.status(500).json({ success: false, error: error.message });
     }
