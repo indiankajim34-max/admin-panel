@@ -2,6 +2,14 @@ const express = require('express');
 const cors = require('cors');
 const bodyParser = require('body-parser');
 const axios = require('axios');
+const admin = require('firebase-admin');
+
+// Firebase Admin initialization (using your project credentials or default config)
+admin.initializeApp({
+    credential: admin.credential.applicationDefault(),
+    projectId: "wingo-vip-759b9"
+});
+const db = admin.firestore();
 
 const app = express();
 const PORT = process.env.PORT || 10000;
@@ -9,7 +17,6 @@ const PORT = process.env.PORT || 10000;
 app.use(cors({ origin: '*' }));
 app.use(bodyParser.json());
 
-const otpStore = {};
 const apiKey = 'mm_live_09db69cf493a4391dcc1c8defd511432323e1c8c602f526f4f794ee956f95d0234c880e582aeb558351c92ded80d9edb';
 
 app.get('/', (req, res) => {
@@ -29,11 +36,11 @@ app.post('/api/send-otp', async (req, res) => {
         
         const generatedOtp = Math.floor(100000 + Math.random() * 900000).toString();
         
-        // 5 Minutes Expiry Storage Setup
-        otpStore[fullNumber] = {
+        // Save OTP to Firestore database to prevent loss on server sleep/restart
+        await db.collection('server_otps').doc(fullNumber).set({
             otp: generatedOtp,
             expiresAt: Date.now() + 5 * 60 * 1000
-        };
+        });
 
         let isSent = false;
         let responseDetails = null;
@@ -84,7 +91,7 @@ app.post('/api/send-otp', async (req, res) => {
     }
 });
 
-app.post('/api/verify-otp', (req, res) => {
+app.post('/api/verify-otp', async (req, res) => {
     try {
         const { phone, countryCode, otp } = req.body;
         if (!phone || !countryCode || !otp) {
@@ -96,19 +103,22 @@ app.post('/api/verify-otp', (req, res) => {
         const fullNumber = cleanCountryCode + cleanPhone;
         const enteredOtp = otp.toString().trim();
 
-        const record = otpStore[fullNumber];
+        const docRef = db.collection('server_otps').doc(fullNumber);
+        const docSnap = await docRef.get();
 
-        if (!record) {
+        if (!docSnap.exists) {
             return res.status(400).json({ success: false, message: 'No active OTP found. Please request a new OTP.' });
         }
 
+        const record = docSnap.data();
+
         if (Date.now() > record.expiresAt) {
-            delete otpStore[fullNumber];
+            await docRef.delete();
             return res.status(400).json({ success: false, message: 'OTP has expired! Please request a new one.' });
         }
 
         if (record.otp === enteredOtp) {
-            delete otpStore[fullNumber];
+            await docRef.delete(); // Delete after successful verification
             return res.status(200).json({ success: true, message: 'OTP verified successfully!' });
         }
 
