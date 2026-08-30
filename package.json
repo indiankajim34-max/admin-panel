@@ -1,7 +1,7 @@
 {
-  "name": "minimoth-backend",
+  "name": "wingo-vip-admin-panel",
   "version": "1.0.0",
-  "description": "Backend server for minimoth",
+  "description": "WinGo VIP Secure Dashboard with Dedicated Backend",
   "main": "server.js",
   "scripts": {
     "start": "node server.js"
