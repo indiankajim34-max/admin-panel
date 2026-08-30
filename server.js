@@ -150,7 +150,6 @@ app.post('/api/verify-otp', async (req, res) => {
 
 let receivedPayments = [];
 
-// MacroDroid से SMS रिसीव करने का एंडपॉइंट
 app.post('/api/webhook/sms', (req, res) => {
     try {
         const { message } = req.body;
@@ -158,7 +157,6 @@ app.post('/api/webhook/sms', (req, res) => {
             return res.status(400).json({ success: false, message: 'Message missing' });
         }
 
-        // BharatPe या अन्य UPI मैसेज से UTR और Amount निकालना
         let utrMatch = message.match(/(?:UTR|Ref|UPI Ref|Txn No)[:\s]*([0-9]{12})/i) || message.match(/\b\d{12}\b/);
         let amountMatch = message.match(/Rs\.?\s*([0-9]+(?:\.[0-9]+)?)/i);
 
@@ -189,7 +187,6 @@ app.post('/api/webhook/sms', (req, res) => {
     }
 });
 
-// वेबसाइट से UTR चेक करके पेमेंट वेरीफाई करने का एंडपॉइंट
 app.post('/api/verify-payment', (req, res) => {
     try {
         const { utr } = req.body;
@@ -217,10 +214,6 @@ app.post('/api/verify-payment', (req, res) => {
     }
 });
 
-
-// ==========================================
-// SERVER START
-// ==========================================
 app.listen(PORT, '0.0.0.0', () => {
     console.log(`Backend server successfully running on port ${PORT}`);
 });
