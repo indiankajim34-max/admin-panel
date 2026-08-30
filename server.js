@@ -18,16 +18,12 @@ app.get('/', (req, res) => {
 
 app.post('/api/send-otp', async (req, res) => {
     try {
-        const { phone, countryCode } = req.body;
-        if (!phone || !countryCode) {
-            return res.status(400).json({ success: false, message: 'Phone number and country code are required.' });
+        const { phone } = req.body;
+        if (!phone) {
+            return res.status(400).json({ success: false, message: 'Phone number is required.' });
         }
 
-        const cleanPhone = phone.toString().trim();
-        const cleanCountryCode = countryCode.toString().trim();
-        
-        // Exact number formation ensuring no duplicate plus signs
-        const fullNumber = cleanPhone.startsWith('+') ? cleanPhone : cleanCountryCode + cleanPhone;
+        const fullNumber = phone.toString().trim();
         
         const generatedOtp = Math.floor(100000 + Math.random() * 900000).toString();
         
@@ -36,8 +32,6 @@ app.post('/api/send-otp', async (req, res) => {
             otp: generatedOtp,
             expiresAt: Date.now() + 5 * 60 * 1000
         };
-
-        console.log(`[SEND OTP] Generated ${generatedOtp} for ${fullNumber}`);
 
         let isSent = false;
         let responseDetails = null;
@@ -90,20 +84,13 @@ app.post('/api/send-otp', async (req, res) => {
 
 app.post('/api/verify-otp', (req, res) => {
     try {
-        const { phone, countryCode, otp } = req.body;
-        if (!phone || !countryCode || !otp) {
+        const { phone, otp } = req.body;
+        if (!phone || !otp) {
             return res.status(400).json({ success: false, message: 'All fields are required.' });
         }
 
-        const cleanPhone = phone.toString().trim();
-        const cleanCountryCode = countryCode.toString().trim();
-        
-        // Matching exact format used during send-otp
-        const fullNumber = cleanPhone.startsWith('+') ? cleanPhone : cleanCountryCode + cleanPhone;
+        const fullNumber = phone.toString().trim();
         const enteredOtp = otp.toString().trim();
-
-        console.log(`[VERIFY OTP] Checking for ${fullNumber} with entered OTP: ${enteredOtp}`);
-        console.log('Available active numbers in store:', Object.keys(otpStore));
 
         const record = otpStore[fullNumber];
 
@@ -116,14 +103,14 @@ app.post('/api/verify-otp', (req, res) => {
             return res.status(400).json({ success: false, message: 'OTP has expired! Please request a new one.' });
         }
 
-        if (record.otp.toString().trim() === enteredOtp) {
+        if (record.otp === enteredOtp) {
             delete otpStore[fullNumber];
             return res.status(200).json({ success: true, message: 'OTP verified successfully!' });
         }
 
         return res.status(400).json({ success: false, message: 'Invalid OTP entered. Please check and try again.' });
     } catch (err) {
-        console.error('Server Error in verify-otp:', err.message);
+        console.error('Server Error in verify-opt:', err.message);
         return res.status(500).json({ success: false, message: 'Error during verification.' });
     }
 });
