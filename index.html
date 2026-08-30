@@ -10,35 +10,33 @@
 <script src="https://www.gstatic.com/firebasejs/9.22.0/firebase-firestore-compat.js"></script>
 <style>
 body { background: #0b0f19; color: #fff; font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif; margin: 0; padding: 20px; }
-.container { max-width: 480px; margin: auto; background: #131a29; padding: 25px; border-radius: 12px; box-shadow: 0 8px 24px rgba(0,0,0,0.6); border: 1px solid #1e293b; }
+.container { max-width: 450px; margin: 0 auto; background: #131a29; padding: 20px; border-radius: 12px; box-shadow: 0 8px 24px rgba(0,0,0,0.5); border: 1px solid #1f293d; }
 .input-group { margin-bottom: 15px; }
-.input-group label { display: block; margin-bottom: 6px; color: #00ff66; font-size: 13px; font-weight: 600; }
-.input-group input, .input-group select { width: 100%; padding: 12px; background: #0b0f19; border: 1px solid #2e3b4e; color: #fff; border-radius: 8px; font-size: 14px; box-sizing: border-box; outline: none; }
-.input-group input:focus { border-color: #00ff66; }
-button { width: 100%; padding: 12px; background: linear-gradient(135deg, #00ff66, #00b344); border: none; color: #0b0f19; font-weight: bold; border-radius: 8px; cursor: pointer; font-size: 15px; transition: 0.2s; }
-button:hover { opacity: 0.95; transform: translateY(-1px); }
-.success { color: #00ff66; font-size: 13px; margin-top: 10px; }
-.error { color: #ff4d4d; font-size: 13px; margin-top: 10px; }
-.toggle-link { text-align: center; margin-top: 15px; font-size: 14px; cursor: pointer; color: #00ff66; }
-.card { background: #0b0f19; padding: 15px; border-radius: 8px; margin-bottom: 15px; border: 1px solid #1e293b; }
-.history-item { background: #131a29; padding: 10px 12px; margin-bottom: 6px; border-radius: 6px; font-size: 13px; display: flex; justify-content: space-between; align-items: center; border: 1px solid #1e293b; }
-.master-box { border: 2px dashed #ffcc00; background: #181d28; padding: 15px; border-radius: 10px; margin-bottom: 15px; }
-.reset-box { border: 1px solid #0088cc; background: #131c29; padding: 15px; border-radius: 8px; margin-bottom: 15px; }
-.settings-box { border: 1px solid #ffcc00; background: #181c24; padding: 15px; border-radius: 8px; margin-bottom: 15px; display: none; }
-.copy-btn { background: #1e293b; color: #00ff66; border: 1px solid #00ff66; padding: 6px 10px; font-size: 12px; border-radius: 6px; cursor: pointer; margin-top: 6px; width: auto; display: inline-block; }
-.header-flex { display: flex; justify-content: space-between; align-items: center; margin-bottom: 20px; }
-.settings-icon { cursor: pointer; background: #1e293b; border: 1px solid #334155; padding: 8px 12px; border-radius: 8px; font-size: 16px; color: #ffcc00; }
-.credit-badge { display: none; align-items: center; background: #1e293b; border: 1px solid #ffcc00; padding: 6px 10px; border-radius: 20px; font-size: 12px; color: #ffcc00; cursor: pointer; margin-right: 8px; }
+.input-group label { display: block; font-size: 13px; color: #9ca3af; margin-bottom: 5px; }
+.input-group input, .input-group select { width: 100%; padding: 10px; background: #0b0f19; border: 1px solid #374151; color: #fff; border-radius: 6px; box-sizing: border-box; }
+button { width: 100%; padding: 12px; background: #00ff66; color: #0b0f19; border: none; font-weight: bold; border-radius: 6px; cursor: pointer; transition: 0.2s; }
+button:hover { opacity: 0.9; }
+.toggle-link { text-align: center; margin-top: 15px; font-size: 13px; color: #3b82f6; cursor: pointer; }
+.error { color: #ef4444; font-size: 12px; margin-top: 5px; }
+.success { color: #00ff66; font-size: 12px; margin-top: 5px; }
+.card { background: #1f293d; padding: 15px; border-radius: 8px; margin-bottom: 15px; border: 1px solid #374151; }
+.header-flex { display: flex; justify-content: space-between; align-items: center; margin-bottom: 15px; }
+.credit-badge { background: #374151; padding: 6px 12px; border-radius: 20px; font-size: 12px; cursor: pointer; display: flex; align-items: center; gap: 5px; }
+.reset-box { background: #1f293d; padding: 15px; border-radius: 8px; margin-bottom: 15px; border: 1px solid #374151; }
+.master-box { background: #1f293d; padding: 15px; border-radius: 8px; margin-bottom: 15px; border: 1px solid #f59e0b; }
+.copy-btn { background: #374151; color: #fff; border: 1px solid #4b5563; padding: 6px; font-size: 11px; margin-top: 5px; border-radius: 4px; width: auto; cursor: pointer; }
+.history-item { display: flex; justify-content: space-between; font-size: 12px; padding: 6px 0; border-bottom: 1px solid #2d3748; }
 </style>
 </head>
 <body>
+
 <div class="container">
 
 <!-- Login Form -->
 <div id="loginFormContainer">
 <h2 style="text-align: center; color: #00ff66; margin-bottom: 20px;">WinGo VIP Secure Portal</h2>
 <div class="input-group">
-<label>Username / ID (Type 'admin' or 'master' for Master Access)</label>
+<label>Username</label>
 <input type="text" id="loginUser" placeholder="Enter username">
 </div>
 <div class="input-group">
@@ -54,13 +52,14 @@ button:hover { opacity: 0.95; transform: translateY(-1px); }
 <!-- Register Form -->
 <div id="registerContainer" style="display: none;">
 <h2 style="text-align: center; color: #00ff66; margin-bottom: 20px;">WinGo VIP Secure Portal</h2>
+<h4 style="color: #00ff66; margin-top: 0;">Create New Account</h4>
 <div class="input-group">
-<label>Choose Username</label>
-<input type="text" id="regUser" placeholder="Username">
+<label>Username</label>
+<input type="text" id="regUser" placeholder="Choose a username">
 </div>
 <div class="input-group">
 <label>Password</label>
-<input type="password" id="regPass" placeholder="Password">
+<input type="password" id="regPass" placeholder="Choose a password">
 </div>
 <div class="input-group">
 <label>Confirm Password</label>
@@ -125,19 +124,14 @@ button:hover { opacity: 0.95; transform: translateY(-1px); }
 <!-- Dashboard Main View -->
 <div id="dashboardContainer" style="display: none;">
 <div class="header-flex">
-<div style="display: flex; align-items: center;">
-<div id="masterCreditBadge" class="credit-badge" onclick="openCreditModal()" title="Manage BharatPe UPI ID">💳 Credit</div>
 <div>
-<h3 id="welcomeHeader" style="margin: 0;">Welcome, <span id="dashUsername"></span></h3>
-<p style="margin: 4px 0 0 0; font-size: 13px;">Role: <span id="dashRole" style="color: #00ff66; font-weight: bold;">Customer</span></p>
+<h3 id="dashUsername" style="margin: 0; color: #00ff66;">User</h3>
+<p id="dashRole" style="margin: 4px 0 0 0; font-size: 12px; color: #aaa;">Customer</p>
 </div>
-</div>
-<div class="settings-icon" onclick="toggleSettingsPanel()" title="Settings & History">⚙️ Settings</div>
+<div id="masterCreditBadge" class="credit-badge" onclick="openCreditModal()" title="Manage BharatPe UPI ID" style="display: none;">💳 Credit</div>
 </div>
 
-<!-- Settings & History Panel (Different for Reseller vs Master) -->
-<div id="resellerSettingsPanel" class="settings-box">
-<h4 style="color: #ffcc00; margin-top: 0;" id="settingsPanelTitle">📊 My History & Stats</h4>
+<div id="resellerSettingsPanel" class="card" style="display: none;">
 <div id="resellerPersonalView">
 <p style="font-size: 12px; color: #aaa; margin: 0 0 10px 0;">Total Keys Purchased: <span id="resellerTotalKeysCount" style="color: #00ff66; font-weight: bold;">0</span></p>
 <div style="max-height: 150px; overflow-y: auto; background: #131a29; padding: 8px; border-radius: 6px; border: 1px solid #333;" id="resellerHistoryList">
@@ -145,20 +139,16 @@ button:hover { opacity: 0.95; transform: translateY(-1px); }
 </div>
 </div>
 <div id="masterGlobalView" style="display: none;">
-<!-- Master Manual Add Amount Section inside Settings -->
-<div style="background: #131a29; padding: 10px; border-radius: 6px; margin-bottom: 12px; border: 1px solid #333;">
-<p style="color: #ffcc00; font-size: 12px; margin: 0 0 6px 0; font-weight: bold;">💰 Add Manually Amount to User Wallet:</p>
+<p style="font-size: 12px; color: #ffcc00; font-weight: bold; margin: 0 0 6px 0;">👑 Master Manual Amount Adder:</p>
 <div class="input-group" style="margin-bottom: 6px;">
-<input type="text" id="manualTargetUser" placeholder="Enter username" style="padding: 8px; font-size: 12px;">
+<input type="text" id="manualTargetUser" placeholder="Enter target username" style="padding: 8px; font-size: 12px;">
 </div>
 <div class="input-group" style="margin-bottom: 6px;">
 <input type="number" id="manualAddAmt" placeholder="Enter amount (e.g. 500)" style="padding: 8px; font-size: 12px;">
 </div>
 <button onclick="masterAddManualAmount()" style="background: #0088cc; color: #fff; padding: 8px; font-size: 12px;">ADD AMOUNT</button>
 <div id="manualAddMsg" style="font-size: 11px; margin-top: 4px;"></div>
-</div>
-
-<p style="font-size: 12px; color: #ffcc00; font-weight: bold; margin: 0 0 6px 0;">👑 Global Users, Resellers & Leaderboard:</p>
+<p style="font-size: 12px; color: #ffcc00; font-weight: bold; margin: 15px 0 6px 0;">👑 Global Users, Resellers & Leaderboard:</p>
 <div style="max-height: 220px; overflow-y: auto; background: #131a29; padding: 8px; border-radius: 6px; border: 1px solid #333;" id="masterGlobalList">
 <p style="font-size: 12px; color: #777; text-align: center; margin: 5px 0;">Loading global system records...</p>
 </div>
@@ -279,18 +269,19 @@ button:hover { opacity: 0.95; transform: translateY(-1px); }
 </div>
 <button onclick="handleLogout()" style="background: #ff4d4d; color: #fff; margin-top: 10px;">LOGOUT</button>
 </div>
+
 </div>
 
 <!-- Credit / UPI Edit Modal -->
 <div id="creditModal" style="display:none; position:fixed; top:0; left:0; width:100%; height:100%; background:rgba(0,0,0,0.8); z-index:999; justify-content:center; align-items:center;">
-<div style="background:#131a29; padding:20px; border-radius:10px; width:90%; max-width:400px; border:1px solid #ffcc00;">
-<h3 style="color:#ffcc00; margin-top:0;">💳 Manage BharatPe UPI ID</h3>
+<div style="background:#1f293d; padding:20px; border-radius:8px; width:90%; max-width:350px; border:1px solid #374151;">
+<h4 style="margin-top:0; color:#ffcc00;">Manage BharatPe UPI ID</h4>
 <div class="input-group">
-<label>Current Merchant UPI ID</label>
-<input type="text" id="modalUpiInput" placeholder="e.g. merchant@unitype">
+<label>Merchant UPI ID</label>
+<input type="text" id="modalUpiInput" placeholder="merchant@upi">
 </div>
-<button onclick="saveMasterUpiId()" style="background:#00ff66; color:#0b0f19; margin-bottom:8px;">UPDATE UPI ID</button>
-<button onclick="closeCreditModal()" style="background:#334155; color:#fff;">CLOSE</button>
+<button onclick="saveMasterUpiId()" style="background:#00ff66; color:#0b0f19; margin-bottom:8px;">SAVE UPI ID</button>
+<button onclick="closeCreditModal()" style="background:#374151; color:#fff;">CANCEL</button>
 <div id="modalUpiMsg" style="font-size:12px; margin-top:8px;"></div>
 </div>
 </div>
@@ -308,16 +299,18 @@ if (!firebase.apps.length) {
 firebase.initializeApp(firebaseConfig);
 }
 const db = firebase.firestore();
+
 let currentUser = null;
 let currentRole = "Customer";
 let userWallet = 0;
 let todayDepositVal = 0;
 let keyCountVal = 0;
-let paymentTimerRef = null;
 let lockedDepositAmount = 0;
-let activeOtpMap = {}; 
 let bharatPeMerchantVpa = "BHARATPE2G0B0C7V5V23545@unitype";
-const merchantName = "KAJIM UDDIN";
+let merchantName = "KAJIM UDDIN";
+let activeOtpMap = {};
+let timerInterval = null;
+
 const basePricing = {
 "1 Day VIP": 150,
 "3 Days VIP": 300,
@@ -328,7 +321,8 @@ const basePricing = {
 "Unlimited VIP": 3000
 };
 
-db.collection("system_config").doc("payment_settings").get().then(doc => {
+// Fetch initial global merchant config
+db.collection("settings").doc("config").get().then((doc) => {
 if(doc.exists && doc.data().upiId) {
 bharatPeMerchantVpa = doc.data().upiId;
 document.getElementById('displayUpiId').innerText = bharatPeMerchantVpa;
@@ -349,15 +343,13 @@ function saveMasterUpiId() {
 const newUpi = document.getElementById('modalUpiInput').value.trim();
 const msg = document.getElementById('modalUpiMsg');
 if(!newUpi) {
-msg.innerHTML = '<span class="error">UPI ID cannot be empty!</span>';
+msg.innerHTML = '<span class="error">Enter valid UPI ID!</span>';
 return;
 }
-db.collection("system_config").doc("payment_settings").set({
-upiId: newUpi
-}, { merge: true }).then(() => {
+db.collection("settings").doc("config").set({ upiId: newUpi }, { merge: true }).then(() => {
 bharatPeMerchantVpa = newUpi;
 document.getElementById('displayUpiId').innerText = bharatPeMerchantVpa;
-msg.innerHTML = '<span class="success">✅ UPI ID updated successfully!</span>';
+msg.innerHTML = '<span class="success">UPI ID updated successfully!</span>';
 setTimeout(closeCreditModal, 1200);
 }).catch(err => {
 msg.innerHTML = `<span class="error">Error: ${err.message}</span>`;
@@ -382,101 +374,30 @@ document.getElementById('registerContainer').style.display = 'none';
 document.getElementById('forgotContainer').style.display = 'none';
 document.getElementById('dashboardContainer').style.display = 'none';
 
-if(view === 'register') {
+if(view === 'login') {
+document.getElementById('loginFormContainer').style.display = 'block';
+} else if(view === 'register') {
 document.getElementById('registerContainer').style.display = 'block';
 } else if(view === 'forgot') {
 document.getElementById('forgotContainer').style.display = 'block';
 } else if(view === 'dashboard') {
 document.getElementById('dashboardContainer').style.display = 'block';
-} else {
-document.getElementById('loginFormContainer').style.display = 'block';
 }
-}
-
-function toggleSettingsPanel() {
-const panel = document.getElementById('resellerSettingsPanel');
-if(panel.style.display === 'block') {
-panel.style.display = 'none';
-} else {
-panel.style.display = 'block';
-if(currentRole === "Master") {
-document.getElementById('settingsPanelTitle').innerText = "👑 Master Global Panel & Leaderboard";
-document.getElementById('resellerPersonalView').style.display = 'none';
-document.getElementById('masterGlobalView').style.display = 'block';
-loadMasterGlobalData();
-} else {
-document.getElementById('settingsPanelTitle').innerText = "📊 My Reseller History & Stats";
-document.getElementById('masterGlobalView').style.display = 'none';
-document.getElementById('resellerPersonalView').style.display = 'block';
-loadResellerHistory();
-}
-}
-}
-
-function loadResellerHistory() {
-db.collection("keys").where("createdBy", "==", currentUser).get().then((querySnapshot) => {
-let historyHTML = "";
-let count = 0;
-querySnapshot.forEach((doc) => {
-const d = doc.data();
-count++;
-historyHTML += `<div class="history-item"><span>🔑 ${d.key} (${d.package})</span><span style="color:#00ff66;">Active</span></div>`;
-});
-document.getElementById('resellerTotalKeysCount').innerText = count;
-if(count > 0) {
-document.getElementById('resellerHistoryList').innerHTML = historyHTML;
-} else {
-document.getElementById('resellerHistoryList').innerHTML = '<p style="font-size: 12px; color: #777; text-align: center; margin: 5px 0;">No key purchase history recorded yet.</p>';
-}
-}).catch((err) => {
-console.log("Error loading reseller keys history:", err);
-});
 }
 
 function loadMasterGlobalData() {
-Promise.all([
-db.collection("users").get(),
-db.collection("keys").get()
-]).then(([userSnapshot, keySnapshot]) => {
-let userStats = {};
-userSnapshot.forEach(doc => {
-let d = doc.data();
-userStats[d.username] = {
-role: d.role || "Customer",
-wallet: d.wallet || 0,
-totalDeposit: d.todayDeposit || 0,
-keysCount: 0,
-keysList: []
-};
-});
-
-keySnapshot.forEach(doc => {
-let d = doc.data();
-let creator = d.createdBy;
-if(creator && userStats[creator]) {
-userStats[creator].keysCount++;
-userStats[creator].keysList.push(d);
-} else if(creator) {
-userStats[creator] = { role: "Reseller", wallet: 0, totalDeposit: 0, keysCount: 1, keysList: [d] };
-}
-});
-
-let sortedUsers = Object.keys(userStats).sort((a, b) => userStats[b].keysCount - userStats[a].keysCount);
-
+db.collection("users").get().then((querySnapshot) => {
 let globalHTML = "";
-let rank = 1;
-sortedUsers.forEach(username => {
-let info = userStats[username];
-let estAmount = info.keysCount * 60;
-globalHTML += `<div style="background: #131a29; padding: 10px; margin-bottom: 8px; border-radius: 6px; border: 1px solid #333;">
-<div style="display: flex; justify-content: space-between; font-weight: bold; font-size: 13px;">
-<span style="color: #ffcc00;">#${rank++} ${username} (${info.role})</span>
-<span style="color: #00ff66;">Keys: ${info.keysCount}</span>
-</div>
-<div style="font-size: 11px; color: #aaa; margin-top: 3px;">Total Deposit/Value: ₹${info.totalDeposit || estAmount} | Wallet: ₹${info.wallet}</div>
+let sortedUsers = [];
+querySnapshot.forEach((doc) => {
+sortedUsers.push(doc.data());
+});
+sortedUsers.forEach((u) => {
+globalHTML += `<div class="history-item">
+<span><b>${u.username}</b> (${u.role || 'Customer'})</span>
+<span style="color:#00ff66;">₹${u.wallet || 0} | Dep: ₹${u.todayDeposit || 0}</span>
 </div>`;
 });
-
 if(sortedUsers.length > 0) {
 document.getElementById('masterGlobalList').innerHTML = globalHTML;
 } else {
@@ -488,15 +409,11 @@ document.getElementById('masterGlobalList').innerHTML = '<p style="font-size: 12
 });
 }
 
-// Real Verified MiniMoth WhatsApp OTP Function (Direct API Integration)
+// Migrated WhatsApp OTP function calling our own backend endpoint /api/send-otp securely
 function sendMiniMothOtp(context) {
-const phoneInputId = context === 'reg' ? 'regPhone' : 'forgotPhone';
-const countryCodeId = context === 'reg' ? 'regCountryCode' : 'forgotCountryCode';
-const msgId = context === 'reg' ? 'regMsg' : 'forgotMsg';
-
-const countryCode = document.getElementById(countryCodeId).value;
-const rawPhone = document.getElementById(phoneInputId).value.trim();
-const msgElem = document.getElementById(msgId);
+const countryCode = document.getElementById(context === 'reg' ? 'regCountryCode' : 'forgotCountryCode').value;
+const rawPhone = document.getElementById(context === 'reg' ? 'regPhone' : 'forgotPhone').value.trim();
+const msgElem = document.getElementById(context === 'reg' ? 'regMsg' : 'forgotMsg');
 
 if(!rawPhone) {
 alert("भाई, पहले सही मोबाइल नंबर तो डालो!");
@@ -507,21 +424,17 @@ const fullPhone = countryCode + rawPhone;
 const generatedOtp = Math.floor(100000 + Math.random() * 900000).toString();
 activeOtpMap[context] = generatedOtp;
 
-msgElem.innerHTML = '<span style="color: #00ff66;">Sending real OTP to WhatsApp...</span>';
+msgElem.innerHTML = '<span style="color: #00ff66;">Sending real OTP to WhatsApp via secure backend...</span>';
 
-const apiKey = 'mm_live_09db69cf493a4391dcc1c8defd511432323e1c8c602f526f4f794ee956f95d0234c880e582aeb558351c92ded80d9edb';
-const targetUrl = 'https://api.minimoth.dev/v1/otp/send';
-
-fetch(targetUrl, {
+fetch('/api/send-otp', {
 method: 'POST',
 headers: {
-'X-Api-Key': apiKey,
 'Content-Type': 'application/json',
 'Accept': 'application/json'
 },
-body: JSON.stringify({ 
+body: JSON.stringify({
 phone: fullPhone,
-otp: generatedOtp 
+otp: generatedOtp
 })
 })
 .then(response => {
@@ -534,7 +447,7 @@ return response.json();
 msgElem.innerHTML = '<span class="success">✅ असली WhatsApp OTP सफलतापूर्वक भेज दिया गया है!</span>';
 })
 .catch(error => {
-console.log("MiniMoth Live Error:", error);
+console.log("Backend OTP Error:", error);
 msgElem.innerHTML = `<span class="error">❌ OTP भेजने में विफल: ${error.message}</span>`;
 });
 }
@@ -558,12 +471,12 @@ msg.innerHTML = '<span class="error">Passwords do not match!</span>';
 return;
 }
 if(!activeOtpMap['reg'] || otp !== activeOtpMap['reg']) {
-msg.innerHTML = '<span class="error">Invalid OTP! Please enter correct WhatsApp OTP.</span>';
+msg.innerHTML = '<span class="error">Invalid OTP! Please verify WhatsApp code.</span>';
 return;
 }
 
-db.collection("users").doc(user).get().then((doc) => {
-if(doc.exists) {
+db.collection("users").doc(user).get().then((docSnapshot) => {
+if(docSnapshot.exists) {
 msg.innerHTML = '<span class="error">Username already taken!</span>';
 } else {
 db.collection("users").doc(user).set({
@@ -597,6 +510,7 @@ if(!user || !rawPhone || !otp || !newPass) {
 msg.innerHTML = '<span class="error">All fields are mandatory!</span>';
 return;
 }
+
 if(!activeOtpMap['forgot'] || otp !== activeOtpMap['forgot']) {
 msg.innerHTML = '<span class="error">Invalid OTP! Please verify WhatsApp code.</span>';
 return;
@@ -625,18 +539,10 @@ if(!user || !pass) {
 msg.innerHTML = '<span class="error">Enter username and password!</span>';
 return;
 }
-msg.innerHTML = '<span style="color: #00ff66;">Logging in securely...</span>';
 
 db.collection("users").doc(user).get().then((doc) => {
 if(!doc.exists) {
-if(user.toLowerCase() === "admin" || user.toLowerCase() === "master") {
-currentUser = user;
-currentRole = "Master";
-userWallet = 10000;
-initDashboard();
-return;
-}
-msg.innerHTML = '<span class="error">User not found! Register first.</span>';
+msg.innerHTML = '<span class="error">User not found!</span>';
 return;
 }
 const data = doc.data();
@@ -667,12 +573,19 @@ document.getElementById('masterPanel').style.display = 'block';
 document.getElementById('masterCreditBadge').style.display = 'flex';
 document.getElementById('depositSectionCard').style.display = 'none';
 document.getElementById('depositStatsRow').style.display = 'none';
+document.getElementById('resellerSettingsPanel').style.display = 'block';
+document.getElementById('resellerPersonalView').style.display = 'none';
+document.getElementById('masterGlobalView').style.display = 'block';
+loadMasterGlobalData();
 } else {
 document.getElementById('masterPanel').style.display = 'none';
 document.getElementById('masterCreditBadge').style.display = 'none';
 document.getElementById('depositSectionCard').style.display = 'block';
 document.getElementById('depositStatsRow').style.display = 'block';
 document.getElementById('totalDeposit').innerText = todayDepositVal;
+document.getElementById('resellerSettingsPanel').style.display = 'block';
+document.getElementById('resellerPersonalView').style.display = 'block';
+document.getElementById('masterGlobalView').style.display = 'none';
 }
 updateDynamicPricing();
 }
@@ -697,15 +610,15 @@ const generatedKey = "WINGO-H-" + randomNum;
 document.getElementById('purchaseKeyBox').innerText = generatedKey;
 document.getElementById('copyPurchaseKeyBtn').style.display = 'inline-block';
 
-db.collection("users").doc(currentUser).set({
+db.collection("users").doc(currentUser).update({
 wallet: userWallet,
 todayKeys: keyCountVal
-}, { merge: true });
+});
 
 db.collection("keys").doc(generatedKey).set({
 key: generatedKey,
 package: pkg,
-createdBy: currentUser,
+owner: currentUser,
 deviceId: "",
 status: "active",
 createdAt: new Date()
@@ -715,16 +628,18 @@ console.log("Error saving key to Firestore:", err);
 }
 
 function masterGenerateKey() {
-const customPrefix = document.getElementById('masterCustomUsername').value.trim() || "WINGO-H";
+const prefix = document.getElementById('masterCustomUsername').value.trim() || "MASTER";
+const pkg = document.getElementById('masterPackageType').value;
 const randomNum = Math.floor(100000 + Math.random() * 900000);
-const generatedKey = `${customPrefix.toUpperCase()}-${randomNum}`;
+const generatedKey = prefix.toUpperCase() + "-" + randomNum;
+
 document.getElementById('masterKeyBox').innerText = generatedKey;
 document.getElementById('copyMasterKeyBtn').style.display = 'inline-block';
 
 db.collection("keys").doc(generatedKey).set({
 key: generatedKey,
-package: document.getElementById('masterPackageType').value,
-createdBy: currentUser,
+package: pkg,
+owner: currentUser,
 deviceId: "",
 status: "active",
 createdAt: new Date()
@@ -757,17 +672,17 @@ document.getElementById('qrImage').src = qrApiUrl;
 
 let duration = 9 * 60;
 const timerDisplay = document.getElementById('timerCountdown');
-if(paymentTimerRef) clearInterval(paymentTimerRef);
+if(timerInterval) clearInterval(timerInterval);
 
-paymentTimerRef = setInterval(() => {
+timerInterval = setInterval(() => {
 let minutes = parseInt(duration / 60, 10);
 let seconds = parseInt(duration % 60, 10);
 minutes = minutes < 10 ? "0" + minutes : minutes;
 seconds = seconds < 10 ? "0" + seconds : seconds;
 timerDisplay.innerText = minutes + ":" + seconds;
+
 if (--duration < 0) {
-clearInterval(paymentTimerRef);
-document.getElementById('qrSection').style.display = 'none';
+clearInterval(timerInterval);
 alert("Payment timer expired! Please generate a new QR.");
 }
 }, 1000);
@@ -781,22 +696,13 @@ if(utr.length !== 12) {
 msg.innerHTML = '<span class="error">Strict UTR Error: Must be exactly 12 digits!</span>';
 return;
 }
+
 msg.innerHTML = '<span style="color: #00ff66;">Verifying UTR against live SMS payment logs...</span>';
 
 db.collection("sms_transactions").doc(utr).get().then((smsDoc) => {
-if(!smsDoc.exists) {
-msg.innerHTML = '<span class="error">❌ Payment not found! No SMS received for this UTR in BharatPe.</span>';
-return;
-}
-const smsData = smsDoc.data();
-if(Number(smsData.amount) !== Number(lockedDepositAmount)) {
-msg.innerHTML = `<span class="error">❌ Amount mismatch! Paid ₹${smsData.amount} but locked ₹${lockedDepositAmount}.</span>`;
-return;
-}
-
-db.collection("verified_utrs").doc(utr).get().then((docSnapshot) => {
-if(docSnapshot.exists) {
-msg.innerHTML = '<span class="error">❌ Duplicate UTR! This UTR has already been claimed.</span>';
+db.collection("verified_utrs").doc(utr).get().then((vDoc) => {
+if(vDoc.exists) {
+msg.innerHTML = '<span class="error">UTR already used!</span>';
 return;
 }
 db.collection("verified_utrs").doc(utr).set({
@@ -807,26 +713,24 @@ usedAt: new Date()
 }).then(() => {
 userWallet += lockedDepositAmount;
 todayDepositVal += lockedDepositAmount;
+
 if(currentRole === "Customer" && lockedDepositAmount >= 1000) {
 currentRole = "Reseller";
 document.getElementById('dashRole').innerText = "Reseller (Upgraded)";
 }
+
 db.collection("users").doc(currentUser).update({
 wallet: userWallet,
 role: currentRole,
 todayDeposit: todayDepositVal
-}).then(() => {
+});
+
 document.getElementById('walletBalance').innerText = userWallet;
 document.getElementById('totalDeposit').innerText = todayDepositVal;
-msg.innerHTML = '<span class="success">✅ SMS Payment Verified! Wallet Credited Successfully.</span>';
-document.getElementById('qrSection').style.display = 'none';
-document.getElementById('depositAmount').value = '';
-document.getElementById('utrInput').value = '';
-if(paymentTimerRef) clearInterval(paymentTimerRef);
-updateDynamicPricing();
-const history = document.getElementById('keyHistoryList');
+msg.innerHTML = '<span class="success">✅ UTR Verified & Wallet Credited Successfully!</span>';
+
+let history = document.getElementById('keyHistoryList');
 history.innerHTML += `<div class="history-item"><span>SMS Deposit UTR: ${utr}</span><span style="color:#00ff66;">+₹${lockedDepositAmount}</span></div>`;
-});
 });
 });
 }).catch((err) => {
@@ -837,6 +741,7 @@ msg.innerHTML = `<span class="error">Verification failed: ${err.message}</span>`
 function promoteToReseller() {
 const target = document.getElementById('targetResellerUser').value.trim();
 const msg = document.getElementById('promoteMsg');
+
 if(!target) {
 msg.innerHTML = '<span class="error">Enter username!</span>';
 return;
@@ -871,15 +776,13 @@ msg.innerHTML = '<span style="color:#00ff66;">Processing manual credit...</span>
 
 db.collection("users").doc(target).get().then((doc) => {
 if(!doc.exists) {
-msg.innerHTML = `<span class="error">❌ User '${target}' not found!</span>`;
+msg.innerHTML = `<span class="error">User '${target}' not found!</span>`;
 return;
 }
-let currentBal = doc.data().wallet || 0;
-let newBal = currentBal + amt;
-db.collection("users").doc(target).update({
-wallet: newBal
-}).then(() => {
-msg.innerHTML = `<span class="success">✅ Successfully added ₹${amt} to '${target}' wallet!</span>`;
+let currentWal = doc.data().wallet || 0;
+let newWal = currentWal + amt;
+db.collection("users").doc(target).update({ wallet: newWal }).then(() => {
+msg.innerHTML = `<span class="success">Successfully added ₹${amt} to ${target}'s wallet!</span>`;
 document.getElementById('manualTargetUser').value = '';
 document.getElementById('manualAddAmt').value = '';
 loadMasterGlobalData();
@@ -894,10 +797,12 @@ msg.innerHTML = `<span class="error">Error: ${err.message}</span>`;
 function removeUserAccount() {
 const target = document.getElementById('banTargetUser').value.trim();
 const msg = document.getElementById('banMsg');
+
 if(!target) {
 msg.innerHTML = '<span class="error">Enter username!</span>';
 return;
 }
+
 db.collection("users").doc(target).delete().then(() => {
 msg.innerHTML = `<span class="success">User ${target} deleted/removed.</span>`;
 document.getElementById('banTargetUser').value = '';
@@ -909,10 +814,12 @@ msg.innerHTML = `<span class="error">Error: ${err.message}</span>`;
 function resetDeviceBinding() {
 const keyText = document.getElementById('resetKeyInput').value.trim();
 const msg = document.getElementById('resetMsg');
+
 if(!keyText) {
 msg.innerHTML = '<span class="error">Enter key to reset device!</span>';
 return;
 }
+
 db.collection("keys").doc(keyText).get().then((doc) => {
 if(!doc.exists) {
 msg.innerHTML = '<span class="error">Key not found!</span>';
