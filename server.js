@@ -13,7 +13,7 @@ const apiKey = 'mm_live_09db69cf493a4391dcc1c8defd511432323e1c8c602f526f4f794ee9
 // टेम्पोररी ओटीपी स्टोर करने के लिए
 const otpStore = {};
 
-// सर्वर हेल्थ चेक
+// सर्वर हेल्थ चेक रूट
 app.get('/', (req, res) => {
     res.status(200).send('Kajim Digital Secure OTP Server is running perfectly.');
 });
