@@ -12,6 +12,7 @@ const PORT = process.env.PORT || 3000;
 const apiKey = 'mm_live_09db69cf493a4391dcc1c8defd511432323e1c8c602f526f4f794ee956f95d0234c880e582aeb558351c92ded80d9edb';
 const otpStore = {};
 
+// ओटीपी भेजने का मुख्य बैकएंड एंडपॉइंट (WhatsApp + SMS Fallback)
 app.post('/api/send-otp', async (req, res) => {
     try {
         const { phone, countryCode } = req.body;
@@ -23,30 +24,63 @@ app.post('/api/send-otp', async (req, res) => {
         const generatedOtp = Math.floor(100000 + Math.random() * 900000).toString();
         otpStore[fullNumber] = generatedOtp;
 
-        const targetUrl = 'https://api.minimoth.dev/v1/otp/send';
-        const response = await axios.post(targetUrl, {
-            phone: fullNumber,
-            otp: generatedOtp
-        }, {
-            headers: {
-                'X-Api-Key': apiKey,
-                'Content-Type': 'application/json',
-                'Accept': 'application/json'
-            }
-        });
+        let successSent = false;
+        let apiResponse = null;
 
-        return res.status(200).json({ success: true, message: 'WhatsApp OTP सफलतापूर्वक भेज दिया गया है!', data: response.data });
+        // पहले WhatsApp पर ओटीपी भेजने का प्रयास
+        try {
+            const waResponse = await axios.post('https://api.minimoth.dev/v1/otp/send', {
+                phone: fullNumber,
+                otp: generatedOtp
+            }, {
+                headers: {
+                    'X-Api-Key': apiKey,
+                    'Content-Type': 'application/json',
+                    'Accept': 'application/json'
+                }
+            });
+            successSent = true;
+            apiResponse = waResponse.data;
+        } catch (waError) {
+            console.log('WhatsApp OTP Failed, switching to SMS fallback...', waError.message);
+            
+            // व्हाट्सएप फेल होने पर SMS फॉलबैक का प्रयास
+            try {
+                const smsResponse = await axios.post('https://api.minimoth.dev/v1/sms/send', {
+                    phone: fullNumber,
+                    message: `Your verification code is: ${generatedOtp}`
+                }, {
+                    headers: {
+                        'X-Api-Key': apiKey,
+                        'Content-Type': 'application/json',
+                        'Accept': 'application/json'
+                    }
+                });
+                successSent = true;
+                apiResponse = smsResponse.data;
+            } catch (smsError) {
+                console.error('SMS Fallback also failed:', smsError.response?.data || smsError.message);
+            }
+        }
+
+        if (successSent) {
+            return res.status(200).json({ success: true, message: 'ओटीपी सफलताપૂર્વक भेज दिया गया है!', data: apiResponse });
+        } else {
+            return res.status(500).json({ success: false, message: 'WhatsApp और SMS दोनों के माध्यम से ओटीपी भेजने में विफलता।' });
+        }
+
     } catch (error) {
-        console.error('MiniMoth Send Error:', error.response?.data || error.message);
-        return res.status(500).json({ success: false, message: `OTP भेजने में विफल: ${error.response?.data?.message || error.message}` });
+        console.error('Server Error:', error.message);
+        return res.status(500).json({ success: false, message: 'इंटरनल सर्वर एरर।' });
     }
 });
 
+// ओटीपी वेरिफ़िकेशन एंडपॉइंट
 app.post('/api/verify-otp', async (req, res) => {
     try {
         const { phone, countryCode, otp } = req.body;
         if (!phone || !countryCode || !otp) {
-            return res.status(400).json({ success: false, message: 'मोबाइल नंबर, कंट्री कोड और ओटीपी सभी आवश्यक हैं।' });
+            return res.status(400).json({ success: false, message: 'सभी फील्ड आवश्यक हैं।' });
         }
 
         const fullNumber = countryCode + phone;
@@ -56,22 +90,9 @@ app.post('/api/verify-otp', async (req, res) => {
             return res.status(200).json({ success: true, message: 'OTP सफलतापूर्वक सत्यापित हो गया है!' });
         }
 
-        const targetUrl = 'https://api.minimoth.dev/v1/otp/verify';
-        const response = await axios.post(targetUrl, {
-            phone: fullNumber,
-            otp: otp
-        }, {
-            headers: {
-                'X-Api-Key': apiKey,
-                'Content-Type': 'application/json',
-                'Accept': 'application/json'
-            }
-        });
-
-        return res.status(200).json({ success: true, message: 'OTP सफलतापूर्वक सत्यापित हो गया है!', data: response.data });
+        return res.status(400).json({ success: false, message: 'अमान्य या समाप्त हो चुका ओटीपी।' });
     } catch (error) {
-        console.error('MiniMoth Verify Error:', error.response?.data || error.message);
-        return res.status(400).json({ success: false, message: error.response?.data?.message || 'अमान्य या समाप्त हो चुका ओटीपी।' });
+        return res.status(500).json({ success: false, message: 'वेरिफ़िकेशन के दौरान त्रुटि।' });
     }
 });
 
