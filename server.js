@@ -91,7 +91,7 @@ app.post('/api/verify-otp', async (req, res) => {
         try {
             const verifyRes = await axios.post('https://api.minimoth.dev/v1/otp/verify', {
                 phone: fullNumber,
-                otp: enteredOtp
+                code: enteredOtp
             }, {
                 headers: {
                     'X-Api-Key': apiKey,
@@ -107,7 +107,7 @@ app.post('/api/verify-otp', async (req, res) => {
             try {
                 const altVerifyRes = await axios.post('https://api.minimoth.dev/v1/verify-otp', {
                     number: fullNumber,
-                    otp: enteredOtp
+                    code: enteredOtp
                 }, {
                     headers: {
                         'Authorization': `Bearer ${apiKey}`,
