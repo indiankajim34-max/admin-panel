@@ -9,25 +9,23 @@ app.use(bodyParser.json());
 
 const PORT = process.env.PORT || 3000;
 
-// मिनीमथ (MiniMoth) लाइव एपीआई क्रेडेंशियल्स
+// MiniMoth Live API Credentials
 const apiKey = 'mm_live_09db69cf493a4391dcc1c8defd511432323e1c8c602f526f4f794ee956f95d0234c880e582aeb558351c92ded80d9edb';
 
-// 1. WhatsApp OTP भेजने का एंडपॉइंट
+// 1. Send OTP Endpoint (MiniMoth generates and sends the real WhatsApp OTP)
 app.post('/api/send-otp', async (req, res) => {
     try {
         const { phone, countryCode } = req.body;
         if (!phone || !countryCode) {
-            return res.status(400).json({ success: false, message: 'फ़ोन नंबर और देश कोड आवश्यक हैं।' });
+            return res.status(400).json({ success: false, message: 'Phone number and country code are required.' });
         }
 
         const fullNumber = countryCode + phone;
-        const generatedOtp = Math.floor(100000 + Math.random() * 900000).toString();
         const targetUrl = 'https://api.minimoth.dev/v1/otp/send';
 
-        // मिनीमथ एपीआई के माध्यम से व्हाट्सएप पर ओटीपी भेजना
-        await axios.post(targetUrl, {
-            phone: fullNumber,
-            otp: generatedOtp
+        // Calling MiniMoth to send the OTP via WhatsApp
+        const response = await axios.post(targetUrl, {
+            phone: fullNumber
         }, {
             headers: {
                 'X-Api-Key': apiKey,
@@ -36,51 +34,43 @@ app.post('/api/send-otp', async (req, res) => {
             }
         });
 
-        // सुरक्षित बैकअप के लिए लोकल स्टोरेज में रखना
-        global.tempOtps = global.tempOtps || {};
-        global.tempOtps[fullNumber] = {
-            otp: generatedOtp,
-            expiresAt: Date.now() + 5 * 60 * 1000 // 5 मिनट की समय सीमा
-        };
-
-        return res.status(200).json({ success: true, message: 'असली WhatsApp OTP सफलतापूर्वक भेज दिया गया है!' });
+        return res.status(200).json({ success: true, message: 'WhatsApp OTP sent successfully!', data: response.data });
     } catch (error) {
         console.error('MiniMoth Send Error:', error.response?.data || error.message);
-        return res.status(500).json({ success: false, message: `OTP भेजने में विफल: ${error.message}` });
+        return res.status(500).json({ success: false, message: `Failed to send OTP: ${error.response?.data?.message || error.message}` });
     }
 });
 
-// 2. OTP वेरीफाय करने का एंडपॉइंट
+// 2. Verify OTP Endpoint (MiniMoth verifies the OTP)
 app.post('/api/verify-otp', async (req, res) => {
     try {
         const { phone, countryCode, otp } = req.body;
+        if (!phone || !countryCode || !otp) {
+            return res.status(400).json({ success: false, message: 'Phone, country code and OTP are required.' });
+        }
+
         const fullNumber = countryCode + phone;
+        const targetUrl = 'https://api.minimoth.dev/v1/otp/verify';
 
-        global.tempOtps = global.tempOtps || {};
-        const record = global.tempOtps[fullNumber];
+        // Calling MiniMoth to verify the OTP entered by user
+        const response = await axios.post(targetUrl, {
+            phone: fullNumber,
+            otp: otp
+        }, {
+            headers: {
+                'X-Api-Key': apiKey,
+                'Content-Type': 'application/json',
+                'Accept': 'application/json'
+            }
+        });
 
-        if (!record) {
-            return res.status(400).json({ success: false, message: 'कृपया पहले ओटीपी अनुरोध करें।' });
-        }
-
-        if (Date.now() > record.expiresAt) {
-            delete global.tempOtps[fullNumber];
-            return res.status(400).json({ success: false, message: 'ओटीपी की समय सीमा समाप्त हो गई है।' });
-        }
-
-        if (record.otp !== otp) {
-            return res.status(400).json({ success: false, message: 'गलत ओटीपी दर्ज किया गया है।' });
-        }
-
-        // सफल सत्यापन के बाद डेटा हटा दें
-        delete global.tempOtps[fullNumber];
-        return res.status(200).json({ success: true, message: 'ओटीपी सफलतापूर्वक सत्यापित हो गया है।' });
+        return res.status(200).json({ success: true, message: 'OTP verified successfully!', data: response.data });
     } catch (error) {
-        console.error('Verify OTP Error:', error);
-        return res.status(500).json({ success: false, message: `सत्यापन विफल: ${error.message}` });
+        console.error('MiniMoth Verify Error:', error.response?.data || error.message);
+        return res.status(400).json({ success: false, message: error.response?.data?.message || 'Invalid or expired OTP.' });
     }
 });
 
 app.listen(PORT, () => {
-    console.log(`सुरक्षित बैकएंड सर्वर पोर्ट ${PORT} पर चल रहा है।`);
+    console.log(`Secure backend server running on port ${PORT}`);
 });
