@@ -11,8 +11,12 @@ app.use(bodyParser.json());
 
 const apiKey = 'mm_live_09db69cf493a4391dcc1c8defd511432323e1c8c602f526f4f794ee956f95d0234c880e582aeb558351c92ded80d9edb';
 
+// ==========================================
+// 1. ORIGINAL SECURE OTP SYSTEM (MINIMOTH API)
+// ==========================================
+
 app.get('/', (req, res) => {
-    res.status(200).send('Kajim Digital Secure OTP Server is running perfectly.');
+    res.status(200).send('Kajim Digital Secure OTP & Payment Server is running perfectly.');
 });
 
 app.post('/api/send-otp', async (req, res) => {
@@ -139,6 +143,84 @@ app.post('/api/verify-otp', async (req, res) => {
     }
 });
 
+
+// ==========================================
+// 2. PAYMENT VERIFICATION SYSTEM (MACRODROID WEBHOOK)
+// ==========================================
+
+let receivedPayments = [];
+
+// MacroDroid से SMS रिसीव करने का एंडपॉइंट
+app.post('/api/webhook/sms', (req, res) => {
+    try {
+        const { message } = req.body;
+        if (!message) {
+            return res.status(400).json({ success: false, message: 'Message missing' });
+        }
+
+        // BharatPe या अन्य UPI मैसेज से UTR और Amount निकालना
+        let utrMatch = message.match(/(?:UTR|Ref|UPI Ref|Txn No)[:\s]*([0-9]{12})/i) || message.match(/\b\d{12}\b/);
+        let amountMatch = message.match(/Rs\.?\s*([0-9]+(?:\.[0-9]+)?)/i);
+
+        let utr = utrMatch ? (utrMatch[1] || utrMatch[0]) : null;
+        let amount = amountMatch ? amountMatch[1] : null;
+
+        if (utr) {
+            receivedPayments.push({
+                utr: utr.trim(),
+                amount: amount ? amount.trim() : '0',
+                message: message,
+                time: new Date()
+            });
+            console.log('Payment Saved Successfully:', { utr, amount });
+            return res.status(200).json({ success: true, message: 'SMS saved successfully' });
+        } else {
+            receivedPayments.push({
+                utr: 'UNKNOWN',
+                amount: amount ? amount.trim() : '0',
+                message: message,
+                time: new Date()
+            });
+            return res.status(200).json({ success: true, message: 'Saved without UTR' });
+        }
+    } catch (err) {
+        console.error('Webhook Error:', err);
+        res.status(500).json({ success: false, message: 'Server error' });
+    }
+});
+
+// वेबसाइट से UTR चेक करके पेमेंट वेरीफाई करने का एंडपॉइंट
+app.post('/api/verify-payment', (req, res) => {
+    try {
+        const { utr } = req.body;
+        if (!utr) {
+            return res.status(400).json({ success: false, message: 'UTR is required' });
+        }
+
+        const foundPayment = receivedPayments.find(p => p.utr === utr.trim());
+
+        if (foundPayment) {
+            return res.status(200).json({ 
+                success: true, 
+                message: 'Payment verified successfully!', 
+                data: foundPayment 
+            });
+        } else {
+            return res.status(404).json({ 
+                success: false, 
+                message: 'Payment not found! No SMS received for this UTR.' 
+            });
+        }
+    } catch (err) {
+        console.error('Verify Payment Error:', err);
+        res.status(500).json({ success: false, message: 'Server error' });
+    }
+});
+
+
+// ==========================================
+// SERVER START
+// ==========================================
 app.listen(PORT, '0.0.0.0', () => {
     console.log(`Backend server successfully running on port ${PORT}`);
 });
