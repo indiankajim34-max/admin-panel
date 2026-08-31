@@ -2,6 +2,8 @@ const express = require('express');
 const cors = require('cors');
 const bodyParser = require('body-parser');
 const axios = require('axios');
+const { initializeApp } = require('firebase/app');
+const { getFirestore, doc, setDoc, getDoc } = require('firebase/firestore');
 
 const app = express();
 const PORT = process.env.PORT || 10000;
@@ -11,8 +13,18 @@ app.use(bodyParser.json());
 
 const apiKey = 'mm_live_09db69cf493a4391dcc1c8defd511432323e1c8c602f526f4f794ee956f95d0234c880e582aeb558351c92ded80d9edb';
 
-// In-memory storage for payments (Safe, fast, and no crash on Render)
-const paymentsDb = new Map();
+// Firebase configuration for direct server-side payment verification (Cleaned & Fixed)
+const firebaseConfig = {
+    apiKey: "AIzaSyD_24prkpu6ylZITC1EM08jp",
+    authDomain: "wingo-vip-759b9.firebaseapp.com",
+    projectId: "wingo-vip-759b9",
+    storageBucket: "wingo-vip-759b9.firebasestorage.app",
+    messagingSenderId: "304008432437",
+    appId: "1:304008432437:web:cba7a59be9e1079ffd9a7c"
+};
+
+const firebaseApp = initializeApp(firebaseConfig);
+const db = getFirestore(firebaseApp);
 
 app.get('/', (req, res) => {
     res.status(200).send('Kajim Digital Secure OTP Server is running perfectly.');
@@ -143,7 +155,7 @@ app.post('/api/verify-otp', async (req, res) => {
 });
 
 // ==========================================
-// TELEGRAM WEBHOOK & PAYMENT VERIFY SYSTEM
+// DIRECT FIREBASE PAYMENT WEBHOOK & VERIFICATION
 // ==========================================
 
 app.post('/api/telegram-webhook', async (req, res) => {
@@ -159,43 +171,38 @@ app.post('/api/telegram-webhook', async (req, res) => {
                 const utr = utrMatch[0];
                 const amount = amountMatch ? amountMatch[1] : '0';
 
-                paymentsDb.set(utr, {
+                // Save directly to Firebase Firestore collections to bypass Render memory limitations
+                await setDoc(doc(db, 'payments', utr), {
                     utr: utr,
                     amount: amount,
                     rawText: text,
                     createdAt: Date.now()
                 });
-                console.log(`Payment saved for UTR: ${utr}`);
+                console.log(`Payment saved to Firebase for UTR: ${utr}`);
             }
         }
         res.status(200).send('OK');
     } catch (error) {
-        console.error('Webhook Error:', error);
+        console.error('Firebase Webhook Error:', error);
         res.status(500).send('Internal Server Error');
     }
 });
 
-app.get('/api/verify-payment/:utr', (req, res) => {
-    const utr = req.params.utr;
-    if (paymentsDb.has(utr)) {
-        return res.status(200).json({ success: true, data: paymentsDb.get(utr) });
-    }
-    return res.status(404).json({ success: false, message: 'Payment not found' });
-});
-
-// Auto-cleanup records older than 24 hours every 1 hour
-setInterval(() => {
+app.get('/api/verify-payment/:utr', async (req, res) => {
     try {
-        const twentyFourHoursAgo = Date.now() - (24 * 60 * 60 * 1000);
-        for (let [utr, record] of paymentsDb.entries()) {
-            if (record.createdAt < twentyFourHoursAgo) {
-                paymentsDb.delete(utr);
-            }
+        const utr = req.params.utr;
+        const docRef = doc(db, 'payments', utr);
+        const docSnap = await getDoc(docRef);
+
+        if (docSnap.exists()) {
+            return res.status(200).json({ success: true, data: docSnap.data() });
         }
+        return res.status(404).json({ success: false, message: 'Payment not found' });
     } catch (error) {
-        console.error('Cleanup Error:', error);
+        console.error('Verification Error:', error);
+        return res.status(500).json({ success: false, message: 'Error verifying payment' });
     }
-}, 60 * 60 * 1000);
+});
 
 app.listen(PORT, '0.0.0.0', () => {
     console.log(`Backend server successfully running on port ${PORT}`);
