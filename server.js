@@ -2,7 +2,7 @@ const express = require('express');
 const cors = require('cors');
 const admin = require('firebase-admin');
 
-// Safe and bulletproof mobile cloud initialization for Render
+// Bulletproof Firebase initialization for Cloud / Render
 if (!admin.apps.length) {
     try {
         const serviceAccount = require('./serviceAccountKey.json');
@@ -22,10 +22,11 @@ const app = express();
 app.use(express.json());
 app.use(cors());
 
-// Active deposit locks tracking map
-const activeDepositLocks = new Map();
+// Active deposit sessions & QR locks tracking maps
+const activeQrSessions = new Map(); // Tracks 3-minute QR validity per user/device
+const activeDepositLocks = new Map(); // Tracks 9-minute verification window
 
-// 1. WhatsApp OTP Sending Route (Unchanged & Safe)
+// 1. WhatsApp OTP Sending Route
 app.post('/api/send-otp', async (req, res) => {
     try {
         const { phone } = req.body;
@@ -49,7 +50,7 @@ app.post('/api/send-otp', async (req, res) => {
     }
 });
 
-// 2. WhatsApp OTP Verification Route (Unchanged & Safe)
+// 2. WhatsApp OTP Verification Route
 app.post('/api/verify-otp', async (req, res) => {
     try {
         const { phone, otp } = req.body;
@@ -83,27 +84,69 @@ app.post('/api/verify-otp', async (req, res) => {
     }
 });
 
-// 3. Pure Device Authentication & Instant UTR Verification Route (No SMS logic)
+// 3. QR Session Route (Enforces strict 3-minute lock per device/user)
+app.post('/api/get-qr-session', async (req, res) => {
+    try {
+        const { username, deviceId } = req.body;
+        if (!username && !deviceId) {
+            return res.status(400).json({ success: false, message: 'Username or Device ID required.' });
+        }
+
+        const identifier = username || deviceId;
+        const currentTime = Date.now();
+        const THREE_MINUTES = 3 * 60 * 1000;
+
+        if (activeQrSessions.has(identifier)) {
+            const sessionData = activeQrSessions.get(identifier);
+            const elapsed = currentTime - sessionData.startTime;
+
+            if (elapsed < THREE_MINUTES) {
+                const remainingSeconds = Math.ceil((THREE_MINUTES - elapsed) / 1000);
+                return res.status(200).json({
+                    success: true,
+                    active: true,
+                    remainingTime: remainingSeconds,
+                    message: 'Existing payment session active.'
+                });
+            }
+        }
+
+        // Start new 3-minute session
+        activeQrSessions.set(identifier, { startTime: currentTime });
+        return res.status(200).json({
+            success: true,
+            active: false,
+            remainingTime: 180,
+            message: 'New QR generated successfully.'
+        });
+    } catch (error) {
+        console.error('QR Session Error:', error);
+        return res.status(500).json({ success: false, message: error.message });
+    }
+});
+
+// 4. Instant UTR Verification & Device Authentication Route
 app.post('/api/verify-utr-instant', async (req, res) => {
     try {
         const { username, utr, amount, deviceId } = req.body;
 
         if (!utr || utr.length !== 12 || !/^\d{12}$/.test(utr)) {
-            return res.status(400).json({ success: false, message: 'Invalid 12-digit UTR format.' });
+            return res.status(400).json({ success: false, message: 'Invalid UTR format. Must be exactly 12 digits.' });
         }
 
         if (!username || !amount) {
             return res.status(400).json({ success: false, message: 'Username and amount are required.' });
         }
 
-        // Global check: Ensure UTR is used only once (One-time validity)
+        // Global check: Ensure UTR is never reused (One-time validity)
         const verifiedUtrRef = db.collection('verified_utrs').doc(utr);
         const verifiedSnap = await verifiedUtrRef.get();
         if (verifiedSnap.exists) {
-            return res.status(400).json({ success: false, message: 'This UTR has already been used and verified!' });
+            return res.status(400).json({ success: false, message: 'USED/INVALID: This UTR has already been used!' });
         }
 
         const currentTime = Date.now();
+        const identifier = username || deviceId;
         
         if (!activeDepositLocks.has(utr)) {
             activeDepositLocks.set(utr, currentTime);
@@ -111,34 +154,44 @@ app.post('/api/verify-utr-instant', async (req, res) => {
 
         const lockTime = activeDepositLocks.get(utr);
         const elapsedSeconds = (currentTime - lockTime) / 1000;
+        const NINE_MINUTES_SECONDS = 9 * 60; // 540 seconds
 
-        // If time window exceeds 9 minutes (540 seconds), move to pending list for approval
-        if (elapsedSeconds > 540) {
+        // If verification window exceeds 9 minutes, move to pending list (tracked with 24-hour expiry)
+        if (elapsedSeconds > NINE_MINUTES_SECONDS) {
+            const expiryLimitTime = admin.firestore.Timestamp.fromMillis(currentTime + (24 * 60 * 60 * 1000));
+
             await db.collection('pending_utrs').add({
                 username: username,
                 utr: utr,
                 amount: Number(amount),
                 deviceId: deviceId || '',
                 status: 'pending',
-                createdAt: admin.firestore.FieldValue.serverTimestamp()
+                createdAt: admin.firestore.FieldValue.serverTimestamp(),
+                expiresAt: expiryLimitTime
             });
 
             activeDepositLocks.delete(utr);
+            if (identifier) activeQrSessions.delete(identifier);
 
             return res.status(200).json({ 
                 success: false, 
                 isPending: true, 
-                message: 'Payment verification time exceeded. Moved to pending list for master approval.' 
+                message: 'Verification time exceeded 9 minutes. Moved to pending list for master approval.' 
             });
         }
 
-        // Transactional update: Credit wallet, update deposit, auto-upgrade role, and lock UTR permanently
+        // Transactional execution preventing double/duplicate wallet credits
         await db.runTransaction(async (transaction) => {
             const userRef = db.collection('users').doc(username);
             const userDoc = await transaction.get(userRef);
 
             if (!userDoc.exists) {
                 throw new Error('User account does not exist.');
+            }
+
+            const freshVerifiedSnap = await transaction.get(verifiedUtrRef);
+            if (freshVerifiedSnap.exists) {
+                throw new Error('USED/INVALID: This UTR has already been used!');
             }
 
             const userData = userDoc.data();
@@ -169,6 +222,7 @@ app.post('/api/verify-utr-instant', async (req, res) => {
         });
 
         activeDepositLocks.delete(utr);
+        if (identifier) activeQrSessions.delete(identifier);
 
         return res.status(200).json({
             success: true,
