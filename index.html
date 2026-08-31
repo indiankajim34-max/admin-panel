@@ -138,7 +138,6 @@ button { width: 100%; padding: 10px; background: #00ff66; color: #0b0f19; border
         <div id="masterPanel" class="master-box" style="display: none;">
             <h4 style="color: #ffcc00; margin-top: 0;">👑 Master Control Panel</h4>
             
-            <!-- Direct Wallet Credit Feature Added -->
             <div style="background: #131a29; padding: 10px; border-radius: 6px; margin-bottom: 12px; border: 1px solid #333;">
                 <p style="color: #00ff66; font-size: 12px; margin: 0 0 6px 0; font-weight: bold;">Direct Credit to User Wallet:</p>
                 <div class="input-group" style="margin-bottom: 6px;">
@@ -216,7 +215,7 @@ button { width: 100%; padding: 10px; background: #00ff66; color: #0b0f19; border
             <button type="button" id="copyPurchaseKeyBtn" class="copy-btn" style="display:none;" onclick="copyTextToClipboard('purchaseKeyBox')">📋 Copy Key</button>
         </div>
 
-        <!-- BharatPe Deposit & UTR Section (Direct UPI App Buttons Removed) -->
+        <!-- BharatPe Deposit & UTR Section -->
         <div class="card" id="depositSectionCard">
             <h4 style="color: #00ff66; margin-top: 0;">💰 BharatPe Deposit & UTR Verification</h4>
             <div class="input-group">
@@ -308,6 +307,12 @@ let paymentTimerRef = null;
 let lockedDepositAmount = 0;
 let bharatPeMerchantVpa = "BHARATPE2G0B0C7V5V23545@unitype";
 const merchantName = "KAJIM UDDIN";
+
+let currentDeviceUuid = localStorage.getItem("app_device_id");
+if (!currentDeviceUuid) {
+    currentDeviceUuid = 'DEV-' + Math.random().toString(36).substring(2, 15) + '-' + Date.now();
+    localStorage.setItem("app_device_id", currentDeviceUuid);
+}
 
 const basePricing = {
     "1 Day VIP": 150,
@@ -454,7 +459,6 @@ function saveMasterUpiId() {
     });
 }
 
-// --- MASTER DIRECT WALLET CREDIT FUNCTION ---
 function masterDirectCreditWallet() {
     const targetUname = document.getElementById('masterCreditUser').value.trim();
     const amtInput = document.getElementById('masterCreditAmount').value.trim();
@@ -845,13 +849,18 @@ function verifyUtrAndCredit() {
         body: JSON.stringify({
             username: currentUser,
             utr: utr,
-            amount: lockedDepositAmount
+            amount: lockedDepositAmount,
+            deviceId: currentDeviceUuid
         })
     })
     .then(res => res.json())
     .then(data => {
         if(!data.success) {
-            msg.innerHTML = `<span class="error">❌ ${data.message}</span>`;
+            if(data.isPending) {
+                msg.innerHTML = `<span class="error">⏳ आपका पेमेंट 9 मिनट का समय पार होने के कारण Pending लिस्ट में चला गया है। मास्टर द्वारा duyệt (approve) होने पर वॉलेट में जुड़ जाएगा।</span>`;
+            } else {
+                msg.innerHTML = `<span class="error">❌ ${data.message}</span>`;
+            }
             return;
         }
 
