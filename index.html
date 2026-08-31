@@ -1,4 +1,3 @@
-<!DOCTYPE html>
 <html lang="en">
 <head>
 <meta charset="UTF-8">
@@ -9,292 +8,275 @@
 <script src="https://www.gstatic.com/firebasejs/9.22.0/firebase-firestore-compat.js"></script>
 <style>
 body { background: #0b0f19; color: #fff; font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif; margin: 0; padding: 20px; }
-.card { background: #131a29; border: 1px solid #1f293d; border-radius: 10px; padding: 15px; margin-bottom: 15px; }
+.container { max-width: 500px; margin: auto; }
+.card, .master-box, .reset-box { background: #131a29; border: 1px solid #333; padding: 15px; border-radius: 8px; margin-bottom: 15px; }
 .input-group { margin-bottom: 12px; }
-.input-group label { display: block; font-size: 12px; color: #aaa; margin-bottom: 5px; }
-.input-group input, .input-group select { width: 100%; padding: 10px; background: #0b0f19; border: 1px solid #333; color: #fff; border-radius: 6px; box-sizing: border-box; }
+.input-group label { display: block; font-size: 13px; color: #aaa; margin-bottom: 5px; }
+.input-group input, .input-group select { width: 100%; padding: 10px; background: #1e293b; border: 1px solid #334155; color: #fff; border-radius: 6px; box-sizing: border-box; }
 button { width: 100%; padding: 10px; background: #00ff66; color: #0b0f19; border: none; font-weight: bold; border-radius: 6px; cursor: pointer; }
-.success { color: #00ff66; font-size: 13px; margin-top: 5px; }
-.error { color: #ff4d4d; font-size: 13px; margin-top: 5px; }
-.toggle-link { text-align: center; font-size: 12px; color: #0088cc; margin-top: 10px; cursor: pointer; }
-.header-flex { display: flex; justify-content: space-between; align-items: center; margin-bottom: 15px; }
-.credit-badge { background: #ffcc00; color: #000; padding: 5px 10px; border-radius: 6px; font-size: 11px; font-weight: bold; cursor: pointer; margin-right: 5px; }
-.pending-badge { background: #ff5722; color: #fff; padding: 5px 10px; border-radius: 6px; font-size: 11px; font-weight: bold; cursor: pointer; }
-.settings-icon { cursor: pointer; font-size: 18px; }
-.settings-box { display: none; background: #1b263b; padding: 12px; border-radius: 8px; margin-bottom: 15px; border: 1px solid #415a77; }
-.master-box { background: #221a10; border: 1px solid #ffcc00; padding: 12px; border-radius: 8px; margin-bottom: 15px; }
-.reset-box { background: #101c2c; border: 1px solid #0088cc; padding: 12px; border-radius: 8px; margin-bottom: 15px; }
-.history-item { display: flex; justify-content: space-between; align-items: center; font-size: 12px; padding: 6px 0; border-bottom: 1px solid #222; }
-.copy-btn { background: #334155; color: #fff; margin-top: 5px; font-size: 11px; padding: 5px; }
+button:hover { opacity: 0.9; }
+.settings-box { border: 1px solid #ffcc00; background: #181c24; padding: 15px; border-radius: 8px; margin-bottom: 15px; display: none; }
+.copy-btn { background: #1e293b; color: #00ff66; border: 1px solid #00ff66; padding: 6px 10px; font-size: 12px; border-radius: 6px; cursor: pointer; margin-top: 6px; width: auto; display: inline-block; }
+.header-flex { display: flex; justify-content: space-between; align-items: center; margin-bottom: 20px; }
+.settings-icon { cursor: pointer; background: #1e293b; border: 1px solid #334155; padding: 8px 12px; border-radius: 8px; font-size: 16px; color: #ffcc00; }
+.credit-badge { display: none; align-items: center; background: #1e293b; border: 1px solid #ffcc00; padding: 6px 10px; border-radius: 20px; font-size: 12px; color: #ffcc00; cursor: pointer; margin-right: 8px; }
+.success { color: #00ff66; margin-top: 5px; font-size: 13px; }
+.error { color: #ff4d4d; margin-top: 5px; font-size: 13px; }
+.toggle-link { text-align: center; font-size: 13px; color: #0088cc; cursor: pointer; margin-top: 10px; }
+.history-item { display: flex; justify-content: space-between; font-size: 12px; padding: 6px 0; border-bottom: 1px solid #222; }
 </style>
 </head>
 <body>
+
 <div class="container">
-    <!-- Login Form -->
-    <div id="loginFormContainer" class="card">
-        <h2 style="text-align: center; color: #00ff66; margin-bottom: 20px;">WinGo VIP Secure Portal</h2>
-        <div class="input-group">
-            <label>Username / ID</label>
-            <input type="text" id="loginUser" placeholder="Enter username">
-        </div>
-        <div class="input-group">
-            <label>Password</label>
-            <input type="password" id="loginPass" placeholder="Enter password">
-        </div>
-        <button onclick="handleLogin()">LOGIN</button>
-        <div id="loginMsg"></div>
-        <div class="toggle-link" onclick="switchView('register')">Create an account? Register</div>
-        <div class="toggle-link" onclick="switchView('forgot')">Forgot Password?</div>
-    </div>
-
-    <!-- Register Form -->
-    <div id="registerContainer" class="card" style="display: none;">
-        <h2 style="text-align: center; color: #00ff66; margin-bottom: 20px;">Create Account</h2>
-        <div class="input-group">
-            <label>Username</label>
-            <input type="text" id="regUser" placeholder="Choose username">
-        </div>
-        <div class="input-group">
-            <label>Password</label>
-            <input type="password" id="regPass" placeholder="Choose password">
-        </div>
-        <div class="input-group">
-            <label>Confirm Password</label>
-            <input type="password" id="regPassConfirm" placeholder="Confirm password">
-        </div>
-        <div class="input-group">
-            <label>WhatsApp / Mobile Number</label>
-            <input type="text" id="regPhone" placeholder="+919876543210" value="+91">
-            <button type="button" onclick="requestBackendOtp('reg')" style="background: #182232; color: #00ff66; border: 1px solid #00ff66; margin-top: 8px; padding: 8px;">SEND WHATSAPP OTP</button>
-        </div>
-        <div class="input-group">
-            <label>Enter 6-Digit OTP</label>
-            <input type="text" id="regOtp" placeholder="Enter 6-digit OTP">
-        </div>
-        <button onclick="handleRegister()">REGISTER ACCOUNT</button>
-        <div id="regMsg"></div>
-        <div class="toggle-link" onclick="switchView('login')">Already registered? Login</div>
-    </div>
-
-    <!-- Forgot Password Form -->
-    <div id="forgotContainer" class="card" style="display: none;">
-        <h2 style="text-align: center; color: #ffcc00; margin-bottom: 20px;">Reset Password</h2>
-        <div class="input-group">
-            <label>Username</label>
-            <input type="text" id="forgotUser" placeholder="Enter your username">
-        </div>
-        <div class="input-group">
-            <label>WhatsApp / Mobile Number</label>
-            <input type="text" id="forgotPhone" placeholder="+919876543210" value="+91">
-            <button type="button" onclick="requestBackendOtp('forgot')" style="background: #182232; color: #00ff66; border: 1px solid #00ff66; margin-top: 8px; padding: 8px;">SEND WHATSAPP OTP</button>
-        </div>
-        <div class="input-group">
-            <label>Enter 6-Digit OTP</label>
-            <input type="text" id="forgotOtp" placeholder="Enter 6-digit OTP">
-        </div>
-        <div class="input-group">
-            <label>New Password</label>
-            <input type="password" id="forgotNewPass" placeholder="Enter new password">
-        </div>
-        <button onclick="handleResetPassword()" style="background: #0088cc; color: #fff;">UPDATE PASSWORD</button>
-        <div id="forgotMsg"></div>
-        <div class="toggle-link" onclick="switchView('login')">Back to Login</div>
-    </div>
-
-    <!-- Dashboard -->
-    <div id="dashboardContainer" style="display: none;">
-        <div class="header-flex">
-            <div style="display: flex; align-items: center; flex-wrap: wrap; gap: 4px;">
-                <div id="masterCreditBadge" class="credit-badge" onclick="openCreditModal()" title="Manage BharatPe UPI ID" style="display:none;">💳 Credit</div>
-                <div id="masterPendingBadge" class="pending-badge" onclick="openPendingPaymentsModal()" title="Pending Payments Approval" style="display:none;">⏳ Pending Payments</div>
-                <div>
-                    <h3 id="welcomeHeader" style="margin: 0;">Welcome, <span id="dashUsername"></span></h3>
-                    <p style="margin: 4px 0 0 0; font-size: 13px;">Role: <span id="dashRole" style="color: #00ff66; font-weight: bold;">Customer</span></p>
-                </div>
-            </div>
-            <div class="settings-icon" onclick="toggleSettingsPanel()" title="Settings & History">⚙️ Settings</div>
-        </div>
-
-        <div id="resellerSettingsPanel" class="settings-box">
-            <h4 style="color: #ffcc00; margin-top: 0;" id="settingsPanelTitle">📊 My History & Stats</h4>
-            <div id="resellerPersonalView">
-                <p style="font-size: 12px; color: #aaa; margin: 0 0 10px 0;">Total Keys Generated: <span id="resellerTotalKeysCount" style="color: #00ff66; font-weight: bold;">0</span></p>
-                <div style="max-height: 150px; overflow-y: auto; background: #131a29; padding: 8px; border-radius: 6px; border: 1px solid #333;" id="resellerHistoryList">
-                    <p style="font-size: 12px; color: #777; text-align: center; margin: 5px 0;">No key history recorded yet.</p>
-                </div>
-            </div>
-            <div id="masterGlobalView" style="display: none;">
-                <p style="font-size: 12px; color: #777; text-align: center; margin: 5px 0;">Loading global system records...</p>
-            </div>
-        </div>
-
-        <div class="card">
-            <p>Wallet Balance: ₹<span id="walletBalance" style="color: #00ff66; font-weight: bold;">0</span></p>
-            <p id="depositStatsRow">Today's Total Deposit: ₹<span id="totalDeposit" style="color: #ffcc00;">0</span></p>
-            <p>Today's Key Count: <span id="keyCount" style="color: #00ff66;">0</span></p>
-        </div>
-
-        <!-- Master Panel -->
-        <div id="masterPanel" class="master-box" style="display: none;">
-            <h4 style="color: #ffcc00; margin-top: 0;">👑 Master Control Panel</h4>
-            
-            <div style="background: #131a29; padding: 10px; border-radius: 6px; margin-bottom: 12px; border: 1px solid #333;">
-                <p style="color: #00ff66; font-size: 12px; margin: 0 0 6px 0; font-weight: bold;">Direct Credit to User Wallet:</p>
-                <div class="input-group" style="margin-bottom: 6px;">
-                    <input type="text" id="masterCreditUser" placeholder="Enter target username">
-                </div>
-                <div class="input-group" style="margin-bottom: 8px;">
-                    <input type="number" id="masterCreditAmount" placeholder="Enter amount to credit (₹)">
-                </div>
-                <button onclick="masterDirectCreditWallet()" style="background: #00ff66; color: #0b0f19; padding: 8px; font-size: 13px;">CREDIT WALLET MANUALLY</button>
-                <div id="masterCreditMsg" style="font-size: 12px; margin-top: 5px;"></div>
-            </div>
-
-            <div style="background: #131a29; padding: 10px; border-radius: 6px; margin-bottom: 12px; border: 1px solid #333;">
-                <p style="color: #00ff66; font-size: 12px; margin: 0 0 6px 0; font-weight: bold;">Promote User to Reseller:</p>
-                <div class="input-group" style="margin-bottom: 8px;">
-                    <input type="text" id="targetResellerUser" placeholder="Enter existing username">
-                </div>
-                <button onclick="promoteToReseller()" style="background: #0088cc; color: #fff; padding: 8px; font-size: 13px;">PROMOTE TO RESELLER</button>
-                <div id="promoteMsg" style="font-size: 12px; margin-top: 5px;"></div>
-            </div>
-            <div style="background: #131a29; padding: 10px; border-radius: 6px; margin-bottom: 12px; border: 1px solid #333;">
-                <p style="color: #ff4d4d; font-size: 12px; margin: 0 0 6px 0; font-weight: bold;">Remove / Ban User:</p>
-                <div class="input-group" style="margin-bottom: 8px;">
-                    <input type="text" id="banTargetUser" placeholder="Enter username to delete">
-                </div>
-                <button onclick="removeUserAccount()" style="background: #ff4d4d; color: #fff; padding: 8px; font-size: 13px;">DELETE / REMOVE USER</button>
-                <div id="banMsg" style="font-size: 12px; margin-top: 5px;"></div>
-            </div>
-            <div class="input-group">
-                <label>Select Master Package Type</label>
-                <select id="masterPackageType">
-                    <option value="1 Day VIP">1 Day VIP</option>
-                    <option value="3 Days VIP">3 Days VIP</option>
-                    <option value="7 Days VIP">7 Days VIP</option>
-                    <option value="15 Days VIP">15 Days VIP</option>
-                    <option value="20 Days VIP">20 Days VIP</option>
-                    <option value="30 Days VIP">30 Days VIP</option>
-                    <option value="Unlimited VIP">Unlimited VIP</option>
-                </select>
-            </div>
-            <button onclick="masterGenerateKey()" style="background: linear-gradient(135deg, #ffcc00, #ff9900); color: #000;">GENERATE CUSTOM KEY</button>
-            <div id="masterKeyBox" class="success" style="word-break: break-all; font-weight: bold; margin-top: 8px;"></div>
-            <button type="button" id="copyMasterKeyBtn" class="copy-btn" style="display:none;" onclick="copyTextToClipboard('masterKeyBox')">📋 Copy Key</button>
-        </div>
-
-        <!-- Session Lock -->
-        <div class="reset-box">
-            <h4 style="color: #0088cc; margin-top: 0;">📱 Single-Device Session Lock</h4>
-            <p style="font-size: 12px; color: #aaa; margin: 0 0 8px 0;">A user session can only remain active on one device at a time.</p>
-            <div class="input-group" style="margin-bottom: 8px;">
-                <input type="text" id="resetKeyInput" placeholder="Enter Key or Session ID">
-            </div>
-            <button onclick="resetDeviceBinding()" style="background: #0088cc; color: #fff; padding: 8px;">Reset Device Lock</button>
-            <div id="resetMsg"></div>
-        </div>
-
-        <!-- Game Server Key Generation -->
-        <div class="card">
-            <h4 style="color: #00ff66; margin-top: 0;">🔑 Game Server Key Generation</h4>
-            <div class="input-group">
-                <label>Select Package</label>
-                <select id="keyPackage" onchange="updateDynamicPricing()">
-                    <option value="1 Day VIP">1 Day VIP (₹150)</option>
-                    <option value="3 Days VIP">3 Days VIP (₹300)</option>
-                    <option value="7 Days VIP">7 Days VIP (₹500)</option>
-                    <option value="15 Days VIP">15 Days VIP (₹700)</option>
-                    <option value="20 Days VIP">20 Days VIP (₹850)</option>
-                    <option value="30 Days VIP">30 Days VIP (₹1250)</option>
-                    <option value="Unlimited VIP">Unlimited VIP (₹3000)</option>
-                </select>
-            </div>
-            <p>Deduction Price: ₹<span id="displayPrice" style="color: #ffcc00; font-weight: bold;">150</span> <span id="priceTierLabel" style="font-size: 11px; color: #aaa;">(Customer Price)</span></p>
-            <button onclick="generateGameServerKey()">BUY & GENERATE KEY</button>
-            <div id="purchaseKeyBox" class="success" style="word-break: break-all; font-weight: bold; margin-top: 8px;"></div>
-            <button type="button" id="copyPurchaseKeyBtn" class="copy-btn" style="display:none;" onclick="copyTextToClipboard('purchaseKeyBox')">📋 Copy Key</button>
-        </div>
-
-        <!-- BharatPe Deposit & UTR Section -->
-        <div class="card" id="depositSectionCard">
-            <h4 style="color: #00ff66; margin-top: 0;">💰 BharatPe Deposit & UTR Verification</h4>
-            <div class="input-group">
-                <label>Deposit Amount (₹1000+ auto-upgrades to Reseller)</label>
-                <input type="number" id="depositAmount" placeholder="Enter amount (e.g. 1000)">
-            </div>
-            <button onclick="startSecureDeposit()" style="background: linear-gradient(135deg, #0088cc, #0044cc); color: #fff;">LOCK AMOUNT & GET QR</button>
-            
-            <div id="qrSection" style="display: none; margin-top: 15px; text-align: center; background: #000; padding: 12px; border-radius: 8px;">
-                <p style="color: #ffcc00; font-size: 13px; margin: 4px 0;">Scan & Pay Exact Locked Amount to KAJIM UDDIN:</p>
-                <h3 id="exactAmountText" style="color: #00ff66; margin: 4px 0;">₹0</h3>
-                <div style="background: #fff; padding: 8px; display: inline-block; border-radius: 6px; margin: 8px 0;">
-                    <img id="qrImage" alt="BharatPe QR" style="width: 140px; height: 140px; display: block;">
-                </div>
-                <p style="font-size: 12px; color: #00ff66; margin: 4px 0;">UPI ID: <span id="displayUpiId">BHARATPE2G0B0C7V5V23545@unitype</span></p>
-                <p style="font-size: 11px; color: #aaa; margin: 4px 0;">QR Valid / Time Remaining: <span id="timerCountdown" style="color: #ffcc00; font-weight: bold;">09:00</span></p>
-            </div>
-
-            <div class="input-group" style="margin-top: 15px;">
-                <label>Enter 12-Digit UTR / UPI Ref ID</label>
-                <input type="text" id="utrInput" placeholder="Enter 12-digit UTR from bank SMS" maxlength="12">
-            </div>
-            <button onclick="verifyUtrAndCredit()" style="background: #00ff66; color: #0b0f19;">VERIFY & CREDIT WALLET</button>
-            <div id="depositMsg"></div>
-        </div>
-
-        <div class="card">
-            <h4 style="color: #fff; margin-top: 0;">📜 History Logs & Overview</h4>
-            <p style="font-size: 12px; color: #aaa;">Midnight Reset active: Stats auto-reset at 12:00 AM daily.</p>
-            <div id="keyHistoryList" style="max-height: 120px; overflow-y: auto; margin-top: 8px;">
-                <p style="font-size: 12px; color: #777;">No transaction history yet.</p>
-            </div>
-        </div>
-
-        <button onclick="handleLogout()" style="background: #ff4d4d; color: #fff; margin-top: 10px;">LOGOUT</button>
-    </div>
+<div id="loginFormContainer" class="card">
+<h2 style="text-align: center; color: #00ff66; margin-bottom: 20px;">WinGo VIP Secure Portal</h2>
+<div class="input-group">
+<label>Username / ID</label>
+<input type="text" id="loginUser" placeholder="Enter username">
+</div>
+<div class="input-group">
+<label>Password</label>
+<input type="password" id="loginPass" placeholder="Enter password">
+</div>
+<button onclick="handleLogin()">LOGIN</button>
+<div id="loginMsg"></div>
+<div class="toggle-link" onclick="switchView('register')">Don't have an account? Register</div>
+<div class="toggle-link" onclick="switchView('forgot')">Forgot Password?</div>
 </div>
 
-<!-- UPI Modal -->
+<div id="registerContainer" class="card" style="display: none;">
+<h2 style="text-align: center; color: #00ff66; margin-bottom: 20px;">Register New Account</h2>
+<div class="input-group">
+<label>Choose Username</label>
+<input type="text" id="regUser" placeholder="Username">
+</div>
+<div class="input-group">
+<label>Password</label>
+<input type="password" id="regPass" placeholder="Password">
+</div>
+<div class="input-group">
+<label>Confirm Password</label>
+<input type="password" id="regPassConfirm" placeholder="Confirm password">
+</div>
+<div class="input-group">
+<label>WhatsApp / Mobile Number</label>
+<div style="background: #2a1f0b; border: 1px solid #ffcc00; color: #ffcc00; padding: 8px 10px; border-radius: 6px; font-size: 12px; margin-bottom: 6px; line-height: 1.4;">
+⚠️ <b>कृपया कंट्री कोड डालें!</b> (जैसे भारत के लिए <b>+91</b> अनिवार्य है। बिना कंट्री कोड के रजिस्टर नहीं होगा।)
+</div>
+<input type="text" id="regPhone" placeholder="+919876543210" value="+91">
+<button type="button" onclick="requestBackendOtp('reg')" style="background: #182232; color: #00ff66; border: 1px solid #00ff66; margin-top: 8px; padding: 8px;">SEND WHATSAPP OTP</button>
+</div>
+<div class="input-group">
+<label>Enter 6-Digit OTP</label>
+<input type="text" id="regOtp" placeholder="Enter 6-digit OTP">
+</div>
+<button onclick="handleRegister()">REGISTER ACCOUNT</button>
+<div id="regMsg"></div>
+<div class="toggle-link" onclick="switchView('login')">Already registered? Login</div>
+</div>
+
+<div id="forgotContainer" class="card" style="display: none;">
+<h2 style="text-align: center; color: #ffcc00; margin-bottom: 20px;">Reset Password</h2>
+<div class="input-group">
+<label>Username</label>
+<input type="text" id="forgotUser" placeholder="Enter your username">
+</div>
+<div class="input-group">
+<label>WhatsApp / Mobile Number</label>
+<div style="background: #2a1f0b; border: 1px solid #ffcc00; color: #ffcc00; padding: 8px 10px; border-radius: 6px; font-size: 12px; margin-bottom: 6px; line-height: 1.4;">
+⚠️ <b>कृपया कंट्री कोड डालें!</b> (जैसे भारत के लिए <b>+91</b> अनिवार्य है। बिना कंट्री कोड के पासवर्ड रिसेट नहीं होगा।)
+</div>
+<input type="text" id="forgotPhone" placeholder="+919876543210" value="+91">
+<button type="button" onclick="requestBackendOtp('forgot')" style="background: #182232; color: #00ff66; border: 1px solid #00ff66; margin-top: 8px; padding: 8px;">SEND WHATSAPP OTP</button>
+</div>
+<div class="input-group">
+<label>Enter 6-Digit OTP</label>
+<input type="text" id="forgotOtp" placeholder="Enter 6-digit OTP">
+</div>
+<div class="input-group">
+<label>New Password</label>
+<input type="password" id="forgotNewPass" placeholder="Enter new password">
+</div>
+<button onclick="handleResetPassword()" style="background: #0088cc; color: #fff;">UPDATE PASSWORD</button>
+<div id="forgotMsg"></div>
+<div class="toggle-link" onclick="switchView('login')">Back to Login</div>
+</div>
+
+<div id="dashboardContainer" style="display: none;">
+<div class="header-flex">
+<div style="display: flex; align-items: center;">
+<div id="masterCreditBadge" class="credit-badge" onclick="openCreditModal()" title="Manage BharatPe UPI ID">💳 Credit</div>
+<div>
+<h3 id="welcomeHeader" style="margin: 0;">Welcome, <span id="dashUsername"></span></h3>
+<p style="margin: 4px 0 0 0; font-size: 13px;">Role: <span id="dashRole" style="color: #00ff66; font-weight: bold;">Customer</span></p>
+</div>
+</div>
+<div class="settings-icon" onclick="toggleSettingsPanel()" title="Settings & History">⚙️ Settings</div>
+</div>
+
+<div id="resellerSettingsPanel" class="settings-box">
+<h4 style="color: #ffcc00; margin-top: 0;" id="settingsPanelTitle">📊 My History & Stats</h4>
+<div id="resellerPersonalView">
+<p style="font-size: 12px; color: #aaa; margin: 0 0 10px 0;">Total Keys Purchased: <span id="resellerTotalKeysCount" style="color: #00ff66; font-weight: bold;">0</span></p>
+<div style="max-height: 150px; overflow-y: auto; background: #131a29; padding: 8px; border-radius: 6px; border: 1px solid #333;" id="resellerHistoryList">
+<p style="font-size: 12px; color: #777; text-align: center; margin: 5px 0;">No key purchase history recorded yet.</p>
+</div>
+</div>
+<div id="masterGlobalView" style="display: none;">
+<p style="font-size: 12px; color: #777; text-align: center; margin: 5px 0;">Loading global system records...</p>
+</div>
+</div>
+
+<div class="card">
+<p>Wallet Balance: ₹<span id="walletBalance" style="color: #00ff66; font-weight: bold;">0</span></p>
+<p id="depositStatsRow">Today's Total Deposit: ₹<span id="totalDeposit" style="color: #ffcc00;">0</span></p>
+<p>Today's Key Count: <span id="keyCount" style="color: #00ff66;">0</span></p>
+</div>
+
+<div id="masterPanel" class="master-box" style="display: none;">
+<h4 style="color: #ffcc00; margin-top: 0;">👑 Master Control Panel</h4>
+
+
+<!-- Left Corner Pending Payments Section Added -->
+<div style="background: #181c24; padding: 10px; border-radius: 6px; margin-bottom: 12px; border: 1px solid #ffcc00;">
+<p style="color: #ffcc00; font-size: 12px; margin: 0 0 6px 0; font-weight: bold;">📥 Pending Payments (Manual Review):</p>
+<div id="masterPendingList" style="max-height: 130px; overflow-y: auto; background: #131a29; padding: 6px; border-radius: 4px; border: 1px solid #333;">
+<p style="font-size: 11px; color: #777; text-align: center; margin: 4px 0;">No pending payments.</p>
+</div>
+</div>
+
+<div style="background: #131a29; padding: 10px; border-radius: 6px; margin-bottom: 12px; border: 1px solid #333;">
+<p style="color: #00ff66; font-size: 12px; margin: 0 0 6px 0; font-weight: bold;">Promote User to Reseller:</p>
+<div class="input-group" style="margin-bottom: 8px;">
+<input type="text" id="targetResellerUser" placeholder="Enter existing valid username">
+</div>
+<button onclick="promoteToReseller()" style="background: #0088cc; color: #fff; padding: 8px; font-size: 13px;">PROMOTE TO RESELLER</button>
+<div id="promoteMsg" style="font-size: 12px; margin-top: 5px;"></div>
+</div>
+
+<div style="background: #131a29; padding: 10px; border-radius: 6px; margin-bottom: 12px; border: 1px solid #333;">
+<p style="color: #ff4d4d; font-size: 12px; margin: 0 0 6px 0; font-weight: bold;">Remove / Ban User:</p>
+<div class="input-group" style="margin-bottom: 8px;">
+<input type="text" id="banTargetUser" placeholder="Enter username to delete">
+</div>
+<button onclick="removeUserAccount()" style="background: #ff4d4d; color: #fff; padding: 8px; font-size: 13px;">DELETE / REMOVE USER</button>
+<div id="banMsg" style="font-size: 12px; margin-top: 5px;"></div>
+</div>
+
+<div class="input-group">
+<label>Custom Tag / Username Prefix</label>
+<input type="text" id="masterCustomUsername" placeholder="e.g. Kajim_VIP">
+</div>
+<div class="input-group">
+<label>Select Package / Custom Days</label>
+<select id="masterPackageType">
+<option value="1 Day VIP">1 Day VIP</option>
+<option value="3 Days VIP">3 Days VIP</option>
+<option value="7 Days VIP">7 Days VIP</option>
+<option value="15 Days VIP">15 Days VIP</option>
+<option value="20 Days VIP">20 Days VIP</option>
+<option value="30 Days VIP">30 Days VIP</option>
+<option value="Unlimited VIP">Unlimited VIP</option>
+</select>
+</div>
+<button onclick="masterGenerateKey()" style="background: linear-gradient(135deg, #ffcc00, #ff9900); color: #000;">GENERATE CUSTOM KEY</button>
+<div id="masterKeyBox" class="success" style="word-break: break-all; font-weight: bold; margin-top: 8px;"></div>
+<button type="button" id="copyMasterKeyBtn" class="copy-btn" style="display:none;" onclick="copyTextToClipboard('masterKeyBox')">📋 Copy Key</button>
+</div>
+
+<div class="reset-box">
+<h4 style="color: #0088cc; margin-top: 0;">📱 Single-Device Session Lock</h4>
+<p style="font-size: 12px; color: #aaa; margin: 0 0 8px 0;">A reseller ID can only remain logged in on one device at a time.</p>
+<div class="input-group" style="margin-bottom: 8px;">
+<input type="text" id="resetKeyInput" placeholder="Enter Key or Session ID">
+</div>
+<button onclick="resetDeviceBinding()" style="background: #0088cc; color: #fff; padding: 8px;">Reset Device Lock</button>
+<div id="resetMsg"></div>
+</div>
+
+<div class="card">
+<h4 style="color: #00ff66; margin-top: 0;">🔑 Game Server Key Generation</h4>
+<div class="input-group">
+<label>Select Package</label>
+<select id="keyPackage" onchange="updateDynamicPricing()">
+<option value="1 Day VIP">1 Day VIP (₹150)</option>
+<option value="3 Days VIP">3 Days VIP (₹300)</option>
+<option value="7 Days VIP">7 Days VIP (₹500)</option>
+<option value="15 Days VIP">15 Days VIP (₹700)</option>
+<option value="20 Days VIP">20 Days VIP (₹850)</option>
+<option value="30 Days VIP">30 Days VIP (₹1250)</option>
+<option value="Unlimited VIP">Unlimited VIP (₹3000)</option>
+</select>
+</div>
+<p>Deduction Price: ₹<span id="displayPrice" style="color: #ffcc00; font-weight: bold;">150</span> <span id="priceTierLabel" style="font-size: 11px; color: #aaa;">(Customer Price)</span></p>
+<button onclick="generateGameServerKey()">BUY & GENERATE KEY</button>
+<div id="purchaseKeyBox" class="success" style="word-break: break-all; font-weight: bold; margin-top: 8px;"></div>
+<button type="button" id="copyPurchaseKeyBtn" class="copy-btn" style="display:none;" onclick="copyTextToClipboard('purchaseKeyBox')">📋 Copy Key</button>
+</div>
+
+<div class="card" id="depositSectionCard">
+<h4 style="color: #00ff66; margin-top: 0;">💰 BharatPe Deposit & Random UTR</h4>
+<div class="input-group">
+<label>Deposit Amount (₹1000+ auto-upgrades to Reseller)</label>
+<input type="number" id="depositAmount" placeholder="Enter amount (e.g. 1000)">
+</div>
+<button id="getQrBtn" onclick="startSecureDeposit()" style="background: linear-gradient(135deg, #0088cc, #0044cc); color: #fff;">LOCK AMOUNT & GET QR</button>
+<div id="qrSection" style="display: none; margin-top: 15px; text-align: center; background: #000; padding: 12px; border-radius: 8px;">
+<p style="color: #ffcc00; font-size: 13px; margin: 4px 0;">Scan & Pay Exact Locked Amount to KAJIM UDDIN:</p>
+<h3 id="exactAmountText" style="color: #00ff66; margin: 4px 0;">₹0</h3>
+<div style="background: #fff; padding: 8px; display: inline-block; border-radius: 6px; margin: 8px 0;">
+<img id="qrImage" alt="BharatPe QR" style="width: 140px; height: 140px; display: block;">
+</div>
+<p style="font-size: 12px; color: #00ff66; margin: 4px 0;">UPI ID: <span id="displayUpiId">BHARATPE2G0B0C7V5V23545@unitype</span></p>
+<p style="color: #ff4d4d; font-size: 13px; font-weight: bold;">Payment Timer: <span id="timerCountdown">05:00</span></p>
+<div class="input-group" style="text-align: left; margin-top: 8px;">
+<label>Any 12-Digit Random UTR Verification</label>
+<input type="text" id="utrInput" placeholder="Enter 12-digit UTR ID" maxlength="12">
+</div>
+<button onclick="verifyUtrAndCredit()" style="background: #00ff66; color: #0b0f19;">VERIFY & CREDIT WALLET</button>
+<div id="depositMsg"></div>
+</div>
+</div>
+
+<div class="card">
+<h4 style="color: #fff; margin-top: 0;">📜 History Logs & Overview</h4>
+<p style="font-size: 12px; color: #aaa;">Midnight Reset active: Stats auto-reset to ₹0 at 12:00 AM daily.</p>
+<div id="keyHistoryList" style="max-height: 120px; overflow-y: auto; margin-top: 8px;">
+<p style="font-size: 12px; color: #777;">No transaction history yet.</p>
+</div>
+</div>
+<button onclick="handleLogout()" style="background: #ff4d4d; color: #fff; margin-top: 10px;">LOGOUT</button>
+</div>
+</div>
+
 <div id="creditModal" style="display:none; position:fixed; top:0; left:0; width:100%; height:100%; background:rgba(0,0,0,0.8); z-index:999; justify-content:center; align-items:center;">
-    <div style="background:#131a29; padding:20px; border-radius:10px; width:90%; max-width:400px; border:1px solid #ffcc00;">
-        <h3 style="color:#ffcc00; margin-top:0;">💳 Manage BharatPe UPI ID</h3>
-        <div class="input-group">
-            <label>Current Merchant UPI ID</label>
-            <input type="text" id="modalUpiInput" placeholder="e.g. merchant@unitype">
-        </div>
-        <button onclick="saveMasterUpiId()" style="background:#00ff66; color:#0b0f19; margin-bottom:8px;">UPDATE UPI ID</button>
-        <button onclick="closeCreditModal()" style="background:#334155; color:#fff;">CLOSE</button>
-        <div id="modalUpiMsg" style="font-size:12px; margin-top:8px;"></div>
-    </div>
+<div style="background:#131a29; padding:20px; border-radius:10px; width:90%; max-width:400px; border:1px solid #ffcc00;">
+<h3 style="color:#ffcc00; margin-top:0;">💳 Manage BharatPe UPI ID</h3>
+<div class="input-group">
+<label>Current Merchant UPI ID</label>
+<input type="text" id="modalUpiInput" placeholder="e.g. merchant@unitype">
 </div>
-
-<!-- Pending Payments Modal for Master -->
-<div id="pendingPaymentsModal" style="display:none; position:fixed; top:0; left:0; width:100%; height:100%; background:rgba(0,0,0,0.85); z-index:1000; justify-content:center; align-items:center;">
-    <div style="background:#131a29; padding:20px; border-radius:10px; width:95%; max-width:550px; border:1px solid #ff5722; max-height:85vh; display:flex; flex-direction:column;">
-        <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom:12px;">
-            <h3 style="color:#ff5722; margin:0;">⏳ Pending Payments Approval</h3>
-            <button onclick="closePendingPaymentsModal()" style="background:#334155; color:#fff; width:auto; padding:5px 12px; font-size:12px;">CLOSE</button>
-        </div>
-        <p style="font-size:12px; color:#aaa; margin:0 0 10px 0;">Review UTR submissions that need master approval.</p>
-        <div id="pendingPaymentsList" style="flex:1; overflow-y:auto; background:#0b0f19; padding:10px; border-radius:6px; border:1px solid #333;">
-            <p style="font-size:12px; color:#777; text-align:center;">Loading pending payments...</p>
-        </div>
-    </div>
+<button onclick="saveMasterUpiId()" style="background:#00ff66; color:#0b0f19; margin-bottom:8px;">UPDATE UPI ID</button>
+<button onclick="closeCreditModal()" style="background:#334155; color:#fff;">CLOSE</button>
+<div id="modalUpiMsg" style="font-size:12px; margin-top:8px;"></div>
+</div>
 </div>
 
 <script>
 const BACKEND_URL = "https://admin-panel-0mra.onrender.com";
+
 const firebaseConfig = {
-    apiKey: "AIzaSyD-Secure-Production-Key",
-    authDomain: "wingo-vip-759b9.firebaseapp.com",
-    projectId: "wingo-vip-759b9",
-    storageBucket: "wingo-vip-759b9.appspot.com",
-    messagingSenderId: "1234567890",
-    appId: "1:1234567890:web:secure"
+apiKey: "AIzaSyD-Secure-Production-Key",
+authDomain: "wingo-vip-759b9.firebaseapp.com",
+projectId: "wingo-vip-759b9",
+storageBucket: "wingo-vip-759b9.appspot.com",
+messagingSenderId: "1234567890",
+appId: "1:1234567890:web:secure"
 };
 
 if (!firebase.apps.length) {
-    firebase.initializeApp(firebaseConfig);
+firebase.initializeApp(firebaseConfig);
 }
 const db = firebase.firestore();
 
@@ -308,717 +290,655 @@ let lockedDepositAmount = 0;
 let bharatPeMerchantVpa = "BHARATPE2G0B0C7V5V23545@unitype";
 const merchantName = "KAJIM UDDIN";
 
-let currentDeviceUuid = localStorage.getItem("app_device_id");
-if (!currentDeviceUuid) {
-    currentDeviceUuid = 'DEV-' + Math.random().toString(36).substring(2, 15) + '-' + Date.now();
-    localStorage.setItem("app_device_id", currentDeviceUuid);
+// Unique Device ID generation & storage for Device Authentication System
+let userDeviceId = localStorage.getItem('wingo_device_id');
+if(!userDeviceId) {
+userDeviceId = 'DEV-' + Math.random().toString(36).substring(2, 15) + Math.random().toString(36).substring(2, 15);
+localStorage.setItem('wingo_device_id', userDeviceId);
 }
 
 const basePricing = {
-    "1 Day VIP": 150,
-    "3 Days VIP": 300,
-    "7 Days VIP": 500,
-    "15 Days VIP": 700,
-    "20 Days VIP": 850,
-    "30 Days VIP": 1250,
-    "Unlimited VIP": 3000
+"1 Day VIP": 150,
+"3 Days VIP": 300,
+"7 Days VIP": 500,
+"15 Days VIP": 700,
+"20 Days VIP": 850,
+"30 Days VIP": 1250,
+"Unlimited VIP": 3000
 };
 
 db.collection("system_config").doc("payment_settings").get().then(doc => {
-    if(doc.exists && doc.data().upiId) {
-        bharatPeMerchantVpa = doc.data().upiId;
-        document.getElementById('displayUpiId').innerText = bharatPeMerchantVpa;
-    }
+if(doc.exists && doc.data().upiId) {
+bharatPeMerchantVpa = doc.data().upiId;
+document.getElementById('displayUpiId').innerText = bharatPeMerchantVpa;
+}
 }).catch(err => console.log("Config load err:", err));
 
 function openCreditModal() {
-    document.getElementById('modalUpiInput').value = bharatPeMerchantVpa;
-    document.getElementById('creditModal').style.display = 'flex';
+document.getElementById('modalUpiInput').value = bharatPeMerchantVpa;
+document.getElementById('creditModal').style.display = 'flex';
 }
 
 function closeCreditModal() {
-    document.getElementById('creditModal').style.display = 'none';
-    document.getElementById('modalUpiMsg').innerText = '';
-}
-
-function openPendingPaymentsModal() {
-    document.getElementById('pendingPaymentsModal').style.display = 'flex';
-    loadPendingPayments();
-}
-
-function closePendingPaymentsModal() {
-    document.getElementById('pendingPaymentsModal').style.display = 'none';
-}
-
-function loadPendingPayments() {
-    const listDiv = document.getElementById('pendingPaymentsList');
-    listDiv.innerHTML = '<p style="font-size: 12px; color: #777; text-align: center;">Fetching pending payments...</p>';
-
-    db.collection("pending_utrs").where("status", "==", "pending").get().then((snapshot) => {
-        if(snapshot.empty) {
-            listDiv.innerHTML = '<p style="font-size: 12px; color: #777; text-align: center;">No pending payments found.</p>';
-            return;
-        }
-
-        let html = "";
-        snapshot.forEach(docSnap => {
-            let d = docSnap.data();
-            let docId = docSnap.id;
-            let dateStr = d.createdAt ? new Date(d.createdAt.toDate ? d.createdAt.toDate() : d.createdAt).toLocaleString() : 'Recent';
-            
-            html += `<div style="background:#131a29; border:1px solid #333; padding:10px; border-radius:6px; margin-bottom:8px;">
-                <div style="display:flex; justify-content:space-between; font-size:12px; margin-bottom:4px;">
-                    <span><b>User:</b> ${d.username}</span>
-                    <span style="color:#ffcc00; font-weight:bold;">₹${d.amount}</span>
-                </div>
-                <div style="font-size:12px; color:#aaa; margin-bottom:6px;">
-                    <span><b>UTR:</b> ${d.utr}</span> | <span>${dateStr}</span>
-                </div>
-                <div style="display:flex; gap:6px;">
-                    <button onclick="approvePendingPayment('${docId}', '${d.username}', ${d.amount}, '${d.utr}')" style="background:#00ff66; color:#0b0f19; padding:5px; font-size:11px; flex:1;">APPROVE & CREDIT</button>
-                    <button onclick="rejectPendingPayment('${docId}')" style="background:#ff4d4d; color:#fff; padding:5px; font-size:11px; flex:1;">REJECT</button>
-                </div>
-            </div>`;
-        });
-        listDiv.innerHTML = html;
-    }).catch(err => {
-        listDiv.innerHTML = `<p style="font-size: 12px; color: #ff4d4d; text-align: center;">Error loading: ${err.message}</p>`;
-    });
-}
-
-function approvePendingPayment(docId, targetUser, amount, utr) {
-    if(!confirm(`Approve ₹${amount} for user '${targetUser}' with UTR ${utr}?`)) return;
-
-    db.runTransaction((transaction) => {
-        const userRef = db.collection("users").doc(targetUser);
-        const pendingRef = db.collection("pending_utrs").doc(docId);
-        const verifiedRef = db.collection("verified_utrs").doc(utr);
-
-        return transaction.get(userRef).then((userDoc) => {
-            if (!userDoc.exists) throw new Error("User does not exist!");
-            
-            let uData = userDoc.data();
-            let newWallet = (uData.wallet || 0) + Number(amount);
-            let newDeposit = (uData.todayDeposit || 0) + Number(amount);
-            let newRole = uData.role || "Customer";
-
-            if (newRole === "Customer" && newDeposit >= 1000) {
-                newRole = "Reseller";
-            }
-
-            transaction.update(userRef, {
-                wallet: newWallet,
-                todayDeposit: newDeposit,
-                role: newRole
-            });
-
-            transaction.set(verifiedRef, {
-                utr: utr,
-                username: targetUser,
-                amount: Number(amount),
-                approvedBy: currentUser,
-                usedAt: new Date()
-            });
-
-            transaction.update(pendingRef, { status: "approved" });
-        });
-    }).then(() => {
-        alert("Payment approved and wallet credited successfully!");
-        loadPendingPayments();
-    }).catch((err) => {
-        alert("Approval failed: " + err.message);
-    });
-}
-
-function rejectPendingPayment(docId) {
-    if(!confirm("Are you sure you want to reject this payment?")) return;
-
-    db.collection("pending_utrs").doc(docId).update({
-        status: "rejected"
-    }).then(() => {
-        alert("Payment rejected.");
-        loadPendingPayments();
-    }).catch(err => {
-        alert("Error rejecting: " + err.message);
-    });
+document.getElementById('creditModal').style.display = 'none';
+document.getElementById('modalUpiMsg').innerText = '';
 }
 
 function saveMasterUpiId() {
-    const newUpi = document.getElementById('modalUpiInput').value.trim();
-    const msg = document.getElementById('modalUpiMsg');
-    if(!newUpi) {
-        msg.innerHTML = '<span class="error">UPI ID cannot be empty!</span>';
-        return;
-    }
-    db.collection("system_config").doc("payment_settings").set({
-        upiId: newUpi
-    }, { merge: true }).then(() => {
-        bharatPeMerchantVpa = newUpi;
-        document.getElementById('displayUpiId').innerText = bharatPeMerchantVpa;
-        msg.innerHTML = '<span class="success">✅ UPI ID updated successfully!</span>';
-    });
+const newUpi = document.getElementById('modalUpiInput').value.trim();
+const msg = document.getElementById('modalUpiMsg');
+if(!newUpi) {
+msg.innerHTML = '<span class="error">UPI ID cannot be empty!</span>';
+return;
 }
-
-function masterDirectCreditWallet() {
-    const targetUname = document.getElementById('masterCreditUser').value.trim();
-    const amtInput = document.getElementById('masterCreditAmount').value.trim();
-    const msg = document.getElementById('masterCreditMsg');
-
-    if(!targetUname || !amtInput) {
-        msg.innerHTML = '<span class="error">Enter username and amount!</span>';
-        return;
-    }
-
-    const creditAmt = Number(amtInput);
-    if(isNaN(creditAmt) || creditAmt <= 0) {
-        msg.innerHTML = '<span class="error">Enter a valid amount!</span>';
-        return;
-    }
-
-    msg.innerHTML = '<span style="color: #00ff66;">Crediting wallet...</span>';
-
-    const userRef = db.collection("users").doc(targetUname);
-
-    db.runTransaction((transaction) => {
-        return transaction.get(userRef).then((userDoc) => {
-            if(!userDoc.exists) {
-                throw new Error("User does not exist!");
-            }
-            const uData = userDoc.data();
-            let newWallet = (uData.wallet || 0) + creditAmt;
-            let newDeposit = (uData.todayDeposit || 0) + creditAmt;
-            let newRole = uData.role || "Customer";
-
-            if(newRole === "Customer" && newDeposit >= 1000) {
-                newRole = "Reseller";
-            }
-
-            transaction.update(userRef, {
-                wallet: newWallet,
-                todayDeposit: newDeposit,
-                role: newRole
-            });
-        });
-    }).then(() => {
-        msg.innerHTML = `<span class="success">✅ Successfully credited ₹${creditAmt} to '${targetUname}'!</span>`;
-        document.getElementById('masterCreditUser').value = '';
-        document.getElementById('masterCreditAmount').value = '';
-    }).catch((err) => {
-        msg.innerHTML = `<span class="error">Error: ${err.message}</span>`;
-    });
+db.collection("system_config").doc("payment_settings").set({
+upiId: newUpi
+}, { merge: true }).then(() => {
+bharatPeMerchantVpa = newUpi;
+document.getElementById('displayUpiId').innerText = bharatPeMerchantVpa;
+msg.innerHTML = '<span class="success">✅ UPI ID updated successfully!</span>';
+});
 }
 
 function requestBackendOtp(context) {
-    const phoneInputId = context === 'reg' ? 'regPhone' : 'forgotPhone';
-    const msgId = context === 'reg' ? 'regMsg' : 'forgotMsg';
-    const rawPhone = document.getElementById(phoneInputId).value.trim();
-    const msgElem = document.getElementById(msgId);
+const phoneInputId = context === 'reg' ? 'regPhone' : 'forgotPhone';
+const msgId = context === 'reg' ? 'regMsg' : 'forgotMsg';
+const rawPhone = document.getElementById(phoneInputId).value.trim();
+const msgElem = document.getElementById(msgId);
 
-    if(!rawPhone || !rawPhone.startsWith('+')) {
-        msgElem.innerHTML = '<span class="error">कृपया कंट्री कोड (+91 आदि) अनिवार्य रूप से डालें!</span>';
-        return;
-    }
+if(!rawPhone || !rawPhone.startsWith('+')) {
+alert("कृपया सही कंट्री कोड के साथ मोबाइल नंबर डालें (जैसे: +919876543210)");
+return;
+}
 
-    msgElem.innerHTML = '<span style="color: #00ff66;">Sending WhatsApp OTP...</span>';
+msgElem.innerHTML = '<span style="color: #00ff66;">Sending OTP via backend server...</span>';
 
-    fetch(`${BACKEND_URL}/api/send-otp`, {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ phone: rawPhone })
-    })
-    .then(res => res.json())
-    .then(data => {
-        if(data.success) {
-            msgElem.innerHTML = '<span class="success">✅ OTP sent successfully via WhatsApp!</span>';
-        } else {
-            msgElem.innerHTML = `<span class="error">❌ Failed: ${data.message}</span>`;
-        }
-    })
-    .catch(error => {
-        msgElem.innerHTML = `<span class="error">❌ Server connection failed: ${error.message}</span>`;
-    });
+fetch(`${BACKEND_URL}/api/send-otp`, {
+method: 'POST',
+headers: { 'Content-Type': 'application/json' },
+body: JSON.stringify({ phone: rawPhone })
+})
+.then(response => response.json())
+.then(data => {
+if(data.success) {
+msgElem.innerHTML = '<span class="success">✅ OTP successfully sent via backend!</span>';
+} else {
+msgElem.innerHTML = `<span class="error">❌ Failed: ${data.message}</span>`;
+}
+})
+.catch(error => {
+msgElem.innerHTML = `<span class="error">❌ Server connection failed: ${error.message}</span>`;
+});
 }
 
 function switchView(view) {
-    document.getElementById('loginFormContainer').style.display = 'none';
-    document.getElementById('registerContainer').style.display = 'none';
-    document.getElementById('forgotContainer').style.display = 'none';
-    document.getElementById('dashboardContainer').style.display = 'none';
+document.getElementById('loginFormContainer').style.display = 'none';
+document.getElementById('registerContainer').style.display = 'none';
+document.getElementById('forgotContainer').style.display = 'none';
+document.getElementById('dashboardContainer').style.display = 'none';
 
-    if(view === 'register') {
-        document.getElementById('registerContainer').style.display = 'block';
-    } else if(view === 'forgot') {
-        document.getElementById('forgotContainer').style.display = 'block';
-    } else if(view === 'dashboard') {
-        document.getElementById('dashboardContainer').style.display = 'block';
-    } else {
-        document.getElementById('loginFormContainer').style.display = 'block';
-    }
+if(view === 'register') {
+document.getElementById('registerContainer').style.display = 'block';
+} else if(view === 'forgot') {
+document.getElementById('forgotContainer').style.display = 'block';
+} else if(view === 'dashboard') {
+document.getElementById('dashboardContainer').style.display = 'block';
+} else {
+document.getElementById('loginFormContainer').style.display = 'block';
+}
 }
 
 function handleRegister() {
-    const user = document.getElementById('regUser').value.trim();
-    const pass = document.getElementById('regPass').value.trim();
-    const passConfirm = document.getElementById('regPassConfirm').value.trim();
-    const rawPhone = document.getElementById('regPhone').value.trim();
-    const otp = document.getElementById('regOtp').value.trim();
-    const msg = document.getElementById('regMsg');
+const user = document.getElementById('regUser').value.trim();
+const pass = document.getElementById('regPass').value.trim();
+const passConfirm = document.getElementById('regPassConfirm').value.trim();
+const rawPhone = document.getElementById('regPhone').value.trim();
+const otp = document.getElementById('regOtp').value.trim();
+const msg = document.getElementById('regMsg');
 
-    if(!user || !pass || !rawPhone || !otp) {
-        msg.innerHTML = '<span class="error">All fields are mandatory!</span>';
-        return;
-    }
-    if(pass !== passConfirm) {
-        msg.innerHTML = '<span class="error">Passwords do not match!</span>';
-        return;
-    }
-    if(!rawPhone.startsWith('+')) {
-        msg.innerHTML = '<span class="error">कृपया कंट्री कोड (+91 आदि) अनिवार्य रूप से डालें!</span>';
-        return;
-    }
+if(!user || !pass || !rawPhone || !otp) {
+msg.innerHTML = '<span class="error">All fields are mandatory!</span>';
+return;
+}
 
-    msg.innerHTML = '<span style="color: #00ff66;">Verifying OTP and registering...</span>';
+if(!rawPhone.startsWith('+')) {
+msg.innerHTML = '<span class="error">कृपया कंट्री कोड (+91 आदि) अनिवार्य रूप से डालें!</span>';
+return;
+}
 
-    fetch(`${BACKEND_URL}/api/verify-otp`, {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ phone: rawPhone, otp: otp })
-    })
-    .then(res => res.json())
-    .then(data => {
-        if(!data.success) {
-            msg.innerHTML = `<span class="error">❌ ${data.message}</span>`;
-            return;
-        }
+if(pass !== passConfirm) {
+msg.innerHTML = '<span class="error">Passwords do not match!</span>';
+return;
+}
 
-        db.collection("users").doc(user).get().then(docSnap => {
-            if(docSnap.exists) {
-                msg.innerHTML = '<span class="error">Username already exists! Choose another.</span>';
-                return;
-            }
+msg.innerHTML = '<span style="color:#00ff66;">Verifying OTP via backend...</span>';
 
-            db.collection("users").doc(user).set({
-                username: user,
-                password: pass,
-                phone: rawPhone,
-                role: "Customer",
-                wallet: 0,
-                todayDeposit: 0,
-                createdAt: new Date()
-            }).then(() => {
-                msg.innerHTML = '<span class="success">✅ Registration successful! Please login.</span>';
-                setTimeout(() => switchView('login'), 1500);
-            });
-        });
-    })
-    .catch(err => {
-        msg.innerHTML = `<span class="error">Verification error: ${err.message}</span>`;
-    });
+fetch(`${BACKEND_URL}/api/verify-otp`, {
+method: 'POST',
+headers: { 'Content-Type': 'application/json' },
+body: JSON.stringify({ phone: rawPhone, otp: otp })
+})
+.then(res => res.json())
+.then(data => {
+if(!data.success) {
+msg.innerHTML = `<span class="error">❌ ${data.message || 'Invalid OTP'}</span>`;
+return;
+}
+
+db.collection("users").doc(user).get().then((doc) => {
+if(doc.exists) {
+msg.innerHTML = '<span class="error">Username already taken!</span>';
+} else {
+db.collection("users").doc(user).set({
+username: user,
+password: pass,
+phone: rawPhone,
+role: "Customer",
+wallet: 0,
+todayDeposit: 0,
+todayKeys: 0,
+deviceId: "",
+createdAt: new Date()
+}).then(() => {
+msg.innerHTML = '<span class="success">Account created successfully! Please login.</span>';
+setTimeout(() => switchView('login'), 1500);
+});
+}
+});
+})
+.catch(err => {
+msg.innerHTML = `<span class="error">Verification error: ${err.message}</span>`;
+});
 }
 
 function handleResetPassword() {
-    const user = document.getElementById('forgotUser').value.trim();
-    const rawPhone = document.getElementById('forgotPhone').value.trim();
-    const otp = document.getElementById('forgotOtp').value.trim();
-    const newPass = document.getElementById('forgotNewPass').value.trim();
-    const msg = document.getElementById('forgotMsg');
+const user = document.getElementById('forgotUser').value.trim();
+const rawPhone = document.getElementById('forgotPhone').value.trim();
+const otp = document.getElementById('forgotOtp').value.trim();
+const newPass = document.getElementById('forgotNewPass').value.trim();
+const msg = document.getElementById('forgotMsg');
 
-    if(!user || !rawPhone || !otp || !newPass) {
-        msg.innerHTML = '<span class="error">All fields are required!</span>';
-        return;
-    }
+if(!user || !rawPhone || !otp || !newPass) {
+msg.innerHTML = '<span class="error">All fields are mandatory!</span>';
+return;
+}
 
-    msg.innerHTML = '<span style="color: #00ff66;">Verifying OTP and updating password...</span>';
+if(!rawPhone.startsWith('+')) {
+msg.innerHTML = '<span class="error">कृपया कंट्री कोड (+91 आदि) अनिवार्य रूप से डालें!</span>';
+return;
+}
 
-    fetch(`${BACKEND_URL}/api/verify-otp`, {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ phone: rawPhone, otp: otp })
-    })
-    .then(res => res.json())
-    .then(data => {
-        if(!data.success) {
-            msg.innerHTML = `<span class="error">❌ ${data.message}</span>`;
-            return;
-        }
+msg.innerHTML = '<span style="color:#00ff66;">Verifying OTP...</span>';
 
-        db.collection("users").doc(user).get().then(docSnap => {
-            if(!docSnap.exists) {
-                msg.innerHTML = '<span class="error">User not found!</span>';
-                return;
-            }
+fetch(`${BACKEND_URL}/api/verify-otp`, {
+method: 'POST',
+headers: { 'Content-Type': 'application/json' },
+body: JSON.stringify({ phone: rawPhone, otp: otp })
+})
+.then(res => res.json())
+.then(data => {
+if(!data.success) {
+msg.innerHTML = `<span class="error">❌ ${data.message || 'Invalid OTP'}</span>`;
+return;
+}
 
-            db.collection("users").doc(user).update({
-                password: newPass
-            }).then(() => {
-                msg.innerHTML = '<span class="success">✅ Password updated successfully!</span>';
-                setTimeout(() => switchView('login'), 1500);
-            });
-        });
-    })
-    .catch(err => {
-        msg.innerHTML = `<span class="error">Error: ${err.message}</span>`;
-    });
+db.collection("users").doc(user).get().then((doc) => {
+if(!doc.exists) {
+msg.innerHTML = '<span class="error">Username not found!</span>';
+return;
+}
+doc.ref.update({ password: newPass }).then(() => {
+msg.innerHTML = '<span class="success">Password updated successfully! Please login.</span>';
+setTimeout(() => switchView('login'), 1500);
+});
+});
+})
+.catch(err => {
+msg.innerHTML = `<span class="error">Error: ${err.message}</span>`;
+});
 }
 
 function handleLogin() {
-    const user = document.getElementById('loginUser').value.trim();
-    const pass = document.getElementById('loginPass').value.trim();
-    const msg = document.getElementById('loginMsg');
+const user = document.getElementById('loginUser').value.trim();
+const pass = document.getElementById('loginPass').value.trim();
+const msg = document.getElementById('loginMsg');
 
-    if(!user || !pass) {
-        msg.innerHTML = '<span class="error">Enter username and password!</span>';
-        return;
-    }
+if(!user || !pass) {
+msg.innerHTML = '<span class="error">Enter username and password!</span>';
+return;
+}
 
-    db.collection("users").doc(user).get().then((doc) => {
-        if(!doc.exists) {
-            msg.innerHTML = '<span class="error">User not found! Register first.</span>';
-            return;
-        }
+db.collection("users").doc(user).get().then((doc) => {
+if(!doc.exists) {
+msg.innerHTML = '<span class="error">User not found! Register first.</span>';
+return;
+}
+const data = doc.data();
+if(data.password !== pass) {
+msg.innerHTML = '<span class="error">Incorrect password!</span>';
+return;
+}
 
-        const data = doc.data();
-        if(data.password !== pass) {
-            msg.innerHTML = '<span class="error">Incorrect password!</span>';
-            return;
-        }
+currentUser = user;
+currentRole = data.role || "Customer";
+userWallet = data.wallet || 0;
+todayDepositVal = data.todayDeposit || 0;
+keyCountVal = data.todayKeys || 0;
+initDashboard();
+}).catch(err => {
+msg.innerHTML = `<span class="error">Login error: ${err.message}</span>`;
+});
+}
 
-        currentUser = user;
-        currentRole = data.role || "Customer";
-        userWallet = data.wallet || 0;
-        todayDepositVal = data.todayDeposit || 0;
+function initDashboard() {
+switchView('dashboard');
+document.getElementById('dashUsername').innerText = currentUser;
+document.getElementById('dashRole').innerText = currentRole;
+document.getElementById('walletBalance').innerText = userWallet;
+document.getElementById('keyCount').innerText = keyCountVal;
 
-        document.getElementById('dashUsername').innerText = currentUser;
-        document.getElementById('dashRole').innerText = currentRole;
-        document.getElementById('walletBalance').innerText = userWallet;
-        document.getElementById('keyCount').innerText = keyCountVal;
-
-        if(currentRole === "Master") {
-            document.getElementById('masterPanel').style.display = 'block';
-            document.getElementById('masterCreditBadge').style.display = 'flex';
-            document.getElementById('masterPendingBadge').style.display = 'flex';
-            document.getElementById('depositSectionCard').style.display = 'none';
-            document.getElementById('depositStatsRow').style.display = 'none';
-        } else {
-            document.getElementById('masterPanel').style.display = 'none';
-            document.getElementById('masterCreditBadge').style.display = 'none';
-            document.getElementById('masterPendingBadge').style.display = 'none';
-            document.getElementById('depositSectionCard').style.display = 'block';
-            document.getElementById('depositStatsRow').style.display = 'block';
-            document.getElementById('totalDeposit').innerText = todayDepositVal;
-        }
-
-        updateDynamicPricing();
-        switchView('dashboard');
-    }).catch(err => {
-        msg.innerHTML = `<span class="error">Login error: ${err.message}</span>`;
-    });
+if(currentRole === "Master") {
+document.getElementById('masterPanel').style.display = 'block';
+document.getElementById('masterCreditBadge').style.display = 'flex';
+document.getElementById('depositSectionCard').style.display = 'none';
+document.getElementById('depositStatsRow').style.display = 'none';
+loadMasterPendingPayments();
+} else {
+document.getElementById('masterPanel').style.display = 'none';
+document.getElementById('masterCreditBadge').style.display = 'none';
+document.getElementById('depositSectionCard').style.display = 'block';
+document.getElementById('depositStatsRow').style.display = 'block';
+document.getElementById('totalDeposit').innerText = todayDepositVal;
+}
+updateDynamicPricing();
 }
 
 function updateDynamicPricing() {
-    const pkg = document.getElementById('keyPackage').value;
-    let price = basePricing[pkg] || 150;
-    if(currentRole === "Reseller" || currentRole === "Master") {
-        price = Math.round(price * 0.4);
-        document.getElementById('priceTierLabel').innerText = "(Reseller 60% Discount Price)";
-    } else {
-        document.getElementById('priceTierLabel').innerText = "(Customer Price)";
-    }
-    document.getElementById('displayPrice').innerText = price;
+const pkg = document.getElementById('keyPackage').value;
+let price = basePricing[pkg] || 150;
+if(currentRole === "Reseller" || currentRole === "Master") {
+price = Math.round(price * 0.4);
+document.getElementById('priceTierLabel').innerText = "(Reseller 60% Discount Applied)";
+} else {
+document.getElementById('priceTierLabel').innerText = "(Customer Price)";
+}
+document.getElementById('displayPrice').innerText = price;
 }
 
 function generateGameServerKey() {
-    const pkg = document.getElementById('keyPackage').value;
-    let price = basePricing[pkg] || 150;
-    if(currentRole === "Reseller" || currentRole === "Master") {
-        price = Math.round(price * 0.4);
-    }
+const pkg = document.getElementById('keyPackage').value;
+let price = basePricing[pkg] || 150;
+if(currentRole === "Reseller" || currentRole === "Master") {
+price = Math.round(price * 0.4);
+}
 
-    if(userWallet < price) {
-        alert("Insufficient wallet balance! Please deposit funds.");
-        return;
-    }
+if(userWallet < price) {
+alert("Insufficient wallet balance! Please deposit funds.");
+return;
+}
 
-    userWallet -= price;
-    keyCountVal++;
+userWallet -= price;
+keyCountVal += 1;
+document.getElementById('walletBalance').innerText = userWallet;
+document.getElementById('keyCount').innerText = keyCountVal;
 
-    const generatedKey = 'WINGO-H-' + Math.random().toString(36).substring(2, 10).toUpperCase() + '-' + Date.now().toString().slice(-4);
+const randomNum = Math.floor(100000 + Math.random() * 900000);
+const generatedKey = "WINGO-H-" + randomNum;
 
-    db.collection("keys").doc(generatedKey).set({
-        key: generatedKey,
-        package: pkg,
-        createdBy: currentUser,
-        deviceId: "",
-        status: "active",
-        createdAt: new Date()
-    }).then(() => {
-        return db.collection("users").doc(currentUser).update({
-            wallet: userWallet
-        });
-    }).then(() => {
-        document.getElementById('walletBalance').innerText = userWallet;
-        document.getElementById('keyCount').innerText = keyCountVal;
-        const keyBox = document.getElementById('purchaseKeyBox');
-        keyBox.innerText = generatedKey;
-        document.getElementById('copyPurchaseKeyBtn').style.display = 'inline-block';
+document.getElementById('purchaseKeyBox').innerText = generatedKey;
+document.getElementById('copyPurchaseKeyBtn').style.display = 'inline-block';
 
-        const history = document.getElementById('keyHistoryList');
-        if(history.innerHTML.includes('No key history')) history.innerHTML = '';
-        history.innerHTML += `<div class="history-item"><span>Key: ${generatedKey} (${pkg})</span><span style="color:#ff4d4d;">-₹${price}</span></div>`;
-    }).catch(err => {
-        alert("Key generation failed: " + err.message);
-    });
+db.collection("users").doc(currentUser).set({
+wallet: userWallet,
+todayKeys: keyCountVal
+}, { merge: true });
+
+db.collection("keys").doc(generatedKey).set({
+key: generatedKey,
+package: pkg,
+createdBy: currentUser,
+deviceId: "",
+status: "active",
+createdAt: new Date()
+}).catch((err) => { console.log(err); });
 }
 
 function masterGenerateKey() {
-    const pkg = document.getElementById('masterPackageType').value;
-    const generatedKey = 'WINGO-MASTER-' + Math.random().toString(36).substring(2, 10).toUpperCase() + '-' + Date.now().toString().slice(-4);
+const customPrefix = document.getElementById('masterCustomUsername').value.trim() || "WINGO-H";
+const randomNum = Math.floor(100000 + Math.random() * 900000);
+const generatedKey = `${customPrefix.toUpperCase()}-${randomNum}`;
 
-    db.collection("keys").doc(generatedKey).set({
-        key: generatedKey,
-        package: pkg,
-        createdBy: currentUser,
-        deviceId: "",
-        status: "active",
-        createdAt: new Date()
-    }).then(() => {
-        const keyBox = document.getElementById('masterKeyBox');
-        keyBox.innerText = generatedKey;
-        document.getElementById('copyMasterKeyBtn').style.display = 'inline-block';
-    }).catch((err) => { console.log(err); });
+document.getElementById('masterKeyBox').innerText = generatedKey;
+document.getElementById('copyMasterKeyBtn').style.display = 'inline-block';
+
+db.collection("keys").doc(generatedKey).set({
+key: generatedKey,
+package: document.getElementById('masterPackageType').value,
+createdBy: currentUser,
+deviceId: "",
+status: "active",
+createdAt: new Date()
+}).catch((err) => { console.log(err); });
 }
 
 function copyTextToClipboard(elementId) {
-    const text = document.getElementById(elementId).innerText;
-    navigator.clipboard.writeText(text).then(() => { alert("Copied to clipboard!"); });
+const text = document.getElementById(elementId).innerText;
+navigator.clipboard.writeText(text).then(() => { alert("Copied to clipboard!"); });
 }
 
+// 5-Minute Cooldown & QR Generation with Device ID Binding
 function startSecureDeposit() {
-    const amtInput = document.getElementById('depositAmount').value;
-    const amt = parseFloat(amtInput);
-    if(!amt || amt <= 0) {
-        alert("Please enter a valid deposit amount!");
-        return;
-    }
-
-    lockedDepositAmount = amt;
-    document.getElementById('exactAmountText').innerText = "₹" + lockedDepositAmount;
-    document.getElementById('qrSection').style.display = 'block';
-
-    const upiUri = `upi://pay?pa=${bharatPeMerchantVpa}&pn=${encodeURIComponent(merchantName)}&am=${lockedDepositAmount}&cu=INR`;
-    const qrImageUrl = `https://api.qrserver.com/v1/create-qr-code/?size=150x150&data=${encodeURIComponent(upiUri)}`;
-    document.getElementById('qrImage').src = qrImageUrl;
-
-    let duration = 9 * 60;
-    const timerDisplay = document.getElementById('timerCountdown');
-    if(paymentTimerRef) clearInterval(paymentTimerRef);
-
-    paymentTimerRef = setInterval(() => {
-        let minutes = parseInt(duration / 60, 10);
-        let seconds = parseInt(duration % 60, 10);
-        minutes = minutes < 10 ? "0" + minutes : minutes;
-        seconds = seconds < 10 ? "0" + seconds : seconds;
-        timerDisplay.textContent = minutes + ":" + seconds;
-
-        if (--duration < 0) {
-            clearInterval(paymentTimerRef);
-            timerDisplay.textContent = "EXPIRED";
-        }
-    }, 1000);
+const amtInput = document.getElementById('depositAmount').value;
+const amt = parseFloat(amtInput);
+if(!amt || amt <= 0) {
+alert("Please enter a valid deposit amount!");
+return;
 }
 
+lockedDepositAmount = amt;
+document.getElementById('exactAmountText').innerText = "₹" + lockedDepositAmount;
+document.getElementById('qrSection').style.display = 'block';
+
+// Disable button & trigger 5-Minute Cooldown
+const getQrBtn = document.getElementById('getQrBtn');
+getQrBtn.disabled = true;
+getQrBtn.style.opacity = '0.5';
+getQrBtn.innerText = "QR Generated (Cooldown Active)";
+
+const upiString = `upi://pay?pa=${bharatPeMerchantVpa}&pn=${encodeURIComponent(merchantName)}&am=${lockedDepositAmount}&cu=INR`;
+const qrApiUrl = `https://api.qrserver.com/v1/create-qr-code/?size=150x150&data=${encodeURIComponent(upiString)}`;
+document.getElementById('qrImage').src = qrApiUrl;
+
+// Save Device ID and session lock info to database instantly
+db.collection("device_sessions").doc(currentUser).set({
+username: currentUser,
+deviceId: userDeviceId,
+lockedAmount: lockedDepositAmount,
+generatedAt: new Date()
+}, { merge: true });
+
+// 5-Minute Timer Countdown Logic
+let duration = 5 * 60;
+const timerDisplay = document.getElementById('timerCountdown');
+if(paymentTimerRef) clearInterval(paymentTimerRef);
+
+paymentTimerRef = setInterval(() => {
+let minutes = parseInt(duration / 60, 10);
+let seconds = parseInt(duration % 60, 10);
+minutes = minutes < 10 ? "0" + minutes : minutes;
+seconds = seconds < 10 ? "0" + seconds : seconds;
+timerDisplay.textContent = minutes + ":" + seconds;
+
+if (--duration < 0) {
+clearInterval(paymentTimerRef);
+timerDisplay.textContent = "EXPIRED";
+document.getElementById('depositMsg').innerHTML = '<span class="error">⏱️ Payment timer expired. If payment was made, it will be sent to Master for manual review.</span>';
+autoSendToPendingList(lockedDepositAmount);
+}
+}, 1000);
+
+// Release 5-minute cooldown for generating new QR after 5 minutes
+setTimeout(() => {
+getQrBtn.disabled = false;
+getQrBtn.style.opacity = '1';
+getQrBtn.innerText = "LOCK AMOUNT & GET QR";
+}, 5 * 60 * 1000);
+}
+
+// Automatic handling if timer expires before verification
+function autoSendToPendingList(amount) {
+const dummyUtr = "EXPIRED-" + Math.floor(100000 + Math.random() * 900000);
+db.collection("pending_payments").doc(dummyUtr).set({
+utr: dummyUtr,
+username: currentUser,
+amount: amount,
+deviceId: userDeviceId,
+status: "pending",
+createdAt: new Date()
+});
+}
+
+// Random UTR Verification with 24-Hour Duplication Lock & 5-Min Window
 function verifyUtrAndCredit() {
-    const utr = document.getElementById('utrInput').value.trim();
-    const msg = document.getElementById('depositMsg');
+const utr = document.getElementById('utrInput').value.trim();
+const msg = document.getElementById('depositMsg');
 
-    if(!utr || utr.length !== 12 || !/^\d{12}$/.test(utr)) {
-        msg.innerHTML = '<span class="error">Strict UTR Error: Must be exactly 12 digits!</span>';
-        return;
-    }
+if(utr.length !== 12) {
+msg.innerHTML = '<span class="error">Strict UTR Error: Must be exactly 12 digits!</span>';
+return;
+}
 
-    if(!lockedDepositAmount || lockedDepositAmount <= 0) {
-        msg.innerHTML = '<span class="error">Please lock deposit amount and generate QR first!</span>';
-        return;
-    }
+msg.innerHTML = '<span style="color: #00ff66;">Verifying Random UTR & Device Authentication...</span>';
 
-    msg.innerHTML = '<span style="color: #00ff66;">Verifying UTR instantly...</span>';
+// Check 24-Hour UTR Duplication Lock in database
+db.collection("verified_utrs").doc(utr).get().then((docSnapshot) => {
+if(docSnapshot.exists) {
+const data = docSnapshot.data();
+const hoursPassed = (new Date() - data.usedAt.toDate()) / (1000 * 60 * 60);
+if(hoursPassed < 24) {
+msg.innerHTML = '<span class="error">❌ Duplicate UTR! This UTR was already used within the last 24 hours.</span>';
+return;
+}
+}
 
-    fetch(`${BACKEND_URL}/api/verify-utr-instant`, {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({
-            username: currentUser,
-            utr: utr,
-            amount: lockedDepositAmount,
-            deviceId: currentDeviceUuid
-        })
-    })
-    .then(res => res.json())
-    .then(data => {
-        if(!data.success) {
-            if(data.isPending) {
-                msg.innerHTML = `<span class="error">⏳ आपका पेमेंट 9 मिनट का समय पार होने के कारण Pending लिस्ट में चला गया है। मास्टर द्वारा duyệt (approve) होने पर वॉलेट में जुड़ जाएगा।</span>`;
-            } else {
-                msg.innerHTML = `<span class="error">❌ ${data.message}</span>`;
-            }
-            return;
-        }
+// Proceed with instant credit for random UTR within window
+userWallet += lockedDepositAmount;
+todayDepositVal += lockedDepositAmount;
 
-        userWallet += lockedDepositAmount;
-        todayDepositVal += lockedDepositAmount;
+if(currentRole === "Customer" && lockedDepositAmount >= 1000) {
+currentRole = "Reseller";
+document.getElementById('dashRole').innerText = "Reseller (Upgraded)";
+}
 
-        if(currentRole === "Customer" && todayDepositVal >= 1000) {
-            currentRole = "Reseller";
-            document.getElementById('dashRole').innerText = "Reseller (Upgraded)";
-        }
+db.collection("users").doc(currentUser).update({
+wallet: userWallet,
+role: currentRole,
+todayDeposit: todayDepositVal,
+deviceId: userDeviceId
+}).then(() => {
+// Save to 24-hour lock collection
+db.collection("verified_utrs").doc(utr).set({
+utr: utr,
+username: currentUser,
+amount: lockedDepositAmount,
+usedAt: new Date()
+});
 
-        document.getElementById('walletBalance').innerText = userWallet;
-        document.getElementById('totalDeposit').innerText = todayDepositVal;
-        msg.innerHTML = '<span class="success">✅ UTR Verified! Wallet Credited Successfully.</span>';
-        
-        document.getElementById('qrSection').style.display = 'none';
-        document.getElementById('depositAmount').value = '';
-        document.getElementById('utrInput').value = '';
-        
-        if(paymentTimerRef) clearInterval(paymentTimerRef);
-        updateDynamicPricing();
+document.getElementById('walletBalance').innerText = userWallet;
+document.getElementById('totalDeposit').innerText = todayDepositVal;
+msg.innerHTML = '<span class="success">✅ Random UTR Verified & Wallet Credited Successfully!</span>';
+document.getElementById('qrSection').style.display = 'none';
+document.getElementById('depositAmount').value = '';
+document.getElementById('utrInput').value = '';
+if(paymentTimerRef) clearInterval(paymentTimerRef);
+updateDynamicPricing();
 
-        const history = document.getElementById('keyHistoryList');
-        if(history.innerHTML.includes('No transaction history')) history.innerHTML = '';
-        history.innerHTML += `<div class="history-item"><span>Deposit UTR: ${utr}</span><span style="color:#00ff66;">+₹${lockedDepositAmount}</span></div>`;
-    })
-    .catch(err => {
-        msg.innerHTML = `<span class="error">Verification connection failed: ${err.message}</span>`;
-    });
+const history = document.getElementById('keyHistoryList');
+history.innerHTML += `<div class="history-item"><span>Random UTR: ${utr}</span><span style="color:#00ff66;">+₹${lockedDepositAmount}</span></div>`;
+});
+
+}).catch((err) => {
+// If any network/technical server issue occurs during verification, send to Master Pending list automatically
+db.collection("pending_payments").doc(utr).set({
+utr: utr,
+username: currentUser,
+amount: lockedDepositAmount,
+deviceId: userDeviceId,
+status: "pending",
+createdAt: new Date()
+}).then(() => {
+msg.innerHTML = '<span class="error">⚠️ Network/Technical delay detected. Payment sent to Master for manual review!</span>';
+});
+});
+}
+
+// Master Panel Functions for Manual Approval / Rejection of Pending Payments
+function loadMasterPendingPayments() {
+db.collection("pending_payments").where("status", "==", "pending").get().then((querySnapshot) => {
+let html = "";
+querySnapshot.forEach((doc) => {
+let d = doc.data();
+html += `<div style="font-size:11px; padding:6px; border-bottom:1px solid #333; display:flex; justify-content:space-between; align-items:center;">
+<span><b>${d.username}</b>: ₹${d.amount}<br><span style="color:#aaa;">UTR: ${d.utr}</span></span>
+<div>
+<button onclick="masterApprovePayment('${doc.id}', '${d.username}', ${d.amount})" style="background:#00ff66; color:#000; padding:3px 6px; font-size:10px; margin-right:4px; width:auto;">Approve</button>
+<button onclick="masterRejectPayment('${doc.id}')" style="background:#ff4d4d; color:#fff; padding:3px 6px; font-size:10px; width:auto;">Reject</button>
+</div>
+</div>`;
+});
+document.getElementById('masterPendingList').innerHTML = html || '<p style="font-size: 11px; color: #777; text-align: center; margin: 4px 0;">No pending payments.</p>';
+}).catch(err => console.log(err));
+}
+
+function masterApprovePayment(docId, targetUser, amount) {
+db.collection("users").doc(targetUser).get().then((userDoc) => {
+if(userDoc.exists) {
+let uData = userDoc.data();
+let newWallet = (uData.wallet || 0) + amount;
+let newDeposit = (uData.todayDeposit || 0) + amount;
+let newRole = uData.role;
+if(newRole === "Customer" && amount >= 1000) { newRole = "Reseller"; }
+
+db.collection("users").doc(targetUser).update({
+wallet: newWallet,
+todayDeposit: newDeposit,
+role: newRole
+});
+}
+db.collection("pending_payments").doc(docId).update({ status: "approved" }).then(() => {
+alert("Payment approved and credited to user!");
+loadMasterPendingPayments();
+});
+});
+}
+
+function masterRejectPayment(docId) {
+db.collection("pending_payments").doc(docId).update({ status: "rejected" }).then(() => {
+alert("Payment rejected.");
+loadMasterPendingPayments();
+});
 }
 
 function promoteToReseller() {
-    const target = document.getElementById('targetResellerUser').value.trim();
-    const msg = document.getElementById('promoteMsg');
-
-    if(!target) {
-        msg.innerHTML = '<span class="error">Enter username!</span>';
-        return;
-    }
-
-    db.collection("users").doc(target).get().then((doc) => {
-        if(!doc.exists) {
-            msg.innerHTML = `<span class="error">❌ Invalid Username!</span>`;
-            return;
-        }
-
-        db.collection("users").doc(target).set({ role: "Reseller" }, { merge: true }).then(() => {
-            msg.innerHTML = `<span class="success">✅ User '${target}' successfully promoted!</span>`;
-            document.getElementById('targetResellerUser').value = '';
-        });
-    });
+const target = document.getElementById('targetResellerUser').value.trim();
+const msg = document.getElementById('promoteMsg');
+if(!target) {
+msg.innerHTML = '<span class="error">Enter username!</span>';
+return;
+}
+db.collection("users").doc(target).get().then((doc) => {
+if(!doc.exists) {
+msg.innerHTML = `<span class="error">❌ Invalid Username!</span>`;
+return;
+}
+db.collection("users").doc(target).set({ role: "Reseller" }, { merge: true }).then(() => {
+msg.innerHTML = `<span class="success">✅ User '${target}' successfully promoted!</span>`;
+document.getElementById('targetResellerUser').value = '';
+});
+});
 }
 
 function removeUserAccount() {
-    const target = document.getElementById('banTargetUser').value.trim();
-    const msg = document.getElementById('banMsg');
-
-    if(!target) {
-        msg.innerHTML = '<span class="error">Enter username to delete!</span>';
-        return;
-    }
-
-    db.collection("users").doc(target).delete().then(() => {
-        msg.innerHTML = `<span class="success">✅ User '${target}' removed successfully!</span>`;
-        document.getElementById('banTargetUser').value = '';
-    }).catch(err => {
-        msg.innerHTML = `<span class="error">Error: ${err.message}</span>`;
-    });
+const target = document.getElementById('banTargetUser').value.trim();
+const msg = document.getElementById('banMsg');
+if(!target) {
+msg.innerHTML = '<span class="error">Enter username!</span>';
+return;
+}
+db.collection("users").doc(target).delete().then(() => {
+msg.innerHTML = `<span class="success">User ${target} removed.</span>`;
+document.getElementById('banTargetUser').value = '';
+});
 }
 
 function resetDeviceBinding() {
-    const keyId = document.getElementById('resetKeyInput').value.trim();
-    const msg = document.getElementById('resetMsg');
-
-    if(!keyId) {
-        msg.innerHTML = '<span class="error">Enter key or session ID!</span>';
-        return;
-    }
-
-    db.collection("keys").doc(keyId).set({ deviceId: "" }, { merge: true }).then(() => {
-        msg.innerHTML = `<span class="success">✅ Device binding reset successfully for key!</span>`;
-        document.getElementById('resetKeyInput').value = '';
-    }).catch(err => {
-        msg.innerHTML = `<span class="error">Error: ${err.message}</span>`;
-    });
+const keyText = document.getElementById('resetKeyInput').value.trim();
+const msg = document.getElementById('resetMsg');
+if(!keyText) {
+msg.innerHTML = '<span class="error">Enter key!</span>';
+return;
+}
+db.collection("keys").doc(keyText).get().then((doc) => {
+if(!doc.exists) {
+msg.innerHTML = '<span class="error">Key not found!</span>';
+return;
+}
+doc.ref.update({ deviceId: "" }).then(() => {
+msg.innerHTML = '<span class="success">Device lock successfully reset!</span>';
+document.getElementById('resetKeyInput').value = '';
+});
+});
 }
 
 function handleLogout() {
-    currentUser = null;
-    currentRole = "Customer";
-    userWallet = 0;
-    todayDepositVal = 0;
-    keyCountVal = 0;
-    if(paymentTimerRef) clearInterval(paymentTimerRef);
-
-    document.getElementById('loginUser').value = '';
-    document.getElementById('loginPass').value = '';
-    document.getElementById('loginMsg').innerHTML = '';
-    document.getElementById('resellerSettingsPanel').style.display = 'none';
-
-    switchView('login');
+currentUser = null;
+currentRole = "Customer";
+switchView('login');
+document.getElementById('loginUser').value = '';
+document.getElementById('loginPass').value = '';
+document.getElementById('loginMsg').innerHTML = '';
+document.getElementById('resellerSettingsPanel').style.display = 'none';
 }
 
 function toggleSettingsPanel() {
-    const panel = document.getElementById('resellerSettingsPanel');
-    if(panel.style.display === 'block') {
-        panel.style.display = 'none';
-    } else {
-        panel.style.display = 'block';
-        if(currentRole === "Master") {
-            document.getElementById('settingsPanelTitle').innerText = "👑 Master Global Panel";
-            document.getElementById('resellerPersonalView').style.display = 'none';
-            document.getElementById('masterGlobalView').style.display = 'block';
-            loadMasterGlobalData();
-        } else {
-            document.getElementById('settingsPanelTitle').innerText = "📊 My Reseller History & Stats";
-            document.getElementById('masterGlobalView').style.display = 'none';
-            document.getElementById('resellerPersonalView').style.display = 'block';
-            loadResellerHistory();
-        }
-    }
+const panel = document.getElementById('resellerSettingsPanel');
+if(panel.style.display === 'block') {
+panel.style.display = 'none';
+} else {
+panel.style.display = 'block';
+if(currentRole === "Master") {
+document.getElementById('settingsPanelTitle').innerText = "👑 Master Global Panel";
+document.getElementById('resellerPersonalView').style.display = 'none';
+document.getElementById('masterGlobalView').style.display = 'block';
+loadMasterGlobalData();
+} else {
+document.getElementById('settingsPanelTitle').innerText = "📊 My Reseller History & Stats";
+document.getElementById('masterGlobalView').style.display = 'none';
+document.getElementById('resellerPersonalView').style.display = 'block';
+loadResellerHistory();
+}
+}
 }
 
 function loadResellerHistory() {
-    db.collection("keys").where("createdBy", "==", currentUser).get().then((querySnapshot) => {
-        let count = querySnapshot.size;
-        document.getElementById('resellerTotalKeysCount').innerText = count;
-        let html = "";
-        querySnapshot.forEach(doc => {
-            let d = doc.data();
-            html += `<div class="history-item"><span>Key: ${d.key}</span><span style="color:#00ff66;">${d.package}</span></div>`;
-        });
-        document.getElementById('resellerHistoryList').innerHTML = html || '<p style="font-size: 12px; color: #777; text-align: center;">No key history recorded yet.</p>';
-    }).catch(err => { console.log(err); });
+db.collection("keys").where("createdBy", "==", currentUser).get().then((querySnapshot) => {
+let historyHTML = "";
+let count = 0;
+querySnapshot.forEach((doc) => {
+const d = doc.data();
+count++;
+historyHTML += `<div class="history-item"><span>🔑 ${d.key} (${d.package})</span><span style="color:#00ff66;">Active</span></div>`;
+});
+document.getElementById('resellerTotalKeysCount').innerText = count;
+if(count > 0) {
+document.getElementById('resellerHistoryList').innerHTML = historyHTML;
+} else {
+document.getElementById('resellerHistoryList').innerHTML = '<p style="font-size: 12px; color: #777; text-align: center;">No history recorded.</p>';
+}
+}).catch(err => { console.log(err); });
 }
 
 function loadMasterGlobalData() {
-    Promise.all([
-        db.collection("users").get(),
-        db.collection("keys").get()
-    ]).then(([userSnapshot, keySnapshot]) => {
-        let userStats = {};
-        userSnapshot.forEach(doc => {
-            let d = doc.data();
-            userStats[d.username || doc.id] = { role: d.role || "Customer", wallet: d.wallet || 0, keysCount: 0 };
-        });
-        keySnapshot.forEach(doc => {
-            let d = doc.data();
-            if(userStats[d.createdBy]) { userStats[d.createdBy].keysCount++; }
-        });
-
-        let html = "";
-        for(let uname in userStats) {
-            let u = userStats[uname];
-            html += `<div class="history-item"><span><b>${uname}</b> (${u.role}) - Wallet: ₹${u.wallet}</span><span style="color:#00ff66;">Keys: ${u.keysCount}</span></div>`;
-        }
-        document.getElementById('masterGlobalView').innerHTML = html || '<p style="font-size: 12px; color: #777; text-align: center;">No records found.</p>';
-    }).catch(err => { console.log(err); });
+Promise.all([
+db.collection("users").get(),
+db.collection("keys").get()
+]).then(([userSnapshot, keySnapshot]) => {
+let userStats = {};
+userSnapshot.forEach(doc => {
+let d = doc.data();
+userStats[d.username] = { role: d.role || "Customer", wallet: d.wallet || 0, keysCount: 0 };
+});
+keySnapshot.forEach(doc => {
+let d = doc.data();
+if(userStats[d.createdBy]) { userStats[d.createdBy].keysCount++; }
+});
+let html = "";
+for(let uname in userStats) {
+let u = userStats[uname];
+html += `<div class="history-item"><span><b>${uname}</b> (${u.role}) - Wallet: ₹${u.wallet}</span><span style="color:#00ff66;">Keys: ${u.keysCount}</span></div>`;
+}
+document.getElementById('masterGlobalView').innerHTML = html || '<p style="font-size: 12px; color: #777; text-align: center;">No records found.</p>';
+}).catch(err => { console.log(err); });
 }
 </script>
 </body>
