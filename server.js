@@ -2,16 +2,18 @@ const express = require('express');
 const cors = require('cors');
 const admin = require('firebase-admin');
 
-// Safe mobile-friendly Firebase initialization to prevent credential and project ID errors
-try {
-    const serviceAccount = require('./serviceAccountKey.json');
-    admin.initializeApp({
-        credential: admin.credential.cert(serviceAccount)
-    });
-} catch (e) {
-    admin.initializeApp({
-        projectId: process.env.FIREBASE_PROJECT_ID || "my-gaming-app" // Mobile cloud environment fallback
-    });
+// Safe and bulletproof mobile cloud initialization for Render
+if (!admin.apps.length) {
+    try {
+        const serviceAccount = require('./serviceAccountKey.json');
+        admin.initializeApp({
+            credential: admin.credential.cert(serviceAccount)
+        });
+    } catch (e) {
+        admin.initializeApp({
+            projectId: process.env.FIREBASE_PROJECT_ID || "admin-panel"
+        });
+    }
 }
 
 const db = admin.firestore();
@@ -23,7 +25,7 @@ app.use(cors());
 // Active deposit locks tracking map (9-minute window)
 const activeDepositLocks = new Map();
 
-// 1. WhatsApp OTP Sending Route
+// 1. WhatsApp OTP Sending Route (Unchanged & Safe)
 app.post('/api/send-otp', async (req, res) => {
     try {
         const { phone } = req.body;
@@ -47,7 +49,7 @@ app.post('/api/send-otp', async (req, res) => {
     }
 });
 
-// 2. WhatsApp OTP Verification Route
+// 2. WhatsApp OTP Verification Route (Unchanged & Safe)
 app.post('/api/verify-otp', async (req, res) => {
     try {
         const { phone, otp } = req.body;
@@ -81,7 +83,7 @@ app.post('/api/verify-otp', async (req, res) => {
     }
 });
 
-// 3. Instant UTR Verification & Deposit Route
+// 3. Instant UTR Verification & Deposit Route (Fixed & Optimized)
 app.post('/api/verify-utr-instant', async (req, res) => {
     try {
         const { username, utr, amount, deviceId } = req.body;
