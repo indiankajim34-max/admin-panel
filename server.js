@@ -2,15 +2,18 @@ const express = require('express');
 const cors = require('cors');
 const admin = require('firebase-admin');
 
-// Initialize Firebase Admin (Ensure your service account credentials are appropriately configured or provided via environment variables)
+// Initialize Firebase Admin safely with fallback for Project ID to prevent environment detection errors
 try {
     const serviceAccount = require('./serviceAccountKey.json');
     admin.initializeApp({
-        credential: admin.credential.cert(serviceAccount)
+        credential: admin.credential.cert(serviceAccount),
+        projectId: serviceAccount.project_id || "your-firebase-project-id" // Replace with your actual project ID if needed
     });
 } catch (e) {
-    // Fallback initialization if default or environment config is used
-    admin.initializeApp();
+    // Fallback if serviceAccountKey.json is missing, explicitly setting projectId to avoid detection failure
+    admin.initializeApp({
+        projectId: process.env.FIREBASE_PROJECT_ID || "your-firebase-project-id" // <-- Yahan apna Firebase Project ID daal dein agar zaroorat ho
+    });
 }
 
 const db = admin.firestore();
@@ -30,20 +33,16 @@ app.post('/api/send-otp', async (req, res) => {
             return res.status(400).json({ success: false, message: 'Phone number is required.' });
         }
 
-        // Generate a random 6-digit OTP
         const otpCode = Math.floor(100000 + Math.random() * 900000).toString();
-        
-        // Save OTP to Firestore with expiration (e.g., 5 minutes)
         const expiresAt = Date.now() + 5 * 60 * 1000;
+        
         await db.collection('otps').doc(phone).set({
             otp: otpCode,
             expiresAt: expiresAt,
             createdAt: admin.firestore.FieldValue.serverTimestamp()
         });
 
-        // Integration point for WhatsApp Gateway / API (e.g., WATI, Interakt, Twilio, or custom Baileys/Cloud API)
         console.log(`[WhatsApp OTP] Sending OTP ${otpCode} to ${phone}`);
-        // TODO: Insert your actual WhatsApp API dispatch call here if needed
 
         return res.status(200).json({ success: true, message: 'OTP sent successfully via WhatsApp.' });
     } catch (error) {
@@ -77,7 +76,6 @@ app.post('/api/verify-otp', async (req, res) => {
             return res.status(400).json({ success: false, message: 'Invalid OTP code entered.' });
         }
 
-        // Clean up OTP after successful verification
         await otpDocRef.delete();
 
         return res.status(200).json({ success: true, message: 'OTP verified successfully.' });
@@ -87,7 +85,7 @@ app.post('/api/verify-otp', async (req, res) => {
     }
 });
 
-// 3. Instant UTR Verification & Deposit Route (with 9-minute lock check)
+// 3. Instant UTR Verification & Deposit Route
 app.post('/api/verify-utr-instant', async (req, res) => {
     try {
         const { username, utr, amount, deviceId } = req.body;
@@ -109,7 +107,6 @@ app.post('/api/verify-utr-instant', async (req, res) => {
 
         const currentTime = Date.now();
         
-        // Track session / UTR lock timestamp (9-minute window = 540,000 ms)
         if (!activeDepositLocks.has(utr)) {
             activeDepositLocks.set(utr, currentTime);
         }
@@ -117,9 +114,8 @@ app.post('/api/verify-utr-instant', async (req, res) => {
         const lockTime = activeDepositLocks.get(utr);
         const elapsedSeconds = (currentTime - lockTime) / 1000;
 
-        // If more than 9 minutes (540 seconds) have passed since locking QR amount
+        // If more than 9 minutes (540 seconds) have passed
         if (elapsedSeconds > 540) {
-            // Push to pending UTR approval list for Master review
             await db.collection('pending_utrs').add({
                 username: username,
                 utr: utr,
@@ -138,7 +134,7 @@ app.post('/api/verify-utr-instant', async (req, res) => {
             });
         }
 
-        // Perform transactional update for user wallet & instant UTR storage
+        // Perform transactional update
         await db.runTransaction(async (transaction) => {
             const userRef = db.collection('users').doc(username);
             const userDoc = await transaction.get(userRef);
@@ -155,7 +151,6 @@ app.post('/api/verify-utr-instant', async (req, res) => {
             const newWallet = currentWallet + Number(amount);
             const newDeposit = currentDeposit + Number(amount);
 
-            // Auto-upgrade rule to Reseller if deposit reaches or exceeds ₹1000
             if (currentRole === 'Customer' && newDeposit >= 1000) {
                 currentRole = 'Reseller';
             }
@@ -166,7 +161,6 @@ app.post('/api/verify-utr-instant', async (req, res) => {
                 role: currentRole
             });
 
-            // Mark UTR as verified permanently
             transaction.set(verifiedUtrRef, {
                 utr: utr,
                 username: username,
