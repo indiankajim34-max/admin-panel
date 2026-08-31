@@ -1,13 +1,4 @@
 const express = require('express');
-const firebaseAdmin = require('firebase-admin');
-
-// Initialize Firebase Admin with your existing project config securely
-if (!firebaseAdmin.apps.length) {
-    firebaseAdmin.initializeApp({
-        projectId: "wingo-vip-759b9"
-    });
-}
-const db = firebaseAdmin.firestore();
 const cors = require('cors');
 const bodyParser = require('body-parser');
 const axios = require('axios');
@@ -145,56 +136,6 @@ app.post('/api/verify-otp', async (req, res) => {
     } catch (err) {
         console.error('Server Error in verify-otp:', err.message);
         return res.status(500).json({ success: false, message: 'Error during verification.' });
-    }
-});
-
-// ==========================================
-// DIRECT FIREBASE PAYMENT WEBHOOK & VERIFICATION
-// ==========================================
-
-app.post('/api/telegram-webhook', async (req, res) => {
-    try {
-        const message = req.body.message || req.body.edited_message;
-        if (message && message.text) {
-            const text = message.text;
-            
-            const utrMatch = text.match(/\b\d{12}\b/);
-            const amountMatch = text.match(/Rs\.?\s*([\d\.]+)/i) || text.match(/INR\s*([\d\.]+)/i);
-
-            if (utrMatch) {
-                const utr = utrMatch[0];
-                const amount = amountMatch ? amountMatch[1] : '0';
-
-                // Save directly to Firebase Firestore collections securely using Admin SDK
-                await db.collection('payments').doc(utr).set({
-                    utr: utr,
-                    amount: amount,
-                    rawText: text,
-                    createdAt: Date.now()
-                });
-                console.log(`Payment saved to Firebase for UTR: ${utr}`);
-            }
-        }
-        res.status(200).send('OK');
-    } catch (error) {
-        console.error('Firebase Webhook Error:', error);
-        res.status(500).send('Internal Server Error');
-    }
-});
-
-app.get('/api/verify-payment/:utr', async (req, res) => {
-    try {
-        const utr = req.params.utr;
-        const docRef = db.collection('payments').doc(utr);
-        const docSnap = await docRef.get();
-
-        if (docSnap.exists) {
-            return res.status(200).json({ success: true, data: docSnap.data() });
-        }
-        return res.status(404).json({ success: false, message: 'Payment not found' });
-    } catch (error) {
-        console.error('Verification Error:', error);
-        return res.status(500).json({ success: false, message: 'Error verifying payment' });
     }
 });
 
