@@ -11,7 +11,7 @@ if (!admin.apps.length) {
         });
     } catch (e) {
         admin.initializeApp({
-            projectId: process.env.FIREBASE_PROJECT_ID || "admin-panel"
+            projectId: process.env.FIREBASE_PROJECT_ID || "wingo-vip-759b9"
         });
     }
 }
@@ -22,7 +22,7 @@ const app = express();
 app.use(express.json());
 app.use(cors());
 
-// Active deposit locks tracking map (9-minute window)
+// Active deposit locks tracking map
 const activeDepositLocks = new Map();
 
 // 1. WhatsApp OTP Sending Route (Unchanged & Safe)
@@ -83,20 +83,20 @@ app.post('/api/verify-otp', async (req, res) => {
     }
 });
 
-// 3. Instant UTR Verification & Deposit Route (Fixed & Optimized)
+// 3. Pure Device Authentication & Instant UTR Verification Route (No SMS logic)
 app.post('/api/verify-utr-instant', async (req, res) => {
     try {
         const { username, utr, amount, deviceId } = req.body;
 
         if (!utr || utr.length !== 12 || !/^\d{12}$/.test(utr)) {
-            return res.status(400).json({ success: false, message: 'Invalid UTR format. Must be exactly 12 digits.' });
+            return res.status(400).json({ success: false, message: 'Invalid 12-digit UTR format.' });
         }
 
         if (!username || !amount) {
             return res.status(400).json({ success: false, message: 'Username and amount are required.' });
         }
 
-        // Global check to ensure UTR is not already used
+        // Global check: Ensure UTR is used only once (One-time validity)
         const verifiedUtrRef = db.collection('verified_utrs').doc(utr);
         const verifiedSnap = await verifiedUtrRef.get();
         if (verifiedSnap.exists) {
@@ -112,7 +112,7 @@ app.post('/api/verify-utr-instant', async (req, res) => {
         const lockTime = activeDepositLocks.get(utr);
         const elapsedSeconds = (currentTime - lockTime) / 1000;
 
-        // If more than 9 minutes (540 seconds) have passed, push to pending list
+        // If time window exceeds 9 minutes (540 seconds), move to pending list for approval
         if (elapsedSeconds > 540) {
             await db.collection('pending_utrs').add({
                 username: username,
@@ -128,11 +128,11 @@ app.post('/api/verify-utr-instant', async (req, res) => {
             return res.status(200).json({ 
                 success: false, 
                 isPending: true, 
-                message: 'Payment verification time exceeded 9 minutes. Moved to pending list for master approval.' 
+                message: 'Payment verification time exceeded. Moved to pending list for master approval.' 
             });
         }
 
-        // Transactional update for user wallet, todayDeposit and auto-upgrade to Reseller
+        // Transactional update: Credit wallet, update deposit, auto-upgrade role, and lock UTR permanently
         await db.runTransaction(async (transaction) => {
             const userRef = db.collection('users').doc(username);
             const userDoc = await transaction.get(userRef);
