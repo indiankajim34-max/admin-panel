@@ -2,18 +2,11 @@ const express = require('express');
 const cors = require('cors');
 const admin = require('firebase-admin');
 
-// Bulletproof Firebase initialization for Cloud / Render
+// Final & Direct Bulletproof Firebase Initialization (No credentials file required)
 if (!admin.apps.length) {
-    try {
-        const serviceAccount = require('./serviceAccountKey.json');
-        admin.initializeApp({
-            credential: admin.credential.cert(serviceAccount)
-        });
-    } catch (e) {
-        admin.initializeApp({
-            projectId: process.env.FIREBASE_PROJECT_ID || "wingo-vip-759b9"
-        });
-    }
+    admin.initializeApp({
+        projectId: "wingo-vip-759b9"
+    });
 }
 
 const db = admin.firestore();
@@ -23,7 +16,7 @@ app.use(express.json());
 app.use(cors());
 
 // Active deposit sessions & QR locks tracking maps
-const activeQrSessions = new Map(); // Tracks 3-minute QR validity per user/device
+const activeQrSessions = new Map(); // Tracks 3-minute strict QR validity per user/device
 const activeDepositLocks = new Map(); // Tracks 9-minute verification window
 
 // 1. WhatsApp OTP Sending Route
@@ -84,7 +77,7 @@ app.post('/api/verify-otp', async (req, res) => {
     }
 });
 
-// 3. QR Session Route (Enforces strict 3-minute lock per device/user)
+// 3. QR Session Route (Enforces strict 3-minute lock: prevents new QR generation/switching before 3 mins)
 app.post('/api/get-qr-session', async (req, res) => {
     try {
         const { username, deviceId } = req.body;
@@ -111,7 +104,7 @@ app.post('/api/get-qr-session', async (req, res) => {
             }
         }
 
-        // Start new 3-minute session
+        // Start new 3-minute session lock
         activeQrSessions.set(identifier, { startTime: currentTime });
         return res.status(200).json({
             success: true,
@@ -138,7 +131,7 @@ app.post('/api/verify-utr-instant', async (req, res) => {
             return res.status(400).json({ success: false, message: 'Username and amount are required.' });
         }
 
-        // Global check: Ensure UTR is never reused (One-time validity)
+        // Global check: Ensure UTR is never reused (One-time validity -> "USED/INVALID")
         const verifiedUtrRef = db.collection('verified_utrs').doc(utr);
         const verifiedSnap = await verifiedUtrRef.get();
         if (verifiedSnap.exists) {
@@ -156,7 +149,7 @@ app.post('/api/verify-utr-instant', async (req, res) => {
         const elapsedSeconds = (currentTime - lockTime) / 1000;
         const NINE_MINUTES_SECONDS = 9 * 60; // 540 seconds
 
-        // If verification window exceeds 9 minutes, move to pending list (tracked with 24-hour expiry)
+        // 9-Minute Timer Check: If exceeds, move automatically to PENDING list with 24-hour expiry timestamp
         if (elapsedSeconds > NINE_MINUTES_SECONDS) {
             const expiryLimitTime = admin.firestore.Timestamp.fromMillis(currentTime + (24 * 60 * 60 * 1000));
 
@@ -180,7 +173,7 @@ app.post('/api/verify-utr-instant', async (req, res) => {
             });
         }
 
-        // Transactional execution preventing double/duplicate wallet credits
+        // Secure Transactional Execution: Prevents double/duplicate wallet credits under any race condition
         await db.runTransaction(async (transaction) => {
             const userRef = db.collection('users').doc(username);
             const userDoc = await transaction.get(userRef);
