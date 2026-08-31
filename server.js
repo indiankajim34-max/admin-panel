@@ -1,25 +1,19 @@
-const express = require('express');
 const cors = require('cors');
-const admin = require('firebase-admin');
+const bodyParser = require('body-parser');
+const axios = require('axios');
 
-// Final & Direct Bulletproof Firebase Initialization (No credentials file required)
-if (!admin.apps.length) {
-    admin.initializeApp({
-        projectId: "wingo-vip-759b9"
-    });
-}
-
-const db = admin.firestore();
 const app = express();
+const PORT = process.env.PORT || 10000;
 
-app.use(express.json());
-app.use(cors());
+app.use(cors({ origin: '*' }));
+app.use(bodyParser.json());
 
-// Active deposit sessions & QR locks tracking maps
-const activeQrSessions = new Map(); // Tracks 3-minute strict QR validity per user/device
-const activeDepositLocks = new Map(); // Tracks 9-minute verification window
+const apiKey = 'mm_live_09db69cf493a4391dcc1c8defd511432323e1c8c602f526f4f794ee956f95d0234c880e582aeb558351c92ded80d9edb';
 
-// 1. WhatsApp OTP Sending Route
+app.get('/', (req, res) => {
+    res.status(200).send('Kajim Digital Secure OTP Server is running perfectly.');
+});
+
 app.post('/api/send-otp', async (req, res) => {
     try {
         const { phone } = req.body;
@@ -27,23 +21,59 @@ app.post('/api/send-otp', async (req, res) => {
             return res.status(400).json({ success: false, message: 'Phone number is required.' });
         }
 
-        const otpCode = Math.floor(100000 + Math.random() * 900000).toString();
-        const expiresAt = Date.now() + 5 * 60 * 1000;
-        
-        await db.collection('otps').doc(phone).set({
-            otp: otpCode,
-            expiresAt: expiresAt,
-            createdAt: admin.firestore.FieldValue.serverTimestamp()
-        });
+        const fullNumber = phone.toString().trim();
+        let isSent = false;
+        let responseDetails = null;
 
-        return res.status(200).json({ success: true, message: 'OTP sent successfully via WhatsApp.' });
-    } catch (error) {
-        console.error('Error sending OTP:', error);
-        return res.status(500).json({ success: false, message: error.message });
+        try {
+            const waRes = await axios.post('https://api.minimoth.dev/v1/otp/send', {
+                phone: fullNumber
+            }, {
+                headers: {
+                    'X-Api-Key': apiKey,
+                    'Content-Type': 'application/json',
+                    'Accept': 'application/json'
+                },
+                timeout: 10000
+            });
+            isSent = true;
+            responseDetails = waRes.data;
+        } catch (waErr) {
+            console.log('Primary API failed, trying alternative endpoint...');
+            try {
+                const altRes = await axios.post('https://api.minimoth.dev/v1/send-otp', {
+                    number: fullNumber
+                }, {
+                    headers: {
+                        'Authorization': `Bearer ${apiKey}`,
+                        'Content-Type': 'application/json'
+                    },
+                    timeout: 10000
+                });
+                isSent = true;
+                responseDetails = altRes.data;
+            } catch (altErr) {
+                console.error('All OTP endpoints failed:', altErr.response?.data || altErr.message);
+                return res.status(500).json({ 
+                    success: false, 
+                    message: 'Failed to send OTP from provider.', 
+                    error: altErr.response?.data || altErr.message 
+                });
+            }
+        }
+
+        if (isSent) {
+            return res.status(200).json({ success: true, message: 'OTP successfully sent!', data: responseDetails });
+        } else {
+            return res.status(500).json({ success: false, message: 'Failed to send OTP, please try again.' });
+        }
+
+    } catch (err) {
+        console.error('Server Error in send-otp:', err.message);
+        return res.status(500).json({ success: false, message: 'Internal server error.' });
     }
 });
 
-// 2. WhatsApp OTP Verification Route
 app.post('/api/verify-otp', async (req, res) => {
     try {
         const { phone, otp } = req.body;
@@ -51,184 +81,63 @@ app.post('/api/verify-otp', async (req, res) => {
             return res.status(400).json({ success: false, message: 'Phone number and OTP are required.' });
         }
 
-        const otpDocRef = db.collection('otps').doc(phone);
-        const otpDoc = await otpDocRef.get();
+        const fullNumber = phone.toString().trim();
+        const enteredOtp = otp.toString().trim();
 
-        if (!otpDoc.exists) {
-            return res.status(400).json({ success: false, message: 'OTP not found or expired. Please request a new one.' });
-        }
+        let isVerified = false;
+        let responseDetails = null;
 
-        const data = otpDoc.data();
-        if (Date.now() > data.expiresAt) {
-            await otpDocRef.delete();
-            return res.status(400).json({ success: false, message: 'OTP has expired. Please request a new one.' });
-        }
-
-        if (data.otp !== otp) {
-            return res.status(400).json({ success: false, message: 'Invalid OTP code entered.' });
-        }
-
-        await otpDocRef.delete();
-
-        return res.status(200).json({ success: true, message: 'OTP verified successfully.' });
-    } catch (error) {
-        console.error('Error verifying OTP:', error);
-        return res.status(500).json({ success: false, message: error.message });
-    }
-});
-
-// 3. QR Session Route (Enforces strict 3-minute lock: prevents new QR generation/switching before 3 mins)
-app.post('/api/get-qr-session', async (req, res) => {
-    try {
-        const { username, deviceId } = req.body;
-        if (!username && !deviceId) {
-            return res.status(400).json({ success: false, message: 'Username or Device ID required.' });
-        }
-
-        const identifier = username || deviceId;
-        const currentTime = Date.now();
-        const THREE_MINUTES = 3 * 60 * 1000;
-
-        if (activeQrSessions.has(identifier)) {
-            const sessionData = activeQrSessions.get(identifier);
-            const elapsed = currentTime - sessionData.startTime;
-
-            if (elapsed < THREE_MINUTES) {
-                const remainingSeconds = Math.ceil((THREE_MINUTES - elapsed) / 1000);
-                return res.status(200).json({
-                    success: true,
-                    active: true,
-                    remainingTime: remainingSeconds,
-                    message: 'Existing payment session active.'
+        try {
+            const verifyRes = await axios.post('https://api.minimoth.dev/v1/otp/verify', {
+                phone: fullNumber,
+                code: enteredOtp
+            }, {
+                headers: {
+                    'X-Api-Key': apiKey,
+                    'Content-Type': 'application/json',
+                    'Accept': 'application/json'
+                },
+                timeout: 10000
+            });
+            isVerified = true;
+            responseDetails = verifyRes.data;
+        } catch (verifyErr) {
+            console.log('Primary verify endpoint failed, trying alternative...');
+            try {
+                const altVerifyRes = await axios.post('https://api.minimoth.dev/v1/verify-otp', {
+                    number: fullNumber,
+                    code: enteredOtp
+                }, {
+                    headers: {
+                        'Authorization': `Bearer ${apiKey}`,
+                        'Content-Type': 'application/json'
+                    },
+                    timeout: 10000
+                });
+                isVerified = true;
+                responseDetails = altVerifyRes.data;
+            } catch (altVerifyErr) {
+                console.error('All verification endpoints failed:', altVerifyErr.response?.data || altVerifyErr.message);
+                return res.status(400).json({ 
+                    success: false, 
+                    message: 'Invalid OTP or verification failed.', 
+                    error: altVerifyErr.response?.data || altVerifyErr.message 
                 });
             }
         }
 
-        // Start new 3-minute session lock
-        activeQrSessions.set(identifier, { startTime: currentTime });
-        return res.status(200).json({
-            success: true,
-            active: false,
-            remainingTime: 180,
-            message: 'New QR generated successfully.'
-        });
-    } catch (error) {
-        console.error('QR Session Error:', error);
-        return res.status(500).json({ success: false, message: error.message });
+        if (isVerified) {
+            return res.status(200).json({ success: true, message: 'OTP verified successfully!', data: responseDetails });
+        } else {
+            return res.status(400).json({ success: false, message: 'Invalid OTP entered.' });
+        }
+
+    } catch (err) {
+        console.error('Server Error in verify-otp:', err.message);
+        return res.status(500).json({ success: false, message: 'Error during verification.' });
     }
 });
 
-// 4. Instant UTR Verification & Device Authentication Route
-app.post('/api/verify-utr-instant', async (req, res) => {
-    try {
-        const { username, utr, amount, deviceId } = req.body;
-
-        if (!utr || utr.length !== 12 || !/^\d{12}$/.test(utr)) {
-            return res.status(400).json({ success: false, message: 'Invalid UTR format. Must be exactly 12 digits.' });
-        }
-
-        if (!username || !amount) {
-            return res.status(400).json({ success: false, message: 'Username and amount are required.' });
-        }
-
-        // Global check: Ensure UTR is never reused (One-time validity -> "USED/INVALID")
-        const verifiedUtrRef = db.collection('verified_utrs').doc(utr);
-        const verifiedSnap = await verifiedUtrRef.get();
-        if (verifiedSnap.exists) {
-            return res.status(400).json({ success: false, message: 'USED/INVALID: This UTR has already been used!' });
-        }
-
-        const currentTime = Date.now();
-        const identifier = username || deviceId;
-        
-        if (!activeDepositLocks.has(utr)) {
-            activeDepositLocks.set(utr, currentTime);
-        }
-
-        const lockTime = activeDepositLocks.get(utr);
-        const elapsedSeconds = (currentTime - lockTime) / 1000;
-        const NINE_MINUTES_SECONDS = 9 * 60; // 540 seconds
-
-        // 9-Minute Timer Check: If exceeds, move automatically to PENDING list with 24-hour expiry timestamp
-        if (elapsedSeconds > NINE_MINUTES_SECONDS) {
-            const expiryLimitTime = admin.firestore.Timestamp.fromMillis(currentTime + (24 * 60 * 60 * 1000));
-
-            await db.collection('pending_utrs').add({
-                username: username,
-                utr: utr,
-                amount: Number(amount),
-                deviceId: deviceId || '',
-                status: 'pending',
-                createdAt: admin.firestore.FieldValue.serverTimestamp(),
-                expiresAt: expiryLimitTime
-            });
-
-            activeDepositLocks.delete(utr);
-            if (identifier) activeQrSessions.delete(identifier);
-
-            return res.status(200).json({ 
-                success: false, 
-                isPending: true, 
-                message: 'Verification time exceeded 9 minutes. Moved to pending list for master approval.' 
-            });
-        }
-
-        // Secure Transactional Execution: Prevents double/duplicate wallet credits under any race condition
-        await db.runTransaction(async (transaction) => {
-            const userRef = db.collection('users').doc(username);
-            const userDoc = await transaction.get(userRef);
-
-            if (!userDoc.exists) {
-                throw new Error('User account does not exist.');
-            }
-
-            const freshVerifiedSnap = await transaction.get(verifiedUtrRef);
-            if (freshVerifiedSnap.exists) {
-                throw new Error('USED/INVALID: This UTR has already been used!');
-            }
-
-            const userData = userDoc.data();
-            const currentWallet = userData.wallet || 0;
-            const currentDeposit = userData.todayDeposit || 0;
-            let currentRole = userData.role || 'Customer';
-
-            const newWallet = currentWallet + Number(amount);
-            const newDeposit = currentDeposit + Number(amount);
-
-            if (currentRole === 'Customer' && newDeposit >= 1000) {
-                currentRole = 'Reseller';
-            }
-
-            transaction.update(userRef, {
-                wallet: newWallet,
-                todayDeposit: newDeposit,
-                role: currentRole
-            });
-
-            transaction.set(verifiedUtrRef, {
-                utr: utr,
-                username: username,
-                amount: Number(amount),
-                deviceId: deviceId || '',
-                usedAt: admin.firestore.FieldValue.serverTimestamp()
-            });
-        });
-
-        activeDepositLocks.delete(utr);
-        if (identifier) activeQrSessions.delete(identifier);
-
-        return res.status(200).json({
-            success: true,
-            message: 'UTR verified instantly and wallet credited successfully.'
-        });
-
-    } catch (error) {
-        console.error('UTR Verification Error:', error);
-        return res.status(500).json({ success: false, message: error.message });
-    }
-});
-
-const PORT = process.env.PORT || 3000;
-app.listen(PORT, () => {
-    console.log(`Server running securely on port ${PORT}`);
+app.listen(PORT, '0.0.0.0', () => {
+    console.log(`Backend server successfully running on port ${PORT}`);
 });
