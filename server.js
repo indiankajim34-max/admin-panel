@@ -1,3 +1,4 @@
+const express = require('express');
 const cors = require('cors');
 const bodyParser = require('body-parser');
 const axios = require('axios');
@@ -90,7 +91,7 @@ app.post('/api/verify-otp', async (req, res) => {
         try {
             const verifyRes = await axios.post('https://api.minimoth.dev/v1/otp/verify', {
                 phone: fullNumber,
-                code: enteredOtp
+: enteredOtp
             }, {
                 headers: {
                     'X-Api-Key': apiKey,
