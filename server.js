@@ -29,7 +29,6 @@ app.get('/', (req, res) => {
 });
 
 // --- ORIGINAL OTP SYSTEM (Untouched & Safe) ---
-
 app.post('/api/send-otp', async (req, res) => {
     try {
         const { phone } = req.body;
@@ -45,7 +44,8 @@ app.post('/api/send-otp', async (req, res) => {
             const otpRes = await axios.post('https://api.minimoth.dev/v1/otp/send', {
                 phone: fullNumber
             }, {
-                headers: { 'Authorization': `Bearer ${apiKey}`, 'Content-Type': 'application/json' }
+                headers: { 'Authorization': `Bearer ${apiKey}`, 'Content-Type': 'application/json' },
+                timeout: 10000
             });
             responseDetails = otpRes.data;
             isSent = true;
@@ -81,7 +81,8 @@ app.post('/api/verify-otp', async (req, res) => {
                 phone: fullNumber,
                 otp: enteredOtp
             }, {
-                headers: { 'Authorization': `Bearer ${apiKey}`, 'Content-Type': 'application/json' }
+                headers: { 'Authorization': `Bearer ${apiKey}`, 'Content-Type': 'application/json' },
+                timeout: 10000
             });
             responseDetails = verifyRes.data;
             isVerified = true;
@@ -105,34 +106,70 @@ app.post('/api/incoming-sms', async (req, res) => {
     try {
         const { sender, message, text } = req.body;
         const smsBody = message || text || "";
-        console.log("Incoming SMS received:", smsBody);
+        
+        if (!smsBody) {
+            console.log("Incoming SMS received but message body is empty.");
+            return res.status(400).json({ success: false, message: 'Message content is required.' });
+        }
 
-        // Flexible Regex to extract 12-digit UTR (UPI Reference Number / Ref No / UTR)[span_0](start_span)[span_0](end_span)[span_1](start_span)[span_1](end_span)
-        const utrMatch = smsBody.match(/\b\d{12}\b/);
+        console.log(`Incoming SMS received: Sender: ${sender || 'Unknown'}, Message: ${smsBody}`);
 
-        // Improved Robust Regex to extract amount across various Indian banking SMS formats[span_2](start_span)[span_2](end_span)[span_3](start_span)[span_3](end_span)
-        const amountMatch = smsBody.match(/(?:Rs\.?|INR|₹|By Transfer|Amount[:\s]*)\s*([0-9]+(?:\.[0-9]+)?)/i) || 
-                          smsBody.match(/([0-9]+(?:\.[0-9]+)?)\s*(?:INR|rs)/i);
+        let utr = null;
+        let amount = null;
 
-        if (utrMatch) {
-            const utr = utrMatch[0];
-            const amount = amountMatch ? parseFloat(amountMatch[1]) : 0;
+        // मजबूत UTR पैटर्न (12-digit UPI reference / UTR / RRN / Ref no)
+        const utrPatterns = [
+            /(?:UTR|upi[-:\s]*ref[-:\s*number]*|reference|ref\s*no|ref|txn|transaction|rrn)[-:\s]*([0-9]{12})/i,
+            /\b([0-9]{12})\b/
+        ];
 
-            if (db) {
-                await db.collection("sms_transactions").doc(utr).set({
-                    utr: utr,
-                    amount: amount,
-                    sender: sender || "BharatPe/Bank",
-                    fullMessage: smsBody,
-                    createdAt: new Date()
-                }, { merge: true });
+        for (let pattern of utrPatterns) {
+            const match = smsBody.match(pattern);
+            if (match && match[1]) {
+                utr = match[1];
+                break;
+            }
+        }
+
+        // मजबूत Amount पैटर्न (Rs, INR, ₹ के बाद या credited/received के पास की संख्या)
+        const amountPatterns = [
+            /(?:Rs\.?|INR|₹)\s*([0-9,]+(?:\.[0-9]{1,2})?)/i,
+            /(?:credited|received|paid|by)\s*(?:rs\.?|inr|₹)?\s*([0-9,]+(?:\.[0-9]{1,2})?)/i
+        ];
+
+        for (let pattern of amountPatterns) {
+            const match = smsBody.match(pattern);
+            if (match && match[1]) {
+                const parsedAmt = parseFloat(match[1].replace(/,/g, ''));
+                if (!isNaN(parsedAmt) && parsedAmt > 0) {
+                    amount = parsedAmt;
+                    break;
+                }
+            }
+        }
+
+        if (utr && amount) {
+            console.log(`Successfully Extracted -> UTR: ${utr}, Amount: ${amount}`);
+
+            if (!db) {
+                console.error('Firestore DB not initialized on server.');
+                return res.status(500).json({ success: false, message: 'Database not initialized.' });
             }
 
-            console.log(`Saved/Updated SMS UTR: ${utr}, Amount: ${amount}`);
-            return res.status(200).json({ success: true, message: 'SMS processed and saved successfully.' });
+            // sms_transactions कलेक्शन में UTR सेव करें ताकि frontend इसे वैलिडेट कर सके
+            await db.collection("sms_transactions").doc(utr).set({
+                utr: utr,
+                amount: amount,
+                sender: sender || "BharatPe/Bank",
+                fullMessage: smsBody,
+                createdAt: new Date()
+            });
+
+            console.log(`Saved SMS UTR: ${utr}, Amount: ${amount}`);
+            return res.status(200).json({ success: true, message: 'SMS processed and saved successfully.', utr, amount });
         } else {
-            console.log("SMS received but 12-digit UTR not found in text.");
-            return res.status(400).json({ success: false, message: '12-digit UTR not found in SMS.' });
+            console.log("SMS received but UTR or Amount not found in text.");
+            return res.status(400).json({ success: false, message: 'UTR or Amount not found in SMS.' });
         }
     } catch (err) {
         console.error('Error processing incoming SMS:', err.message);
