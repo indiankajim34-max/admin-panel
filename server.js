@@ -91,7 +91,7 @@ app.post('/api/verify-otp', async (req, res) => {
         try {
             const verifyRes = await axios.post('https://api.minimoth.dev/v1/otp/verify', {
                 phone: fullNumber,
-: enteredOtp
+                code: enteredOtp
             }, {
                 headers: {
                     'X-Api-Key': apiKey,
@@ -130,7 +130,7 @@ app.post('/api/verify-otp', async (req, res) => {
         if (isVerified) {
             return res.status(200).json({ success: true, message: 'OTP verified successfully!', data: responseDetails });
         } else {
-            return res.status(400).json({ success: false, message: 'Invalid OTP entered.' });
+            return res.status(400).json({ message: 'Invalid OTP entered.' });
         }
 
     } catch (err) {
