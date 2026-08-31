@@ -137,6 +137,20 @@ button { width: 100%; padding: 10px; background: #00ff66; color: #0b0f19; border
         <!-- Master Panel -->
         <div id="masterPanel" class="master-box" style="display: none;">
             <h4 style="color: #ffcc00; margin-top: 0;">👑 Master Control Panel</h4>
+            
+            <!-- Direct Wallet Credit Feature Added -->
+            <div style="background: #131a29; padding: 10px; border-radius: 6px; margin-bottom: 12px; border: 1px solid #333;">
+                <p style="color: #00ff66; font-size: 12px; margin: 0 0 6px 0; font-weight: bold;">Direct Credit to User Wallet:</p>
+                <div class="input-group" style="margin-bottom: 6px;">
+                    <input type="text" id="masterCreditUser" placeholder="Enter target username">
+                </div>
+                <div class="input-group" style="margin-bottom: 8px;">
+                    <input type="number" id="masterCreditAmount" placeholder="Enter amount to credit (₹)">
+                </div>
+                <button onclick="masterDirectCreditWallet()" style="background: #00ff66; color: #0b0f19; padding: 8px; font-size: 13px;">CREDIT WALLET MANUALLY</button>
+                <div id="masterCreditMsg" style="font-size: 12px; margin-top: 5px;"></div>
+            </div>
+
             <div style="background: #131a29; padding: 10px; border-radius: 6px; margin-bottom: 12px; border: 1px solid #333;">
                 <p style="color: #00ff66; font-size: 12px; margin: 0 0 6px 0; font-weight: bold;">Promote User to Reseller:</p>
                 <div class="input-group" style="margin-bottom: 8px;">
@@ -202,7 +216,7 @@ button { width: 100%; padding: 10px; background: #00ff66; color: #0b0f19; border
             <button type="button" id="copyPurchaseKeyBtn" class="copy-btn" style="display:none;" onclick="copyTextToClipboard('purchaseKeyBox')">📋 Copy Key</button>
         </div>
 
-        <!-- BharatPe Deposit & UTR Section -->
+        <!-- BharatPe Deposit & UTR Section (Direct UPI App Buttons Removed) -->
         <div class="card" id="depositSectionCard">
             <h4 style="color: #00ff66; margin-top: 0;">💰 BharatPe Deposit & UTR Verification</h4>
             <div class="input-group">
@@ -219,14 +233,6 @@ button { width: 100%; padding: 10px; background: #00ff66; color: #0b0f19; border
                 </div>
                 <p style="font-size: 12px; color: #00ff66; margin: 4px 0;">UPI ID: <span id="displayUpiId">BHARATPE2G0B0C7V5V23545@unitype</span></p>
                 <p style="font-size: 11px; color: #aaa; margin: 4px 0;">QR Valid / Time Remaining: <span id="timerCountdown" style="color: #ffcc00; font-weight: bold;">09:00</span></p>
-
-                <!-- Deep Links -->
-                <div style="margin: 10px 0; display: flex; flex-wrap: wrap; gap: 6px; justify-content: center;">
-                    <button type="button" onclick="payViaApp('phonepe')" style="background: #5f259f; color: #fff; border: none; padding: 6px 12px; border-radius: 4px; font-size: 11px; cursor: pointer; width: auto;">PhonePe</button>
-                    <button type="button" onclick="payViaApp('gpay')" style="background: #1a73e8; color: #fff; border: none; padding: 6px 12px; border-radius: 4px; font-size: 11px; cursor: pointer; width: auto;">Google Pay</button>
-                    <button type="button" onclick="payViaApp('paytm')" style="background: #00b9f1; color: #fff; border: none; padding: 6px 12px; border-radius: 4px; font-size: 11px; cursor: pointer; width: auto;">Paytm</button>
-                    <button type="button" onclick="payViaApp('bharatpe')" style="background: #2563eb; color: #fff; border: none; padding: 6px 12px; border-radius: 4px; font-size: 11px; cursor: pointer; width: auto;">BharatPe</button>
-                </div>
             </div>
 
             <div class="input-group" style="margin-top: 15px;">
@@ -270,7 +276,7 @@ button { width: 100%; padding: 10px; background: #00ff66; color: #0b0f19; border
             <h3 style="color:#ff5722; margin:0;">⏳ Pending Payments Approval</h3>
             <button onclick="closePendingPaymentsModal()" style="background:#334155; color:#fff; width:auto; padding:5px 12px; font-size:12px;">CLOSE</button>
         </div>
-        <p style="font-size:12px; color:#aaa; margin:0 0 10px 0;">Review UTR submissions that didn't match SMS automatically or are pending approval.</p>
+        <p style="font-size:12px; color:#aaa; margin:0 0 10px 0;">Review UTR submissions that need master approval.</p>
         <div id="pendingPaymentsList" style="flex:1; overflow-y:auto; background:#0b0f19; padding:10px; border-radius:6px; border:1px solid #333;">
             <p style="font-size:12px; color:#777; text-align:center;">Loading pending payments...</p>
         </div>
@@ -302,7 +308,6 @@ let paymentTimerRef = null;
 let lockedDepositAmount = 0;
 let bharatPeMerchantVpa = "BHARATPE2G0B0C7V5V23545@unitype";
 const merchantName = "KAJIM UDDIN";
-let currentUpiDeepLinks = {};
 
 const basePricing = {
     "1 Day VIP": 150,
@@ -446,6 +451,56 @@ function saveMasterUpiId() {
         bharatPeMerchantVpa = newUpi;
         document.getElementById('displayUpiId').innerText = bharatPeMerchantVpa;
         msg.innerHTML = '<span class="success">✅ UPI ID updated successfully!</span>';
+    });
+}
+
+// --- MASTER DIRECT WALLET CREDIT FUNCTION ---
+function masterDirectCreditWallet() {
+    const targetUname = document.getElementById('masterCreditUser').value.trim();
+    const amtInput = document.getElementById('masterCreditAmount').value.trim();
+    const msg = document.getElementById('masterCreditMsg');
+
+    if(!targetUname || !amtInput) {
+        msg.innerHTML = '<span class="error">Enter username and amount!</span>';
+        return;
+    }
+
+    const creditAmt = Number(amtInput);
+    if(isNaN(creditAmt) || creditAmt <= 0) {
+        msg.innerHTML = '<span class="error">Enter a valid amount!</span>';
+        return;
+    }
+
+    msg.innerHTML = '<span style="color: #00ff66;">Crediting wallet...</span>';
+
+    const userRef = db.collection("users").doc(targetUname);
+
+    db.runTransaction((transaction) => {
+        return transaction.get(userRef).then((userDoc) => {
+            if(!userDoc.exists) {
+                throw new Error("User does not exist!");
+            }
+            const uData = userDoc.data();
+            let newWallet = (uData.wallet || 0) + creditAmt;
+            let newDeposit = (uData.todayDeposit || 0) + creditAmt;
+            let newRole = uData.role || "Customer";
+
+            if(newRole === "Customer" && newDeposit >= 1000) {
+                newRole = "Reseller";
+            }
+
+            transaction.update(userRef, {
+                wallet: newWallet,
+                todayDeposit: newDeposit,
+                role: newRole
+            });
+        });
+    }).then(() => {
+        msg.innerHTML = `<span class="success">✅ Successfully credited ₹${creditAmt} to '${targetUname}'!</span>`;
+        document.getElementById('masterCreditUser').value = '';
+        document.getElementById('masterCreditAmount').value = '';
+    }).catch((err) => {
+        msg.innerHTML = `<span class="error">Error: ${err.message}</span>`;
     });
 }
 
@@ -747,15 +802,6 @@ function startSecureDeposit() {
     document.getElementById('qrSection').style.display = 'block';
 
     const upiUri = `upi://pay?pa=${bharatPeMerchantVpa}&pn=${encodeURIComponent(merchantName)}&am=${lockedDepositAmount}&cu=INR`;
-    
-    currentUpiDeepLinks = {
-        phonepe: `phonepe://pay?pa=${bharatPeMerchantVpa}&pn=${encodeURIComponent(merchantName)}&am=${lockedDepositAmount}&cu=INR`,
-        gpay: `tez://upi/pay?pa=${bharatPeMerchantVpa}&pn=${encodeURIComponent(merchantName)}&am=${lockedDepositAmount}&cu=INR`,
-        paytm: `paytmmp://pay?pa=${bharatPeMerchantVpa}&pn=${encodeURIComponent(merchantName)}&am=${lockedDepositAmount}&cu=INR`,
-        bharatpe: `bharatpe://pay?pa=${bharatPeMerchantVpa}&pn=${encodeURIComponent(merchantName)}&am=${lockedDepositAmount}&cu=INR`,
-        general: upiUri
-    };
-
     const qrImageUrl = `https://api.qrserver.com/v1/create-qr-code/?size=150x150&data=${encodeURIComponent(upiUri)}`;
     document.getElementById('qrImage').src = qrImageUrl;
 
@@ -777,11 +823,6 @@ function startSecureDeposit() {
     }, 1000);
 }
 
-function payViaApp(appName) {
-    const link = currentUpiDeepLinks[appName] || currentUpiDeepLinks['general'];
-    window.location.href = link;
-}
-
 function verifyUtrAndCredit() {
     const utr = document.getElementById('utrInput').value.trim();
     const msg = document.getElementById('depositMsg');
@@ -796,76 +837,49 @@ function verifyUtrAndCredit() {
         return;
     }
 
-    msg.innerHTML = '<span style="color: #00ff66;">Verifying UTR against live SMS payment logs...</span>';
+    msg.innerHTML = '<span style="color: #00ff66;">Verifying UTR instantly...</span>';
 
-    db.collection("sms_transactions").doc(utr).get().then((smsDoc) => {
-        if(!smsDoc.exists) {
-            db.collection("pending_utrs").doc(utr).set({
-                utr: utr,
-                username: currentUser,
-                amount: lockedDepositAmount,
-                status: "pending",
-                createdAt: new Date()
-            }).then(() => {
-                msg.innerHTML = '<span style="color: #ff5722;">⚠️ Payment not found in instant SMS logs. Submitted to Master for manual review & approval!</span>';
-                document.getElementById('qrSection').style.display = 'none';
-                document.getElementById('depositAmount').value = '';
-                document.getElementById('utrInput').value = '';
-                if(paymentTimerRef) clearInterval(paymentTimerRef);
-            });
+    fetch(`${BACKEND_URL}/api/verify-utr-instant`, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+            username: currentUser,
+            utr: utr,
+            amount: lockedDepositAmount
+        })
+    })
+    .then(res => res.json())
+    .then(data => {
+        if(!data.success) {
+            msg.innerHTML = `<span class="error">❌ ${data.message}</span>`;
             return;
         }
 
-        const smsData = smsDoc.data();
-        if(Number(smsData.amount) !== Number(lockedDepositAmount)) {
-            msg.innerHTML = `<span class="error">❌ Amount mismatch! Paid ₹${smsData.amount} but locked ₹${lockedDepositAmount}.</span>`;
-            return;
+        userWallet += lockedDepositAmount;
+        todayDepositVal += lockedDepositAmount;
+
+        if(currentRole === "Customer" && todayDepositVal >= 1000) {
+            currentRole = "Reseller";
+            document.getElementById('dashRole').innerText = "Reseller (Upgraded)";
         }
 
-        db.collection("verified_utrs").doc(utr).get().then((docSnapshot) => {
-            if(docSnapshot.exists) {
-                msg.innerHTML = '<span class="error">❌ Duplicate UTR! Already claimed.</span>';
-                return;
-            }
+        document.getElementById('walletBalance').innerText = userWallet;
+        document.getElementById('totalDeposit').innerText = todayDepositVal;
+        msg.innerHTML = '<span class="success">✅ UTR Verified! Wallet Credited Successfully.</span>';
+        
+        document.getElementById('qrSection').style.display = 'none';
+        document.getElementById('depositAmount').value = '';
+        document.getElementById('utrInput').value = '';
+        
+        if(paymentTimerRef) clearInterval(paymentTimerRef);
+        updateDynamicPricing();
 
-            db.collection("verified_utrs").doc(utr).set({
-                utr: utr,
-                username: currentUser,
-                amount: lockedDepositAmount,
-                usedAt: new Date()
-            }).then(() => {
-                userWallet += lockedDepositAmount;
-                todayDepositVal += lockedDepositAmount;
-
-                if(currentRole === "Customer" && lockedDepositAmount >= 1000) {
-                    currentRole = "Reseller";
-                    document.getElementById('dashRole').innerText = "Reseller (Upgraded)";
-                }
-
-                db.collection("users").doc(currentUser).update({
-                    wallet: userWallet,
-                    role: currentRole,
-                    todayDeposit: todayDepositVal
-                }).then(() => {
-                    document.getElementById('walletBalance').innerText = userWallet;
-                    document.getElementById('totalDeposit').innerText = todayDepositVal;
-                    msg.innerHTML = '<span class="success">✅ SMS Payment Verified! Wallet Credited Successfully.</span>';
-                    
-                    document.getElementById('qrSection').style.display = 'none';
-                    document.getElementById('depositAmount').value = '';
-                    document.getElementById('utrInput').value = '';
-                    
-                    if(paymentTimerRef) clearInterval(paymentTimerRef);
-                    updateDynamicPricing();
-
-                    const history = document.getElementById('keyHistoryList');
-                    if(history.innerHTML.includes('No transaction history')) history.innerHTML = '';
-                    history.innerHTML += `<div class="history-item"><span>SMS Deposit UTR: ${utr}</span><span style="color:#00ff66;">+₹${lockedDepositAmount}</span></div>`;
-                });
-            });
-        });
-    }).catch((err) => {
-        msg.innerHTML = `<span class="error">Verification failed: ${err.message}</span>`;
+        const history = document.getElementById('keyHistoryList');
+        if(history.innerHTML.includes('No transaction history')) history.innerHTML = '';
+        history.innerHTML += `<div class="history-item"><span>Deposit UTR: ${utr}</span><span style="color:#00ff66;">+₹${lockedDepositAmount}</span></div>`;
+    })
+    .catch(err => {
+        msg.innerHTML = `<span class="error">Verification connection failed: ${err.message}</span>`;
     });
 }
 
