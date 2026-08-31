@@ -14,8 +14,8 @@ if (!admin.apps.length) {
         // Fallback or lightweight initialization if needed
     }
 }
-const db = admin.apps.length ? admin.firestore() : null;
 
+const db = admin.apps.length ? admin.firestore() : null;
 const app = express();
 const PORT = process.env.PORT || 10000;
 
@@ -42,40 +42,15 @@ app.post('/api/send-otp', async (req, res) => {
         let responseDetails = null;
 
         try {
-            const waRes = await axios.post('https://api.minimoth.dev/v1/otp/send', {
+            const otpRes = await axios.post('https://api.minimoth.dev/v1/otp/send', {
                 phone: fullNumber
             }, {
-                headers: {
-                    'X-Api-Key': apiKey,
-                    'Content-Type': 'application/json',
-                    'Accept': 'application/json'
-                },
-                timeout: 10000
+                headers: { 'Authorization': `Bearer ${apiKey}`, 'Content-Type': 'application/json' }
             });
+            responseDetails = otpRes.data;
             isSent = true;
-            responseDetails = waRes.data;
-        } catch (waErr) {
-            console.log('Primary API failed, trying alternative endpoint...');
-            try {
-                const altRes = await axios.post('https://api.minimoth.dev/v1/send-otp', {
-                    number: fullNumber
-                }, {
-                    headers: {
-                        'Authorization': `Bearer ${apiKey}`,
-                        'Content-Type': 'application/json'
-                    },
-                    timeout: 10000
-                });
-                isSent = true;
-                responseDetails = altRes.data;
-            } catch (altErr) {
-                console.error('All OTP endpoints failed:', altErr.response?.data || altErr.message);
-                return res.status(500).json({ 
-                    success: false, 
-                    message: 'Failed to send OTP from provider.', 
-                    error: altErr.response?.data || altErr.message 
-                });
-            }
+        } catch (apiErr) {
+            console.error('Minimoth API send-otp error:', apiErr.response?.data || apiErr.message);
         }
 
         if (isSent) {
@@ -83,7 +58,6 @@ app.post('/api/send-otp', async (req, res) => {
         } else {
             return res.status(500).json({ success: false, message: 'Failed to send OTP, please try again.' });
         }
-
     } catch (err) {
         console.error('Server Error in send-otp:', err.message);
         return res.status(500).json({ success: false, message: 'Internal server error.' });
@@ -99,55 +73,27 @@ app.post('/api/verify-otp', async (req, res) => {
 
         const fullNumber = phone.toString().trim();
         const enteredOtp = otp.toString().trim();
-
         let isVerified = false;
         let responseDetails = null;
 
         try {
             const verifyRes = await axios.post('https://api.minimoth.dev/v1/otp/verify', {
                 phone: fullNumber,
-                code: enteredOtp
+                otp: enteredOtp
             }, {
-                headers: {
-                    'X-Api-Key': apiKey,
-                    'Content-Type': 'application/json',
-                    'Accept': 'application/json'
-                },
-                timeout: 10000
+                headers: { 'Authorization': `Bearer ${apiKey}`, 'Content-Type': 'application/json' }
             });
-            isVerified = true;
             responseDetails = verifyRes.data;
-        } catch (verifyErr) {
-            console.log('Primary verify endpoint failed, trying alternative...');
-            try {
-                const altVerifyRes = await axios.post('https://api.minimoth.dev/v1/verify-otp', {
-                    number: fullNumber,
-                    code: enteredOtp
-                }, {
-                    headers: {
-                        'Authorization': `Bearer ${apiKey}`,
-                        'Content-Type': 'application/json'
-                    },
-                    timeout: 10000
-                });
-                isVerified = true;
-                responseDetails = altVerifyRes.data;
-            } catch (altVerifyErr) {
-                console.error('All verification endpoints failed:', altVerifyErr.response?.data || altVerifyErr.message);
-                return res.status(400).json({ 
-                    success: false, 
-                    message: 'Invalid OTP or verification failed.', 
-                    error: altVerifyErr.response?.data || altVerifyErr.message 
-                });
-            }
+            isVerified = true;
+        } catch (apiErr) {
+            console.error('Minimoth API verify-otp error:', apiErr.response?.data || apiErr.message);
         }
 
         if (isVerified) {
-            return res.status(200).json({ success: true, message: 'OTP verified successfully!', data: responseDetails });
+            return res.status(200).json({ success: true, message: 'OTP verified successfully.', data: responseDetails });
         } else {
             return res.status(400).json({ success: false, message: 'Invalid OTP entered.' });
         }
-
     } catch (err) {
         console.error('Server Error in verify-otp:', err.message);
         return res.status(500).json({ success: false, message: 'Error during verification.' });
@@ -155,39 +101,38 @@ app.post('/api/verify-otp', async (req, res) => {
 });
 
 // --- AUTOMATIC SMS PAYMENT VERIFICATION ROUTE ---
-
 app.post('/api/incoming-sms', async (req, res) => {
     try {
         const { sender, message, text } = req.body;
         const smsBody = message || text || "";
-        
         console.log("Incoming SMS received:", smsBody);
 
-        // Regex to extract 12-digit UTR (UPI Reference Number)
+        // Flexible Regex to extract 12-digit UTR (UPI Reference Number / Ref No / UTR)[span_0](start_span)[span_0](end_span)[span_1](start_span)[span_1](end_span)
         const utrMatch = smsBody.match(/\b\d{12}\b/);
-        // Regex to extract amount (e.g., Rs.3.0 or INR 3 or ₹3)
-        const amountMatch = smsBody.match(/(?:Rs\.?|INR|₹)\s*([0-9]+(?:\.[0-9]+)?)/i);
 
-        if (utrMatch && amountMatch) {
+        // Improved Robust Regex to extract amount across various Indian banking SMS formats[span_2](start_span)[span_2](end_span)[span_3](start_span)[span_3](end_span)
+        const amountMatch = smsBody.match(/(?:Rs\.?|INR|₹|By Transfer|Amount[:\s]*)\s*([0-9]+(?:\.[0-9]+)?)/i) || 
+                          smsBody.match(/([0-9]+(?:\.[0-9]+)?)\s*(?:INR|rs)/i);
+
+        if (utrMatch) {
             const utr = utrMatch[0];
-            const amount = parseFloat(amountMatch[1]);
+            const amount = amountMatch ? parseFloat(amountMatch[1]) : 0;
 
-            // Save the extracted SMS transaction into Firestore collection 'sms_transactions'
             if (db) {
                 await db.collection("sms_transactions").doc(utr).set({
                     utr: utr,
                     amount: amount,
-                    sender: sender || "BharatPe",
+                    sender: sender || "BharatPe/Bank",
                     fullMessage: smsBody,
                     createdAt: new Date()
-                });
+                }, { merge: true });
             }
 
-            console.log(`Saved SMS UTR: ${utr}, Amount: ${amount}`);
+            console.log(`Saved/Updated SMS UTR: ${utr}, Amount: ${amount}`);
             return res.status(200).json({ success: true, message: 'SMS processed and saved successfully.' });
         } else {
-            console.log("SMS received but UTR or Amount not found in text.");
-            return res.status(400).json({ success: false, message: 'UTR or Amount not found in SMS.' });
+            console.log("SMS received but 12-digit UTR not found in text.");
+            return res.status(400).json({ success: false, message: '12-digit UTR not found in SMS.' });
         }
     } catch (err) {
         console.error('Error processing incoming SMS:', err.message);
