@@ -2,17 +2,15 @@ const express = require('express');
 const cors = require('cors');
 const admin = require('firebase-admin');
 
-// Initialize Firebase Admin safely with fallback for Project ID to prevent environment detection errors
+// Safe mobile-friendly Firebase initialization to prevent credential and project ID errors
 try {
     const serviceAccount = require('./serviceAccountKey.json');
     admin.initializeApp({
-        credential: admin.credential.cert(serviceAccount),
-        projectId: serviceAccount.project_id || "your-firebase-project-id" // Replace with your actual project ID if needed
+        credential: admin.credential.cert(serviceAccount)
     });
 } catch (e) {
-    // Fallback if serviceAccountKey.json is missing, explicitly setting projectId to avoid detection failure
     admin.initializeApp({
-        projectId: process.env.FIREBASE_PROJECT_ID || "your-firebase-project-id" // <-- Yahan apna Firebase Project ID daal dein agar zaroorat ho
+        projectId: process.env.FIREBASE_PROJECT_ID || "my-gaming-app" // Mobile cloud environment fallback
     });
 }
 
@@ -22,7 +20,7 @@ const app = express();
 app.use(express.json());
 app.use(cors());
 
-// In-memory or tracking map for active deposit session locks (9-minute window)
+// Active deposit locks tracking map (9-minute window)
 const activeDepositLocks = new Map();
 
 // 1. WhatsApp OTP Sending Route
@@ -41,8 +39,6 @@ app.post('/api/send-otp', async (req, res) => {
             expiresAt: expiresAt,
             createdAt: admin.firestore.FieldValue.serverTimestamp()
         });
-
-        console.log(`[WhatsApp OTP] Sending OTP ${otpCode} to ${phone}`);
 
         return res.status(200).json({ success: true, message: 'OTP sent successfully via WhatsApp.' });
     } catch (error) {
@@ -98,7 +94,7 @@ app.post('/api/verify-utr-instant', async (req, res) => {
             return res.status(400).json({ success: false, message: 'Username and amount are required.' });
         }
 
-        // Check if UTR has already been used globally
+        // Global check to ensure UTR is not already used
         const verifiedUtrRef = db.collection('verified_utrs').doc(utr);
         const verifiedSnap = await verifiedUtrRef.get();
         if (verifiedSnap.exists) {
@@ -114,7 +110,7 @@ app.post('/api/verify-utr-instant', async (req, res) => {
         const lockTime = activeDepositLocks.get(utr);
         const elapsedSeconds = (currentTime - lockTime) / 1000;
 
-        // If more than 9 minutes (540 seconds) have passed
+        // If more than 9 minutes (540 seconds) have passed, push to pending list
         if (elapsedSeconds > 540) {
             await db.collection('pending_utrs').add({
                 username: username,
@@ -134,7 +130,7 @@ app.post('/api/verify-utr-instant', async (req, res) => {
             });
         }
 
-        // Perform transactional update
+        // Transactional update for user wallet, todayDeposit and auto-upgrade to Reseller
         await db.runTransaction(async (transaction) => {
             const userRef = db.collection('users').doc(username);
             const userDoc = await transaction.get(userRef);
