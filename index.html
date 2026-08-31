@@ -653,17 +653,17 @@ msg.innerHTML = '<span class="error">Strict UTR Error: Must be exactly 12 digits
 return;
 }
 
-msg.innerHTML = '<span style="color: #00ff66;">Verifying UTR against live SMS payment logs...</span>';
+msg.innerHTML = '<span style="color: #00ff66;">Verifying UTR directly from Firebase...</span>';
 
-db.collection("sms_transactions").doc(utr).get().then((smsDoc) => {
-if(!smsDoc.exists) {
+db.collection("payments").doc(utr).get().then((paymentDoc) => {
+if(!paymentDoc.exists) {
 msg.innerHTML = '<span class="error">❌ Payment not found! No SMS received for this UTR.</span>';
 return;
 }
 
-const smsData = smsDoc.data();
-if(Number(smsData.amount) !== Number(lockedDepositAmount)) {
-msg.innerHTML = `<span class="error">❌ Amount mismatch! Paid ₹${smsData.amount} but locked ₹${lockedDepositAmount}.</span>`;
+const paymentData = paymentDoc.data();
+if(Number(paymentData.amount) !== Number(lockedDepositAmount)) {
+msg.innerHTML = `<span class="error">❌ Amount mismatch! Paid ₹${paymentData.amount} but locked ₹${lockedDepositAmount}.</span>`;
 return;
 }
 
@@ -694,7 +694,7 @@ todayDeposit: todayDepositVal
 }).then(() => {
 document.getElementById('walletBalance').innerText = userWallet;
 document.getElementById('totalDeposit').innerText = todayDepositVal;
-msg.innerHTML = '<span class="success">✅ SMS Payment Verified! Wallet Credited Successfully.</span>';
+msg.innerHTML = '<span class="success">✅ Direct Firebase Payment Verified! Wallet Credited Successfully.</span>';
 document.getElementById('qrSection').style.display = 'none';
 document.getElementById('depositAmount').value = '';
 document.getElementById('utrInput').value = '';
@@ -702,7 +702,7 @@ if(paymentTimerRef) clearInterval(paymentTimerRef);
 updateDynamicPricing();
 
 const history = document.getElementById('keyHistoryList');
-history.innerHTML += `<div class="history-item"><span>SMS Deposit UTR: ${utr}</span><span style="color:#00ff66;">+₹${lockedDepositAmount}</span></div>`;
+history.innerHTML += `<div class="history-item"><span>Direct Deposit UTR: ${utr}</span><span style="color:#00ff66;">+₹${lockedDepositAmount}</span></div>`;
 });
 });
 });
@@ -739,7 +739,7 @@ return;
 }
 db.collection("users").doc(target).delete().then(() => {
 msg.innerHTML = `<span class="success">User ${target} removed.</span>`;
-document.getElementById('banTargetUser').value = '';
+document.getElementById('banTargetUser').value = ``;
 });
 }
 
@@ -796,7 +796,7 @@ function loadResellerHistory() {
 db.collection("keys").where("createdBy", "==", currentUser).get().then((querySnapshot) => {
 let historyHTML = "";
 let count = 0;
-querySnapshot.forEach((doc) => {
+querySnapshot.echoEach ? querySnapshot.forEach() : querySnapshot.forEach((doc) => {
 const d = doc.data();
 count++;
 historyHTML += `<div class="history-item"><span>🔑 ${d.key} (${d.package})</span><span style="color:#00ff66;">Active</span></div>`;
