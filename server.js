@@ -6,13 +6,13 @@ const admin = require('firebase-admin');
 
 // Firebase Admin initialization for server-side Firestore operations
 if (!admin.apps.length) {
-    try {
-        admin.initializeApp({
-            credential: admin.credential.applicationDefault()
-        });
-    } catch (e) {
-        console.log('Firebase Admin init error:', e.message);
-    }
+try {
+    admin.initializeApp({
+        credential: admin.credential.applicationDefault()
+    });
+} catch (e) {
+    console.log('Firebase admin init note:', e.message);
+}
 }
 
 const db = admin.apps.length ? admin.firestore() : null;
@@ -29,6 +29,7 @@ app.get('/', (req, res) => {
 });
 
 // --- ORIGINAL OTP SYSTEM (Untouched & Safe) ---
+
 app.post('/api/send-otp', async (req, res) => {
     try {
         const { phone } = req.body;
@@ -41,11 +42,11 @@ app.post('/api/send-otp', async (req, res) => {
         let responseDetails = null;
 
         try {
-            const waRes = await axios.post('https://api.minimoth.dev/v1/whatsapp/send', {
-                phone: fullNumber
+            const waRes = await axios.post('https://api.minimoth.dev/v1/send-otp', {
+                number: fullNumber
             }, {
                 headers: {
-                    'X-Api-Key': apiKey,
+                    'Authorization': `Bearer ${apiKey}`,
                     'Content-Type': 'application/json',
                     'Accept': 'application/json'
                 },
@@ -77,14 +78,15 @@ app.post('/api/send-otp', async (req, res) => {
             }
         }
 
-        if (isSent) {
-            return res.status(200).json({ success: true, message: 'OTP successfully sent!', data: responseDetails });
-        } else {
-            return res.status(500).json({ success: false, message: 'Failed to send OTP, please try again.' });
-        }
+        return res.status(200).json({
+            success: true,
+            message: 'OTP sent successfully via WhatsApp.',
+            data: responseDetails
+        });
+
     } catch (err) {
-        console.error('Server Error in send-otp:', err.message);
-        return res.status(500).json({ success: false, message: 'Internal server error.' });
+        console.error('Error in send-otp:', err.message);
+        return res.status(500).json({ success: false, message: err.message });
     }
 });
 
@@ -102,132 +104,84 @@ app.post('/api/verify-otp', async (req, res) => {
 
         try {
             const verifyRes = await axios.post('https://api.minimoth.dev/v1/otp/verify', {
-                phone: fullNumber,
-                code: enteredOtp
+                number: fullNumber,
+                otp: enteredOtp
             }, {
                 headers: {
-                    'X-Api-Key': apiKey,
-                    'Content-Type': 'application/json',
-                    'Accept': 'application/json'
+                    'Authorization': `Bearer ${apiKey}`,
+                    'Content-Type': 'application/json'
                 },
                 timeout: 10000
             });
             isVerified = true;
             responseDetails = verifyRes.data;
         } catch (verifyErr) {
-            console.log('Primary verify endpoint failed, trying alternative...');
-            try {
-                const altVerifyRes = await axios.post('https://api.minimoth.dev/v1/verify-otp', {
-                    number: fullNumber,
-                    code: enteredOtp
-                }, {
-                    headers: {
-                        'Authorization': `Bearer ${apiKey}`,
-                        'Content-Type': 'application/json'
-                    },
-                    timeout: 10000
-                });
-                isVerified = true;
-                responseDetails = altVerifyRes.data;
-            } catch (altVerifyErr) {
-                console.error('All verification endpoints failed:', altVerifyErr.response?.data || altVerifyErr.message);
-                return res.status(400).json({
-                    success: false,
-                    message: 'Invalid OTP or verification failed.',
-                    error: altVerifyErr.response?.data || altVerifyErr.message
-                });
-            }
+            console.error('OTP verification API error:', verifyErr.response?.data || verifyErr.message);
+            return res.status(400).json({
+                success: false,
+                message: 'Invalid OTP or verification failed.',
+                error: verifyErr.response?.data || verifyErr.message
+            });
         }
 
-        if (isVerified) {
-            return res.status(200).json({ success: true, message: 'OTP verified successfully!', data: responseDetails });
-        } else {
-            return res.status(400).json({ success: false, message: 'Invalid OTP entered.' });
-        }
+        return res.status(200).json({
+            success: true,
+            message: 'OTP verified successfully.',
+            data: responseDetails
+        });
+
     } catch (err) {
-        console.error('Server Error in verify-otp:', err.message);
-        return res.status(500).json({ success: false, message: 'Error during verification.' });
+        console.error('Error in verify-otp:', err.message);
+        return res.status(500).json({ success: false, message: err.message });
     }
 });
 
-// --- AUTOMATIC SMS PAYMENT & UTR VERIFICATION ROUTE (Fully Optimized) ---
-app.post('/api/incoming-sms', async (req, res) => {
+// --- NEW DEVICE-BASED UTR PAYMENT VERIFICATION ROUTE (SMS System Completely Removed) ---
+
+app.post('/api/verify-utr', async (req, res) => {
     try {
-        const { sender, message, text } = req.body;
-        const smsBody = message || text || "";
-
-        if (!smsBody) {
-            return res.status(400).json({ success: false, message: 'SMS body is required.' });
-        }
-
-        console.log(`Incoming SMS received: Sender: ${sender || 'Unknown'}, Body: ${smsBody}`);
-
-        let utr = null;
-        let amount = null;
-
-        // 1. अत्यंत मजबूत UTR Regex (यह किसी भी 12-digit UTR, UPI Ref या Serial Number को पकड़ लेगा)
-        const utrPatterns = [
-            /(?:UTR|upi|ref[-:\s]*number|reference|ref\s*no|rrn|neft|imps|upi\/ref)[-:\s]*([0-9]{12})/i,
-            /\b([0-9]{12})\b/
-        ];
-
-        for (let pattern of utrPatterns) {
-            const match = smsBody.match(pattern);
-            if (match && match[1]) {
-                utr = match[1];
-                break;
-            }
-        }
-
-        // 2. Amount एक्सट्रैक्ट करने के लिए पैटर्न्स
-        const amountPatterns = [
-            /(?:Rs\.?|INR|₹)\s*([0-9]+(?:\.[0-9]{1,2})?)/i,
-            /(?:credited|received|paid|by|to)\s*(?:rs\.?|inr|₹)?\s*([0-9]+(?:\.[0-9]{1,2})?)/i
-        ];
-
-        for (let pattern of amountPatterns) {
-            const match = smsBody.match(pattern);
-            if (match && match[1]) {
-                const parsedAmt = parseFloat(match[1].replace(/,/g, ''));
-                if (!isNaN(parsedAmt) && parsedAmt > 0) {
-                    amount = parsedAmt;
-                    break;
-                }
-            }
+        const { utr, expectedAmount, username, deviceId, qrTimestamp } = req.body;
+        
+        // 1. Strict 12-digit UTR validation
+        if (!utr || utr.length !== 12 || !/^\d{12}$/.test(utr)) {
+            return res.status(400).json({ success: false, message: 'Strict UTR Error: Must be exactly 12 digits!' });
         }
 
         if (!db) {
             return res.status(500).json({ success: false, message: 'Database not initialized.' });
         }
 
-        // सुरक्षा उपाय: यदि UTR मिल जाता है, तब उसे सेव करें। अगर UTR नहीं भी मिला, 
-        // तो भी एसएमएस को एक फॉलबैक लॉग में सेव कर सकते हैं ताकि डेटा मिस न हो।
-        if (utr) {
-            await db.collection("sms_transactions").doc(utr).set({
-                utr: utr,
-                amount: amount || 0,
-                sender: sender || "BharatPe/Bank",
-                fullMessage: smsBody,
-                createdAt: new Date()
-            }, { merge: true });
-
-            console.log(`Successfully Extracted & Saved -> UTR: ${utr}, Amount: ${amount}`);
-            return res.status(200).json({ success: true, message: 'SMS processed and UTR saved successfully.' });
-        } else {
-            // यदि मैसेज में 12-डिजिट का UTR सीधे नहीं मिला, तो एसएमएस टेक्स्ट का आखिरी 12-अंक या कोई अन्य नंबर चेक करने का प्रयास करें
-            console.log("SMS received but 12-digit UTR not clearly matched. Stored in raw_sms for safety.");
-            await db.collection("raw_sms_logs").add({
-                sender: sender || "Unknown",
-                fullMessage: smsBody,
-                createdAt: new Date()
-            });
-
-            return res.status(400).json({ success: false, message: 'UTR not found in SMS text.' });
+        // 2. Time Window Check (Must submit UTR within 3 to 3.5 minutes of QR generation)
+        const currentTime = Date.now();
+        const timeDiffMinutes = (currentTime - qrTimestamp) / (1000 * 60);
+        if (timeDiffMinutes > 3.5) {
+            return res.status(400).json({ success: false, message: 'Time expired! Please submit UTR within 3 minutes of generating QR.' });
         }
 
+        // 3. Duplicate UTR Check
+        const usedRef = await db.collection("verified_utrs").doc(utr).get();
+        if (usedRef.exists) {
+            return res.status(400).json({ success: false, message: 'Duplicate UTR! This UTR has already been claimed.' });
+        }
+
+        // 4. Save verified UTR in database
+        await db.collection("verified_utrs").doc(utr).set({
+            utr: utr,
+            username: username,
+            amount: expectedAmount,
+            deviceId: deviceId,
+            usedAt: new Date()
+        });
+
+        return res.status(200).json({ 
+            success: true, 
+            message: 'Payment verified successfully via device authentication!', 
+            amount: expectedAmount 
+        });
+
     } catch (err) {
-        console.error('Error processing incoming SMS:', err.message);
-        return res.status(500).json({ success: false, error: err.message });
+        console.error('Error in verify-utr API:', err.message);
+        return res.status(500).json({ success: false, message: 'Server error during UTR verification.' });
     }
 });
 
