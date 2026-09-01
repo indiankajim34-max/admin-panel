@@ -5,6 +5,7 @@ const axios = require('axios');
 const multer = require('multer');
 const fs = require('fs');
 const path = require('path');
+const { createWorker } = require('tesseract.js');
 
 const app = express();
 const PORT = process.env.PORT || 10000;
@@ -43,7 +44,7 @@ setInterval(() => {
                 if (err) return;
                 const hoursAgo = (now - stats.mtimeMs) / (1000 * 60 * 60);
                 if (hoursAgo >= 3) {
-                    fs.unlink(filePath, () => {}); 
+                    fs.unlink(filePath, () => {}); // Delete file after 3 hours
                 }
             });
         });
@@ -51,7 +52,7 @@ setInterval(() => {
 }, 15 * 60 * 1000);
 
 app.get('/', (req, res) => {
-    res.status(200).send('Kajim Digital Secure Server is running perfectly.');
+    res.status(200).send('Kajim Digital Secure OTP Server is running perfectly.');
 });
 
 app.post('/api/send-otp', async (req, res) => {
@@ -79,6 +80,7 @@ app.post('/api/send-otp', async (req, res) => {
             isSent = true;
             responseDetails = waRes.data;
         } catch (waErr) {
+            console.log('Primary API failed, trying alternative endpoint...');
             try {
                 const altRes = await axios.post('https://api.minimoth.dev/v1/send-otp', {
                     number: fullNumber
@@ -92,6 +94,7 @@ app.post('/api/send-otp', async (req, res) => {
                 isSent = true;
                 responseDetails = altRes.data;
             } catch (altErr) {
+                console.error('All OTP endpoints failed:', altErr.response?.data || altErr.message);
                 return res.status(500).json({ 
                     success: false, 
                     message: 'Failed to send OTP from provider.', 
@@ -107,6 +110,7 @@ app.post('/api/send-otp', async (req, res) => {
         }
 
     } catch (err) {
+        console.error('Server Error in send-otp:', err.message);
         return res.status(500).json({ success: false, message: 'Internal server error.' });
     }
 });
@@ -139,6 +143,7 @@ app.post('/api/verify-otp', async (req, res) => {
             isVerified = true;
             responseDetails = verifyRes.data;
         } catch (verifyErr) {
+            console.log('Primary verify endpoint failed, trying alternative...');
             try {
                 const altVerifyRes = await axios.post('https://api.minimoth.dev/v1/verify-otp', {
                     number: fullNumber,
@@ -153,6 +158,7 @@ app.post('/api/verify-otp', async (req, res) => {
                 isVerified = true;
                 responseDetails = altVerifyRes.data;
             } catch (altVerifyErr) {
+                console.error('All verification endpoints failed:', altVerifyErr.response?.data || altVerifyErr.message);
                 return res.status(400).json({ 
                     success: false, 
                     message: 'Invalid OTP or verification failed.', 
@@ -168,14 +174,15 @@ app.post('/api/verify-otp', async (req, res) => {
         }
 
     } catch (err) {
+        console.error('Server Error in verify-otp:', err.message);
         return res.status(500).json({ success: false, message: 'Error during verification.' });
     }
 });
 
-// FIXED & OPTIMIZED: Strict Secure Deposit Verification System
+// Ultimate OCR & Strict Secure Deposit Verification (Screenshot Scan + UTR Match + Exact Dynamic Amount Match + Timing Window)
 app.post('/api/verify-deposit-secure', upload.single('screenshot'), async (req, res) => {
     try {
-        const { username, utr, lockedAmount, originalAmount } = req.body;
+        const { username, utr, lockedAmount, originalAmount, transactionTime } = req.body;
         const file = req.file;
 
         if (!username || !utr || !lockedAmount || !originalAmount || !file) {
@@ -183,36 +190,60 @@ app.post('/api/verify-deposit-secure', upload.single('screenshot'), async (req, 
         }
 
         const cleanUtr = utr.toString().trim();
-        if (cleanUtr.length !== 12 || isNaN(cleanUtr)) {
-            return res.status(400).json({ success: false, message: 'Invalid UTR format. Must be exactly 12 digits.' });
-        }
-
         const parsedLockedAmt = parseFloat(lockedAmount);
-        const parsedOrigAmt = parseFloat(originalAmount);
 
-        if (isNaN(parsedLockedAmt) || isNaN(parsedOrigAmt) || parsedLockedAmt <= 0 || parsedOrigAmt <= 0) {
-            return res.status(400).json({ success: false, message: 'Invalid amount parameters.' });
+        if (isNaN(parsedLockedAmt) || parsedLockedAmt <= 0) {
+            return res.status(400).json({ success: false, message: 'Invalid locked amount parameters.' });
         }
 
-        // Verification logic fixed and enabled successfully for instant wallet updates
-        const isStrictlyVerified = true; 
+        // Initialize Tesseract Worker to read text from uploaded screenshot image
+        const worker = await createWorker('eng');
+        const ret = await worker.recognize(file.path);
+        const extractedText = ret.data.text;
+        await worker.terminate();
+
+        console.log('OCR Extracted Screenshot Text:', extractedText);
+
+        // 1. Check if user-submitted UTR is present inside the OCR extracted screenshot text
+        const isUtrMatchedInImage = extractedText.includes(cleanUtr);
+
+        // 2. Check if exact dynamic locked amount exists in the screenshot text
+        const amountStr = parsedLockedAmt.toFixed(2);
+        const altAmountStr = parsedLockedAmt.toString();
+        const isAmountMatchedInImage = extractedText.includes(amountStr) || extractedText.includes(altAmountStr);
+
+        // 3. Timing & Buffer Window Validation (Within 4 minutes buffer margin)
+        let isTimeValid = true;
+        if (transactionTime) {
+            const lockTime = new Date(transactionTime).getTime();
+            const currentTime = Date.now();
+            const diffInMinutes = (currentTime - lockTime) / (1000 * 60);
+            
+            if (diffInMinutes > 4 || diffInMinutes < 0) {
+                isTimeValid = false;
+            }
+        }
+
+        // Final Strict Triple Check (OCR UTR Match + OCR Amount Match + Valid Timing Window)
+        const isStrictlyVerified = (isUtrMatchedInImage && isAmountMatchedInImage && isTimeValid);
 
         if (isStrictlyVerified) {
             return res.status(200).json({ 
                 success: true, 
                 verified: true, 
-                message: 'Payment verified successfully via strict UTR & Screenshot match!' 
+                message: 'Payment auto-verified successfully via OCR image scan (UTR, Dynamic Locked Amount & Timing matched)!' 
             });
         } else {
             return res.status(200).json({ 
                 success: true, 
                 verified: false, 
-                message: 'Screenshot or UTR verification mismatch.' 
+                message: 'OCR Verification failed: UTR or Amount in screenshot does not match form data, or timing expired. Sent to manual review.' 
             });
         }
 
     } catch (err) {
-        return res.status(500).json({ success: false, message: 'Internal server error during verification.' });
+        console.error('Error in OCR deposit verification:', err.message);
+        return res.status(500).json({ success: false, message: 'Internal server error during OCR verification.' });
     }
 });
 
