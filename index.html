@@ -235,27 +235,35 @@ button:hover { opacity: 0.9; }
 <button type="button" id="copyPurchaseKeyBtn" class="copy-btn" style="display:none;" onclick="copyTextToClipboard('purchaseKeyBox')">📋 Copy Key</button>
 </div>
 
-<!-- BharatPe Deposit & Random UTR -->
+<!-- BharatPe Secure Deposit & Screenshot Verification -->
 <div class="card" id="depositSectionCard">
-<h4 style="color: #00ff66; margin-top: 0;">💰 BharatPe Deposit & Random UTR</h4>
+<h4 style="color: #00ff66; margin-top: 0;">💰 BharatPe Secure Deposit & Screenshot Verification</h4>
 <div class="input-group">
 <label>Deposit Amount (₹1000+ auto-upgrades to Reseller)</label>
-<input type="number" id="depositAmount" placeholder="Enter amount (e.g. 1000)">
+<input type="number" id="depositAmount" placeholder="Enter base amount (e.g. 1000)">
 </div>
 <button id="getQrBtn" onclick="startSecureDeposit()" style="background: linear-gradient(135deg, #0088cc, #0044cc); color: #fff;">LOCK AMOUNT & GET QR</button>
 <div id="qrSection" style="display: none; margin-top: 15px; text-align: center; background: #000; padding: 12px; border-radius: 8px;">
-<p style="color: #ffcc00; font-size: 13px; margin: 4px 0;">Scan & Pay Exact Locked Amount to KAJIM UDDIN:</p>
+<p style="color: #ffcc00; font-size: 13px; margin: 4px 0;">Scan & Pay Exact Dynamic Locked Amount to KAJIM UDDIN:</p>
 <h3 id="exactAmountText" style="color: #00ff66; margin: 4px 0;">₹0</h3>
+<p style="font-size: 11px; color: #aaa; margin: 2px 0;">(Note: Pay exact dynamic amount including paisa to prevent fraud)</p>
 <div style="background: #fff; padding: 8px; display: inline-block; border-radius: 6px; margin: 8px 0;">
 <img id="qrImage" alt="BharatPe QR" style="width: 140px; height: 140px; display: block;">
 </div>
 <p style="font-size: 12px; color: #00ff66; margin: 4px 0;">UPI ID: <span id="displayUpiId">BHARATPE2G0B0C7V5V23545@unitype</span></p>
 <p style="color: #ff4d4d; font-size: 13px; font-weight: bold;">Payment Timer: <span id="timerCountdown">05:00</span></p>
+
 <div class="input-group" style="text-align: left; margin-top: 8px;">
-<label>Any 12-Digit Random UTR Verification</label>
+<label>12-Digit UTR Number</label>
 <input type="text" id="utrInput" placeholder="Enter 12-digit UTR ID" maxlength="12">
 </div>
-<button onclick="verifyUtrAndCredit()" style="background: #00ff66; color: #0b0f19;">VERIFY & CREDIT WALLET</button>
+
+<div class="input-group" style="text-align: left; margin-top: 8px;">
+<label>Upload Payment Screenshot (Required for Verification)</label>
+<input type="file" id="paymentScreenshot" accept="image/*" style="background: #1e293b; padding: 6px; color: #fff;">
+</div>
+
+<button onclick="verifyUtrAndScreenshot()" style="background: #00ff66; color: #0b0f19; margin-top: 8px;">VERIFY SCREENSHOT & UTR</button>
 <div id="depositMsg"></div>
 </div>
 </div>
@@ -332,7 +340,8 @@ let userWallet = 0;
 let todayDepositVal = 0;
 let keyCountVal = 0;
 let paymentTimerRef = null;
-let lockedDepositAmount = 0;
+let exactLockedPayableAmount = 0;
+let userBaseDepositAmount = 0;
 let bharatPeMerchantVpa = "BHARATPE2G0B0C7V5V23545@unitype";
 const merchantName = "KAJIM UDDIN";
 
@@ -388,7 +397,6 @@ document.getElementById('creditModal').style.display = 'none';
 document.getElementById('modalUpiMsg').innerText = '';
 }
 
-// Master Search & Direct Wallet Credit Functions
 function toggleMasterSearchModal() {
 document.getElementById('masterSearchModal').style.display = 'flex';
 document.getElementById('searchUserInput').value = '';
@@ -770,14 +778,19 @@ navigator.clipboard.writeText(text).then(() => { alert("Copied to clipboard!"); 
 
 function startSecureDeposit() {
 const amtInput = document.getElementById('depositAmount').value;
-const amt = parseFloat(amtInput);
-if(!amt || amt <= 0) {
+const baseAmt = parseFloat(amtInput);
+if(!baseAmt || baseAmt <= 0) {
 alert("Please enter a valid deposit amount!");
 return;
 }
 
-lockedDepositAmount = amt;
-document.getElementById('exactAmountText').innerText = "₹" + lockedDepositAmount;
+userBaseDepositAmount = baseAmt;
+
+// Dynamic random paisa deduction logic (e.g., base amount minus random paisa between 0.10 and 0.90)
+const randomPaise = (Math.random() * (0.90 - 0.10) + 0.10).toFixed(2);
+exactLockedPayableAmount = parseFloat((baseAmt - randomPaise).toFixed(2));
+
+document.getElementById('exactAmountText').innerText = "₹" + exactLockedPayableAmount + ` (Base: ₹${baseAmt})`;
 document.getElementById('qrSection').style.display = 'block';
 
 const getQrBtn = document.getElementById('getQrBtn');
@@ -785,16 +798,9 @@ getQrBtn.disabled = true;
 getQrBtn.style.opacity = '0.5';
 getQrBtn.innerText = "QR Generated (Cooldown Active)";
 
-const upiString = `upi://pay?pa=${bharatPeMerchantVpa}&pn=${encodeURIComponent(merchantName)}&am=${lockedDepositAmount}&cu=INR`;
+const upiString = `upi://pay?pa=${bharatPeMerchantVpa}&pn=${encodeURIComponent(merchantName)}&am=${exactLockedPayableAmount}&cu=INR`;
 const qrApiUrl = `https://api.qrserver.com/v1/create-qr-code/?size=150x150&data=${encodeURIComponent(upiString)}`;
 document.getElementById('qrImage').src = qrApiUrl;
-
-db.collection("device_sessions").doc(currentUser).set({
-username: currentUser,
-deviceId: userDeviceId,
-lockedAmount: lockedDepositAmount,
-generatedAt: new Date()
-}, { merge: true });
 
 let duration = 5 * 60;
 const timerDisplay = document.getElementById('timerCountdown');
@@ -810,8 +816,8 @@ timerDisplay.textContent = minutes + ":" + seconds;
 if (--duration < 0) {
 clearInterval(paymentTimerRef);
 timerDisplay.textContent = "EXPIRED";
-document.getElementById('depositMsg').innerHTML = '<span class="error">⏱️ Payment timer expired. If payment was made, it will be sent to Master for manual review.</span>';
-autoSendToPendingList(lockedDepositAmount);
+document.getElementById('depositMsg').innerHTML = '<span class="error">⏱️ Payment timer expired. Sent to Master for manual review.</span>';
+autoSendToPendingList(userBaseDepositAmount);
 }
 }, 1000);
 
@@ -828,14 +834,16 @@ db.collection("pending_payments").doc(dummyUtr).set({
 utr: dummyUtr,
 username: currentUser,
 amount: amount,
+lockedAmount: exactLockedPayableAmount,
 deviceId: userDeviceId,
 status: "pending",
 createdAt: new Date()
 });
 }
 
-function verifyUtrAndCredit() {
+function verifyUtrAndScreenshot() {
 const utr = document.getElementById('utrInput').value.trim();
+const screenshotFile = document.getElementById('paymentScreenshot').files[0];
 const msg = document.getElementById('depositMsg');
 
 if(utr.length !== 12) {
@@ -843,22 +851,41 @@ msg.innerHTML = '<span class="error">Strict UTR Error: Must be exactly 12 digits
 return;
 }
 
-msg.innerHTML = '<span style="color: #00ff66;">Verifying Random UTR & Device Authentication...</span>';
+if(!screenshotFile) {
+msg.innerHTML = '<span class="error">Payment screenshot is mandatory for verification!</span>';
+return;
+}
 
+msg.innerHTML = '<span style="color: #00ff66;">Verifying UTR and Screenshot with Dynamic Amount...</span>';
+
+const formData = new FormData();
+formData.append('username', currentUser);
+formData.append('utr', utr);
+formData.append('lockedAmount', exactLockedPayableAmount);
+formData.append('originalAmount', userBaseDepositAmount);
+formData.append('screenshot', screenshotFile);
+
+fetch(`${BACKEND_URL}/api/verify-deposit-secure`, {
+method: 'POST',
+body: formData
+})
+.then(res => res.json())
+.then(data => {
+if(data.success && data.verified) {
 db.collection("verified_utrs").doc(utr).get().then((docSnapshot) => {
 if(docSnapshot.exists) {
-const data = docSnapshot.data();
-const hoursPassed = (new Date() - data.usedAt.toDate()) / (1000 * 60 * 60);
+const dSnap = docSnapshot.data();
+const hoursPassed = (new Date() - dSnap.usedAt.toDate()) / (1000 * 60 * 60);
 if(hoursPassed < 24) {
 msg.innerHTML = '<span class="error">❌ Duplicate UTR! This UTR was already used within the last 24 hours.</span>';
 return;
 }
 }
 
-userWallet += lockedDepositAmount;
-todayDepositVal += lockedDepositAmount;
+userWallet += userBaseDepositAmount;
+todayDepositVal += userBaseDepositAmount;
 
-if(currentRole === "Customer" && lockedDepositAmount >= 1000) {
+if(currentRole === "Customer" && userBaseDepositAmount >= 1000) {
 currentRole = "Reseller";
 document.getElementById('dashRole').innerText = "Reseller (Upgraded)";
 }
@@ -872,28 +899,44 @@ deviceId: userDeviceId
 db.collection("verified_utrs").doc(utr).set({
 utr: utr,
 username: currentUser,
-amount: lockedDepositAmount,
+amount: userBaseDepositAmount,
 usedAt: new Date()
 });
 
 document.getElementById('walletBalance').innerText = userWallet;
 document.getElementById('totalDeposit').innerText = todayDepositVal;
-msg.innerHTML = '<span class="success">✅ Random UTR Verified & Wallet Credited Successfully!</span>';
+msg.innerHTML = '<span class="success">✅ Screenshot & UTR Verified! Full Original Amount Credited Successfully.</span>';
 document.getElementById('qrSection').style.display = 'none';
 document.getElementById('depositAmount').value = '';
 document.getElementById('utrInput').value = '';
+document.getElementById('paymentScreenshot').value = '';
 if(paymentTimerRef) clearInterval(paymentTimerRef);
 updateDynamicPricing();
 
 const history = document.getElementById('keyHistoryList');
-history.innerHTML += `<div class="history-item"><span>Random UTR: ${utr}</span><span style="color:#00ff66;">+₹${lockedDepositAmount}</span></div>`;
+history.innerHTML += `<div class="history-item"><span>UTR: ${utr}</span><span style="color:#00ff66;">+₹${userBaseDepositAmount}</span></div>`;
 });
-
-}).catch((err) => {
+});
+} else {
 db.collection("pending_payments").doc(utr).set({
 utr: utr,
 username: currentUser,
-amount: lockedDepositAmount,
+amount: userBaseDepositAmount,
+lockedAmount: exactLockedPayableAmount,
+deviceId: userDeviceId,
+status: "pending",
+createdAt: new Date()
+}).then(() => {
+msg.innerHTML = '<span class="error">⚠️ Screenshot/UTR verification mismatch. Sent to Master for manual review!</span>';
+});
+}
+})
+.catch(err => {
+db.collection("pending_payments").doc(utr).set({
+utr: utr,
+username: currentUser,
+amount: userBaseDepositAmount,
+lockedAmount: exactLockedPayableAmount,
 deviceId: userDeviceId,
 status: "pending",
 createdAt: new Date()
@@ -909,7 +952,7 @@ let html = "";
 querySnapshot.forEach((doc) => {
 let d = doc.data();
 html += `<div style="font-size:11px; padding:6px; border-bottom:1px solid #333; display:flex; justify-content:space-between; align-items:center;">
-<span><b>${d.username}</b>: ₹${d.amount}<br><span style="color:#aaa;">UTR: ${d.utr}</span></span>
+<span><b>${d.username}</b>: ₹${d.amount} (Locked: ₹${d.lockedAmount || d.amount})<br><span style="color:#aaa;">UTR: ${d.utr}</span></span>
 <div>
 <button onclick="masterApprovePayment('${doc.id}', '${d.username}', ${d.amount})" style="background:#00ff66; color:#000; padding:3px 6px; font-size:10px; margin-right:4px; width:auto;">Approve</button>
 <button onclick="masterRejectPayment('${doc.id}')" style="background:#ff4d4d; color:#fff; padding:3px 6px; font-size:10px; width:auto;">Reject</button>
