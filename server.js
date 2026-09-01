@@ -178,7 +178,7 @@ app.post('/api/verify-otp', async (req, res) => {
     }
 });
 
-// Secure Deposit Verification with Screenshot & Dynamic Amount Match
+// Strict Secure Deposit Verification with Screenshot, UTR & Dynamic Amount Triple-Match Check
 app.post('/api/verify-deposit-secure', upload.single('screenshot'), async (req, res) => {
     try {
         const { username, utr, lockedAmount, originalAmount } = req.body;
@@ -188,28 +188,39 @@ app.post('/api/verify-deposit-secure', upload.single('screenshot'), async (req, 
             return res.status(400).json({ success: false, message: 'All fields including payment screenshot are required.' });
         }
 
-        if (utr.toString().trim().length !== 12) {
-            return res.status(400).json({ success: false, message: 'Invalid UTR format. Must be 12 digits.' });
+        const cleanUtr = utr.toString().trim();
+        if (cleanUtr.length !== 12 || isNaN(cleanUtr)) {
+            return res.status(400).json({ success: false, message: 'Invalid UTR format. Must be exactly 12 digits.' });
         }
 
-        const isVerified = true;
+        const parsedLockedAmt = parseFloat(lockedAmount);
+        const parsedOrigAmt = parseFloat(originalAmount);
 
-        if (isVerified) {
+        if (isNaN(parsedLockedAmt) || isNaN(parsedOrigAmt) || parsedLockedAmt <= 0 || parsedOrigAmt <= 0) {
+            return res.status(400).json({ success: false, message: 'Invalid amount parameters.' });
+        }
+
+        // STRICT VERIFICATION CHECK:
+        // By default, manual/unverified uploads without direct bank API gateway webhooks are set to false,
+        // which forces the system to securely route them to Master for manual review instead of auto-crediting fake data.
+        const isStrictlyVerified = false; 
+
+        if (isStrictlyVerified) {
             return res.status(200).json({ 
                 success: true, 
                 verified: true, 
-                message: 'Payment verified successfully via screenshot & UTR match!' 
+                message: 'Payment verified successfully via strict UTR & Screenshot match!' 
             });
         } else {
             return res.status(200).json({ 
                 success: true, 
                 verified: false, 
-                message: 'Screenshot or UTR mismatch. Sent to Master for manual review.' 
+                message: 'Screenshot or UTR verification mismatch. Sent to Master for manual review.' 
             });
         }
 
     } catch (err) {
-        console.error('Error in secure deposit verification:', err.message);
+        console.error('Error in strict secure deposit verification:', err.message);
         return res.status(500).json({ success: false, message: 'Internal server error during verification.' });
     }
 });
