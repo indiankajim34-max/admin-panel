@@ -2,6 +2,7 @@ const express = require('express');
 const cors = require('cors');
 const bodyParser = require('body-parser');
 const axios = require('axios');
+
 const app = express();
 const PORT = process.env.PORT || 10000;
 
@@ -20,6 +21,7 @@ app.post('/api/send-otp', async (req, res) => {
         if (!phone) {
             return res.status(400).json({ success: false, message: 'Phone number is required.' });
         }
+
         const fullNumber = phone.toString().trim();
         let isSent = false;
         let responseDetails = null;
@@ -53,17 +55,20 @@ app.post('/api/send-otp', async (req, res) => {
                 responseDetails = altRes.data;
             } catch (altErr) {
                 console.error('All OTP endpoints failed:', altErr.response?.data || altErr.message);
-                return res.status(500).json({
-                    success: false,
-                    message: 'Failed to send OTP via WhatsApp.',
-                    error: altErr.response?.data || altErr.message
+                return res.status(500).json({ 
+                    success: false, 
+                    message: 'Failed to send OTP from provider.', 
+                    error: altErr.response?.data || altErr.message 
                 });
             }
         }
 
         if (isSent) {
-            return res.status(200).json({ success: true, message: 'OTP sent successfully!', data: responseDetails });
+            return res.status(200).json({ success: true, message: 'OTP successfully sent!', data: responseDetails });
+        } else {
+            return res.status(500).json({ success: false, message: 'Failed to send OTP, please try again.' });
         }
+
     } catch (err) {
         console.error('Server Error in send-otp:', err.message);
         return res.status(500).json({ success: false, message: 'Internal server error.' });
@@ -76,8 +81,10 @@ app.post('/api/verify-otp', async (req, res) => {
         if (!phone || !otp) {
             return res.status(400).json({ success: false, message: 'Phone number and OTP are required.' });
         }
+
         const fullNumber = phone.toString().trim();
         const enteredOtp = otp.toString().trim();
+
         let isVerified = false;
         let responseDetails = null;
 
@@ -112,10 +119,10 @@ app.post('/api/verify-otp', async (req, res) => {
                 responseDetails = altVerifyRes.data;
             } catch (altVerifyErr) {
                 console.error('All verification endpoints failed:', altVerifyErr.response?.data || altVerifyErr.message);
-                return res.status(400).json({
-                    success: false,
-                    message: 'Invalid OTP or verification failed.',
-                    error: altVerifyErr.response?.data || altVerifyErr.message
+                return res.status(400).json({ 
+                    success: false, 
+                    message: 'Invalid OTP or verification failed.', 
+                    error: altVerifyErr.response?.data || altVerifyErr.message 
                 });
             }
         }
@@ -123,8 +130,9 @@ app.post('/api/verify-otp', async (req, res) => {
         if (isVerified) {
             return res.status(200).json({ success: true, message: 'OTP verified successfully!', data: responseDetails });
         } else {
-            return res.status(400).json({ success: false, message: 'Invalid OTP entered.' });
+            return res.status(400).json({ message: 'Invalid OTP entered.' });
         }
+
     } catch (err) {
         console.error('Server Error in verify-otp:', err.message);
         return res.status(500).json({ success: false, message: 'Error during verification.' });
@@ -132,5 +140,5 @@ app.post('/api/verify-otp', async (req, res) => {
 });
 
 app.listen(PORT, '0.0.0.0', () => {
-    console.log(`Server is running on port ${PORT}`);
+    console.log(`Backend server successfully running on port ${PORT}`);
 });
