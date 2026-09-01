@@ -786,7 +786,6 @@ return;
 
 userBaseDepositAmount = baseAmt;
 
-// Dynamic random paisa deduction logic (e.g., base amount minus random paisa between 0.10 and 0.90)
 const randomPaise = (Math.random() * (0.90 - 0.10) + 0.10).toFixed(2);
 exactLockedPayableAmount = parseFloat((baseAmt - randomPaise).toFixed(2));
 
