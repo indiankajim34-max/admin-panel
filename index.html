@@ -68,7 +68,7 @@ button:hover { opacity: 0.9; }
 <div class="input-group">
 <label>WhatsApp / Mobile Number</label>
 <div style="background: #2a1f0b; border: 1px solid #ffcc00; color: #ffcc00; padding: 8px 10px; border-radius: 6px; font-size: 12px; margin-bottom: 6px; line-height: 1.4;">
-⚠️ <b>कृपया कंट्री कोड डालें!</b> (जैसे भारत के लिए <b>+91</b> अनिवार्य है। बिना कंट्री कोड के रजिस्टर नहीं होगा।)
+⚠️ <b>कृपया कंट्री कोड डालें!</b> (जैसे भारत के लिए <b>+91</b> अनिवार्य है।)
 </div>
 <input type="text" id="regPhone" placeholder="+919876543210" value="+91">
 <button type="button" onclick="requestBackendOtp('reg')" style="background: #182232; color: #00ff66; border: 1px solid #00ff66; margin-top: 8px; padding: 8px;">SEND WHATSAPP OTP</button>
@@ -91,9 +91,6 @@ button:hover { opacity: 0.9; }
 </div>
 <div class="input-group">
 <label>WhatsApp / Mobile Number</label>
-<div style="background: #2a1f0b; border: 1px solid #ffcc00; color: #ffcc00; padding: 8px 10px; border-radius: 6px; font-size: 12px; margin-bottom: 6px; line-height: 1.4;">
-⚠️ <b>कृपया कंट्री कोड डालें!</b> (जैसे भारत के लिए <b>+91</b> अनिवार्य है। बिना कंट्री कोड के पासवर्ड रिसेट नहीं होगा।)
-</div>
 <input type="text" id="forgotPhone" placeholder="+919876543210" value="+91">
 <button type="button" onclick="requestBackendOtp('forgot')" style="background: #182232; color: #00ff66; border: 1px solid #00ff66; margin-top: 8px; padding: 8px;">SEND WHATSAPP OTP</button>
 </div>
@@ -244,9 +241,8 @@ button:hover { opacity: 0.9; }
 </div>
 <button id="getQrBtn" onclick="startSecureDeposit()" style="background: linear-gradient(135deg, #0088cc, #0044cc); color: #fff;">LOCK AMOUNT & GET QR</button>
 <div id="qrSection" style="display: none; margin-top: 15px; text-align: center; background: #000; padding: 12px; border-radius: 8px;">
-<p style="color: #ffcc00; font-size: 13px; margin: 4px 0;">Scan & Pay Exact Dynamic Locked Amount to KAJIM UDDIN:</p>
+<p style="color: #ffcc00; font-size: 13px; margin: 4px 0;">Scan & Pay Exact Dynamic Locked Amount:</p>
 <h3 id="exactAmountText" style="color: #00ff66; margin: 4px 0;">₹0</h3>
-<p style="font-size: 11px; color: #aaa; margin: 2px 0;">(Note: Pay exact dynamic amount including paisa to prevent fraud)</p>
 <div style="background: #fff; padding: 8px; display: inline-block; border-radius: 6px; margin: 8px 0;">
 <img id="qrImage" alt="BharatPe QR" style="width: 140px; height: 140px; display: block;">
 </div>
@@ -259,7 +255,7 @@ button:hover { opacity: 0.9; }
 </div>
 
 <div class="input-group" style="text-align: left; margin-top: 8px;">
-<label>Upload Payment Screenshot (Required for Verification)</label>
+<label>Upload Payment Screenshot</label>
 <input type="file" id="paymentScreenshot" accept="image/*" style="background: #1e293b; padding: 6px; color: #fff;">
 </div>
 
@@ -270,7 +266,6 @@ button:hover { opacity: 0.9; }
 
 <div class="card">
 <h4 style="color: #fff; margin-top: 0;">📜 History Logs & Overview</h4>
-<p style="font-size: 12px; color: #aaa;">Midnight Reset active: Stats auto-reset to ₹0 at 12:00 AM daily.</p>
 <div id="keyHistoryList" style="max-height: 120px; overflow-y: auto; margin-top: 8px;">
 <p style="font-size: 12px; color: #777;">No transaction history yet.</p>
 </div>
@@ -351,6 +346,17 @@ userDeviceId = 'DEV-' + Math.random().toString(36).substring(2, 15) + Math.rando
 localStorage.setItem('wingo_device_id', userDeviceId);
 }
 
+// Package Duration Mapping (Accurate hours mapping)
+const packageHours = {
+"1 Day VIP": 24,
+"3 Days VIP": 72,
+"7 Days VIP": 168,
+"15 Days VIP": 360,
+"20 Days VIP": 480,
+"30 Days VIP": 720,
+"Unlimited VIP": 876000 // 100 years
+};
+
 const basePricing = {
 "1 Day VIP": 150,
 "3 Days VIP": 300,
@@ -361,27 +367,6 @@ const basePricing = {
 "Unlimited VIP": 3000
 };
 
-// Exact Hourly Mappings for License Expiry System
-const packageHoursMap = {
-"1 Day VIP": 24,
-"3 Days VIP": 72,
-"7 Days VIP": 168,
-"15 Days VIP": 360,
-"20 Days VIP": 480,
-"30 Days VIP": 720,
-"Unlimited VIP": -1
-};
-
-// Strongly Unique Key Generator (Collision and Overwrite Proof)
-function generateUniqueKeyString(prefix = "WINGO-H") {
-const cleanPrefix = prefix.toUpperCase().replace(/[^A-Z0-9_-]/g, '') || "WINGO-H";
-const timeComponent = Date.now().toString(36).toUpperCase();
-const randomComponent = Math.floor(100000 + Math.random() * 900000).toString();
-const randomAlpha = Math.random().toString(36).substring(2, 6).toUpperCase();
-return `${cleanPrefix}-${timeComponent}-${randomComponent}${randomAlpha}`;
-}
-
-// Midnight Reset Check Logic
 function checkMidnightReset() {
 const todayStr = new Date().toDateString();
 const lastResetDate = localStorage.getItem('wingo_last_reset_date');
@@ -569,11 +554,6 @@ msg.innerHTML = '<span class="error">All fields are mandatory!</span>';
 return;
 }
 
-if(!rawPhone.startsWith('+')) {
-msg.innerHTML = '<span class="error">कृपया कंट्री कोड (+91 आदि) अनिवार्य रूप से डालें!</span>';
-return;
-}
-
 if(pass !== passConfirm) {
 msg.innerHTML = '<span class="error">Passwords do not match!</span>';
 return;
@@ -628,11 +608,6 @@ const msg = document.getElementById('forgotMsg');
 
 if(!user || !rawPhone || !otp || !newPass) {
 msg.innerHTML = '<span class="error">All fields are mandatory!</span>';
-return;
-}
-
-if(!rawPhone.startsWith('+')) {
-msg.innerHTML = '<span class="error">कृपया कंट्री कोड (+91 आदि) अनिवार्य रूप से डालें!</span>';
 return;
 }
 
@@ -735,6 +710,7 @@ document.getElementById('priceTierLabel').innerText = "(Customer Price)";
 document.getElementById('displayPrice').innerText = price;
 }
 
+// Key Generation with Millisecond uniqueness & Exact Package Hours mapping
 function generateGameServerKey() {
 const pkg = document.getElementById('keyPackage').value;
 let price = basePricing[pkg] || 150;
@@ -752,8 +728,12 @@ keyCountVal += 1;
 document.getElementById('walletBalance').innerText = userWallet;
 document.getElementById('keyCount').innerText = keyCountVal;
 
-const generatedKey = generateUniqueKeyString("WINGO-H");
-const durationHours = packageHoursMap[pkg] !== undefined ? packageHoursMap[pkg] : 24;
+// Using millisecond timestamp offset to guarantee unique key generation
+const uniqueMsOffset = Date.now();
+const randomNum = Math.floor(100000 + Math.random() * 900000);
+const generatedKey = "WINGO-H-" + randomNum + "-" + String(uniqueMsOffset).slice(-4);
+
+const durationHrs = packageHours[pkg] || 24;
 
 document.getElementById('purchaseKeyBox').innerText = generatedKey;
 document.getElementById('copyPurchaseKeyBtn').style.display = 'inline-block';
@@ -766,13 +746,9 @@ todayKeys: keyCountVal
 db.collection("keys").doc(generatedKey).set({
 key: generatedKey,
 package: pkg,
-durationHours: durationHours,
+durationHours: durationHrs,
 createdBy: currentUser,
 deviceId: "",
-boundDeviceId: "",
-activatedAt: null,
-expiresAt: null,
-isExpired: false,
 status: "active",
 createdAt: new Date()
 }).catch((err) => { console.log(err); });
@@ -780,9 +756,12 @@ createdAt: new Date()
 
 function masterGenerateKey() {
 const customPrefix = document.getElementById('masterCustomUsername').value.trim() || "WINGO-H";
-const generatedKey = generateUniqueKeyString(customPrefix);
 const pkg = document.getElementById('masterPackageType').value;
-const durationHours = packageHoursMap[pkg] !== undefined ? packageHoursMap[pkg] : 24;
+const uniqueMsOffset = Date.now();
+const randomNum = Math.floor(100000 + Math.random() * 900000);
+const generatedKey = `${customPrefix.toUpperCase()}-${randomNum}-${String(uniqueMsOffset).slice(-4)}`;
+
+const durationHrs = packageHours[pkg] || 24;
 
 document.getElementById('masterKeyBox').innerText = generatedKey;
 document.getElementById('copyMasterKeyBtn').style.display = 'inline-block';
@@ -790,13 +769,9 @@ document.getElementById('copyMasterKeyBtn').style.display = 'inline-block';
 db.collection("keys").doc(generatedKey).set({
 key: generatedKey,
 package: pkg,
-durationHours: durationHours,
+durationHours: durationHrs,
 createdBy: currentUser,
 deviceId: "",
-boundDeviceId: "",
-activatedAt: null,
-expiresAt: null,
-isExpired: false,
 status: "active",
 createdAt: new Date()
 }).catch((err) => { console.log(err); });
@@ -816,7 +791,6 @@ return;
 }
 
 userBaseDepositAmount = baseAmt;
-
 const randomPaise = (Math.random() * (0.90 - 0.10) + 0.10).toFixed(2);
 exactLockedPayableAmount = parseFloat((baseAmt - randomPaise).toFixed(2));
 
@@ -846,7 +820,6 @@ timerDisplay.textContent = minutes + ":" + seconds;
 if (--duration < 0) {
 clearInterval(paymentTimerRef);
 timerDisplay.textContent = "EXPIRED";
-document.getElementById('depositMsg').innerHTML = '<span class="error">⏱️ Payment timer expired. Sent to Master for manual review.</span>';
 autoSendToPendingList(userBaseDepositAmount);
 }
 }, 1000);
@@ -882,11 +855,11 @@ return;
 }
 
 if(!screenshotFile) {
-msg.innerHTML = '<span class="error">Payment screenshot is mandatory for verification!</span>';
+msg.innerHTML = '<span class="error">Payment screenshot is mandatory!</span>';
 return;
 }
 
-msg.innerHTML = '<span style="color: #00ff66;">Verifying UTR and Screenshot with Dynamic Amount...</span>';
+msg.innerHTML = '<span style="color: #00ff66;">Verifying UTR and Screenshot...</span>';
 
 const formData = new FormData();
 formData.append('username', currentUser);
@@ -902,16 +875,6 @@ body: formData
 .then(res => res.json())
 .then(data => {
 if(data.success && data.verified) {
-db.collection("verified_utrs").doc(utr).get().then((docSnapshot) => {
-if(docSnapshot.exists) {
-const dSnap = docSnapshot.data();
-const hoursPassed = (new Date() - dSnap.usedAt.toDate()) / (1000 * 60 * 60);
-if(hoursPassed < 24) {
-msg.innerHTML = '<span class="error">❌ Duplicate UTR! This UTR was already used within the last 24 hours.</span>';
-return;
-}
-}
-
 userWallet += userBaseDepositAmount;
 todayDepositVal += userBaseDepositAmount;
 
@@ -935,7 +898,7 @@ usedAt: new Date()
 
 document.getElementById('walletBalance').innerText = userWallet;
 document.getElementById('totalDeposit').innerText = todayDepositVal;
-msg.innerHTML = '<span class="success">✅ Screenshot & UTR Verified! Full Original Amount Credited Successfully.</span>';
+msg.innerHTML = '<span class="success">✅ Screenshot & UTR Verified Successfully!</span>';
 document.getElementById('qrSection').style.display = 'none';
 document.getElementById('depositAmount').value = '';
 document.getElementById('utrInput').value = '';
@@ -945,7 +908,6 @@ updateDynamicPricing();
 
 const history = document.getElementById('keyHistoryList');
 history.innerHTML += `<div class="history-item"><span>UTR: ${utr}</span><span style="color:#00ff66;">+₹${userBaseDepositAmount}</span></div>`;
-});
 });
 } else {
 db.collection("pending_payments").doc(utr).set({
@@ -957,7 +919,7 @@ deviceId: userDeviceId,
 status: "pending",
 createdAt: new Date()
 }).then(() => {
-msg.innerHTML = '<span class="error">⚠️ Screenshot/UTR verification mismatch. Sent to Master for manual review!</span>';
+msg.innerHTML = '<span class="error">⚠️ Verification mismatch. Sent to Master for manual review!</span>';
 });
 }
 })
@@ -971,7 +933,7 @@ deviceId: userDeviceId,
 status: "pending",
 createdAt: new Date()
 }).then(() => {
-msg.innerHTML = '<span class="error">⚠️ Network/Technical delay detected. Payment sent to Master for manual review!</span>';
+msg.innerHTML = '<span class="error">⚠️ Network error. Payment sent to Master for review!</span>';
 });
 });
 }
@@ -982,7 +944,7 @@ let html = "";
 querySnapshot.forEach((doc) => {
 let d = doc.data();
 html += `<div style="font-size:11px; padding:6px; border-bottom:1px solid #333; display:flex; justify-content:space-between; align-items:center;">
-<span><b>${d.username}</b>: ₹${d.amount} (Locked: ₹${d.lockedAmount || d.amount})<br><span style="color:#aaa;">UTR: ${d.utr}</span></span>
+<span><b>${d.username}</b>: ₹${d.amount}<br><span style="color:#aaa;">UTR: ${d.utr}</span></span>
 <div>
 <button onclick="masterApprovePayment('${doc.id}', '${d.username}', ${d.amount})" style="background:#00ff66; color:#000; padding:3px 6px; font-size:10px; margin-right:4px; width:auto;">Approve</button>
 <button onclick="masterRejectPayment('${doc.id}')" style="background:#ff4d4d; color:#fff; padding:3px 6px; font-size:10px; width:auto;">Reject</button>
@@ -1009,7 +971,7 @@ role: newRole
 });
 }
 db.collection("pending_payments").doc(docId).update({ status: "approved" }).then(() => {
-alert("Payment approved and credited to user!");
+alert("Payment approved!");
 loadMasterPendingPayments();
 });
 });
@@ -1029,15 +991,9 @@ if(!target) {
 msg.innerHTML = '<span class="error">Enter username!</span>';
 return;
 }
-db.collection("users").doc(target).get().then((doc) => {
-if(!doc.exists) {
-msg.innerHTML = `<span class="error">❌ Invalid Username!</span>`;
-return;
-}
 db.collection("users").doc(target).set({ role: "Reseller" }, { merge: true }).then(() => {
 msg.innerHTML = `<span class="success">✅ User '${target}' successfully promoted!</span>`;
 document.getElementById('targetResellerUser').value = '';
-});
 });
 }
 
@@ -1066,7 +1022,7 @@ if(!doc.exists) {
 msg.innerHTML = '<span class="error">Key not found!</span>';
 return;
 }
-doc.ref.update({ deviceId: "", boundDeviceId: "" }).then(() => {
+doc.ref.update({ deviceId: "" }).then(() => {
 msg.innerHTML = '<span class="success">Device lock successfully reset!</span>';
 document.getElementById('resetKeyInput').value = '';
 });
