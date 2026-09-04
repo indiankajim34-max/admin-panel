@@ -361,6 +361,26 @@ const basePricing = {
 "Unlimited VIP": 3000
 };
 
+// Exact Hourly Mappings for License Expiry System
+const packageHoursMap = {
+"1 Day VIP": 24,
+"3 Days VIP": 72,
+"7 Days VIP": 168,
+"15 Days VIP": 360,
+"20 Days VIP": 480,
+"30 Days VIP": 720,
+"Unlimited VIP": -1
+};
+
+// Strongly Unique Key Generator (Collision and Overwrite Proof)
+function generateUniqueKeyString(prefix = "WINGO-H") {
+const cleanPrefix = prefix.toUpperCase().replace(/[^A-Z0-9_-]/g, '') || "WINGO-H";
+const timeComponent = Date.now().toString(36).toUpperCase();
+const randomComponent = Math.floor(100000 + Math.random() * 900000).toString();
+const randomAlpha = Math.random().toString(36).substring(2, 6).toUpperCase();
+return `${cleanPrefix}-${timeComponent}-${randomComponent}${randomAlpha}`;
+}
+
 // Midnight Reset Check Logic
 function checkMidnightReset() {
 const todayStr = new Date().toDateString();
@@ -732,8 +752,8 @@ keyCountVal += 1;
 document.getElementById('walletBalance').innerText = userWallet;
 document.getElementById('keyCount').innerText = keyCountVal;
 
-const randomNum = Math.floor(100000 + Math.random() * 900000);
-const generatedKey = "WINGO-H-" + randomNum;
+const generatedKey = generateUniqueKeyString("WINGO-H");
+const durationHours = packageHoursMap[pkg] !== undefined ? packageHoursMap[pkg] : 24;
 
 document.getElementById('purchaseKeyBox').innerText = generatedKey;
 document.getElementById('copyPurchaseKeyBtn').style.display = 'inline-block';
@@ -746,8 +766,13 @@ todayKeys: keyCountVal
 db.collection("keys").doc(generatedKey).set({
 key: generatedKey,
 package: pkg,
+durationHours: durationHours,
 createdBy: currentUser,
 deviceId: "",
+boundDeviceId: "",
+activatedAt: null,
+expiresAt: null,
+isExpired: false,
 status: "active",
 createdAt: new Date()
 }).catch((err) => { console.log(err); });
@@ -755,17 +780,23 @@ createdAt: new Date()
 
 function masterGenerateKey() {
 const customPrefix = document.getElementById('masterCustomUsername').value.trim() || "WINGO-H";
-const randomNum = Math.floor(100000 + Math.random() * 900000);
-const generatedKey = `${customPrefix.toUpperCase()}-${randomNum}`;
+const generatedKey = generateUniqueKeyString(customPrefix);
+const pkg = document.getElementById('masterPackageType').value;
+const durationHours = packageHoursMap[pkg] !== undefined ? packageHoursMap[pkg] : 24;
 
 document.getElementById('masterKeyBox').innerText = generatedKey;
 document.getElementById('copyMasterKeyBtn').style.display = 'inline-block';
 
 db.collection("keys").doc(generatedKey).set({
 key: generatedKey,
-package: document.getElementById('masterPackageType').value,
+package: pkg,
+durationHours: durationHours,
 createdBy: currentUser,
 deviceId: "",
+boundDeviceId: "",
+activatedAt: null,
+expiresAt: null,
+isExpired: false,
 status: "active",
 createdAt: new Date()
 }).catch((err) => { console.log(err); });
@@ -1035,7 +1066,7 @@ if(!doc.exists) {
 msg.innerHTML = '<span class="error">Key not found!</span>';
 return;
 }
-doc.ref.update({ deviceId: "" }).then(() => {
+doc.ref.update({ deviceId: "", boundDeviceId: "" }).then(() => {
 msg.innerHTML = '<span class="success">Device lock successfully reset!</span>';
 document.getElementById('resetKeyInput').value = '';
 });
